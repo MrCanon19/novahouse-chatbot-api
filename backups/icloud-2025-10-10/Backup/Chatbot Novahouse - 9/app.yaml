@@ -1,0 +1,30 @@
+runtime: python311
+entrypoint: gunicorn -b :$PORT main:app --log-level debug
+
+instance_class: F1
+
+automatic_scaling:
+  min_instances: 0
+  max_instances: 1
+
+service: default
+
+runtime_config:
+  python_version: 3.11
+
+env_variables:
+  DATABASE_URL: "postgresql://chatbot_user:NovaHouse2024SecurePass@35.205.83.191:5432/chatbot_db"
+  CLOUD_SQL_CONNECTION_NAME: "glass-core-467907-e9:europe-west1:novahouse-chatbot-db"
+  OPENAI_API_KEY: "sk-proj-LKJhgfdsa1234567890abcdef"
+  MONDAY_API_KEY: "eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjU2MTI0OTM2MiwiYWFpIjoxMSwidWlkIjo2NzA0MDY5NCwiaWFkIjoiMjAyNS0wOS0xMlQwNjo1ODoxOC4yNzVaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6MjU4NDk4NzEsInJnbiI6ImV1YzEifQ.Z-5M7pm_QZa1YBQ4a5caSg6XZlM4X1_fTcnF5JmQJyw"
+
+beta_settings:
+  cloud_sql_instances: "glass-core-467907-e9:europe-west1:novahouse-chatbot-db"
+
+handlers:
+- url: /static
+  static_dir: src/static
+
+- url: /.*
+  script: auto
+
