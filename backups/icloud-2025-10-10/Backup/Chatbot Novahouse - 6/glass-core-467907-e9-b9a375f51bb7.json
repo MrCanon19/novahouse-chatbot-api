@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "glass-core-467907-e9",
+  "private_key_id": "b9a375f51bb76e2d9cdf5964208f7c765b383eca",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC5cxdMwylpi4oq\nTBThC9Slh/O3mJOYkcD1mbYjpCAo3Raabv82WKuDyKR8nLG86tYYz2qHmatg2o0j\nmOuHx61AU5xL2Z/Ejvqq+PUvfuzQ3e1FjJwLpRl7EtE0DVafRLro0D8EKCTC0Fxa\nxtBJxbnhBUNtVVph8vE+MMxtTJ/ksa23b9+Mpx6Z2V0GfDoC2tWhH3qeZdWXcp93\ni05I/l5k6iT24NcgHxC9dm9k2f9DH1FqBw3AuE3jWmnotocZ1FQy5vN272lvgONU\nXmsLAuiMdz1J/BhmJTeLq6Q3p9BHStSHuBdSG72aJFDAvTcGovfALQBdSy9h2KWC\n6EkwUBJLAgMBAAECggEAGbMDVZXuFTxLJ1Vnx1AWZeITOiwguBHqxZ5JiWLjOgZ5\nbWlYYLWk/xw8/y/PybhZdxK3VpdLEp721CoK6cQYFEQB8tjztQ+DWVIq2CwksUUv\n7mVv8oUspMuUxjva9zNVG5JQSUku3vh08/d9QdvuyGosT+h2IADEwbONgNAPkGd6\nM1sxp5AdJMu3vt6wfTIsEYfnp7f65hsWx1pU4xLbUIKeG9K8zaxy/ZMmtW/RFkz6\noN8pTefeXD1qiA9SycOrLEjwpy6CYPIo8m8Wgkhyg0q9h5oLcVglPrnyqIuCe49f\nKZfAI9tzvFoVkPkUwLfJjYS49/R4uJBUvzlUYhwskQKBgQD1gTK1uxJY27fdmEdJ\nPsvqmv7+T9LZa5NZvraaBVepwzIM+LI0XqLrACdg1AumX5Q/Op/mLVYMr1x9GqF/\nh7x90/6MGIj5p8Bu48eksRBr1nkYFykmE1YdfaEuIIYlhSTCDtL5rcJ8BkypJGQN\npyOwY7wy/5JYOv3Uwa8ruPHgpwKBgQDBYKZxnpFtJsuffc97rX1ST89icPktC9ny\nuaUsTc5TkkYywjs/BDKr9+Dysx+uk26huINzM4NIePHzpCSfIhAH+3Vtn3sVFn4p\nGxEVIBRKNL7QD/CSDUDoI1+a8iUFRFLB4oQ22k+vEFLzH68yrjz5TQrcrlq7KRSB\nuq5xbMDxvQKBgQDqiUf5p0LK0vTfZMfNaImEkhhCud1zyjqVxQVLNQlfa9PX4orU\nTwiTOq1j6o9KnQrSMN5rFiqbqbfQ6G0amYDwMGOAUTwiTSkghsjGREWsz9MVuaKc\n9mIRgGBH4dhl5cGNBn50+pPOynHYMKTJCkClFVLI4bFcStcNtw7y1Rd2BwKBgQCc\nzFWpwz2AF/j7tfPLAP2hBH3QAHLLB9UNb2Jy7hPix7SL69pGWo0Ly85mfL+vunP2\nRbqwapCE7yygtfPL5L7C+i5ZWPtgOgDKK9xKGNza3rHp20Lh6kU69ZPL+5PxFVlV\nROqX36TE+qOH56UTnxxpuQKZtfZz0/eAyXIxHlHEsQKBgFY+gIqKQ9KaffaAIOTZ\nu6KJy9n9akMK5CRJGDHiqwibkBzt3QRgrcevXiQGwnzG+OKu7pifqqU+kgK2+HUB\nOrt9qjtRy96ehsYn8cMGj5GkghMxfgdTgxAmR9TCLv6DislfFOlFJJHwSkFAe5nm\nE+nKNcWx0CpzA2PEyGVgDhBR\n-----END PRIVATE KEY-----\n",
+  "client_email": "manus-chatbot-deployer@glass-core-467907-e9.iam.gserviceaccount.com",
+  "client_id": "100701463599976062133",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/manus-chatbot-deployer%40glass-core-467907-e9.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
