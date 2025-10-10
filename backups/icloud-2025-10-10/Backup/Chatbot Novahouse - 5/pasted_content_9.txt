@@ -1,0 +1,384 @@
+Your Cloud Platform project in this session is set to glass-core-467907-e9.
+Use `gcloud config set project [PROJECT_ID]` to change to a different project.
+marini19944@cloudshell:~ (glass-core-467907-e9)$ gcloud projects get-iam-policy glass-core-467907-e9 --format=json > iam-policy.json
+marini19944@cloudshell:~ (glass-core-467907-e9)$ {
+  "role": "jakas/rola",
+  "members": [
+    "typ:email@example.com"
+  ]
+}
+-bash: role:: command not found
+-bash: members:: command not found
+marini19944@cloudshell:~ (glass-core-467907-e9)$ gcloud projects get-iam-policy glass-core-467907-e9 --format=json > iam-policy.json
+marini19944@cloudshell:~ (glass-core-467907-e9)$ {
+  "role": "jakas/rola",
+  "members": [
+    "typ:email@example.com"
+  ]
+}
+-bash: role:: command not found
+-bash: members:: command not found
+-bash: typ:email@example.com: command not found
+-bash: ]: command not found
+marini19944@cloudshell:~ (glass-core-467907-e9)$ gcloud projects get-iam-policy glass-core-467907-e9 --format=json
+{
+  "bindings": [
+    {
+      "members": [
+        "serviceAccount:manus-chatbot-deployer@glass-core-467907-e9.iam.gserviceaccount.com"
+      ],
+      "role": "roles/appengine.deployer"
+    },
+    {
+      "members": [
+        "serviceAccount:service-894348317208@gcp-gae-service.iam.gserviceaccount.com"
+      ],
+      "role": "roles/appengine.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:service-894348317208@gcp-sa-artifactregistry.iam.gserviceaccount.com"
+      ],
+      "role": "roles/artifactregistry.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:service-894348317208@gcp-sa-cloudaicompanion.iam.gserviceaccount.com"
+      ],
+      "role": "roles/cloudaicompanion.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:894348317208@cloudbuild.gserviceaccount.com"
+      ],
+      "role": "roles/cloudbuild.builds.builder"
+    },
+    {
+      "members": [
+        "serviceAccount:service-894348317208@gcp-sa-cloudbuild.iam.gserviceaccount.com"
+      ],
+      "role": "roles/cloudbuild.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:894348317208-compute@developer.gserviceaccount.com",
+        "serviceAccount:glass-core-467907-e9@appspot.gserviceaccount.com"
+      ],
+      "role": "roles/editor"
+    },
+    {
+      "members": [
+        "serviceAccount:service-894348317208@gcp-sa-firestore.iam.gserviceaccount.com"
+      ],
+      "role": "roles/firestore.serviceAgent"
+    },
+    {
+      "members": [
+        "user:m.kubiak@novahouse.pl",
+        "user:marini19944@gmail.com"
+      ],
+      "role": "roles/owner"
+    },
+    {
+      "members": [
+        "serviceAccount:glass-core-467907-e9@appspot.gserviceaccount.com"
+      ],
+      "role": "roles/storage.admin"
+    },
+    {
+      "members": [
+        "serviceAccount:manus-chatbot-deployer@glass-core-467907-e9.iam.gserviceaccount.com"
+      ],
+      "role": "roles/storage.folderAdmin"
+    }
+  ],
+  "etag": "BwY-JJ8ZTnE=",
+  "version": 1
+}
+marini19944@cloudshell:~ (glass-core-467907-e9)$ gcloud projects set-iam-policy glass-core-467907-e9 iam-policy.json
+Updated IAM policy for project [glass-core-467907-e9].
+bindings:
+- members:
+  - serviceAccount:manus-chatbot-deployer@glass-core-467907-e9.iam.gserviceaccount.com
+  role: roles/appengine.deployer
+- members:
+  - serviceAccount:service-894348317208@gcp-gae-service.iam.gserviceaccount.com
+  role: roles/appengine.serviceAgent
+- members:
+  - serviceAccount:service-894348317208@gcp-sa-artifactregistry.iam.gserviceaccount.com
+  role: roles/artifactregistry.serviceAgent
+- members:
+  - serviceAccount:service-894348317208@gcp-sa-cloudaicompanion.iam.gserviceaccount.com
+  role: roles/cloudaicompanion.serviceAgent
+- members:
+  - serviceAccount:894348317208@cloudbuild.gserviceaccount.com
+  role: roles/cloudbuild.builds.builder
+- members:
+  - serviceAccount:service-894348317208@gcp-sa-cloudbuild.iam.gserviceaccount.com
+  role: roles/cloudbuild.serviceAgent
+- members:
+  - serviceAccount:894348317208-compute@developer.gserviceaccount.com
+  - serviceAccount:glass-core-467907-e9@appspot.gserviceaccount.com
+  role: roles/editor
+- members:
+  - serviceAccount:service-894348317208@gcp-sa-firestore.iam.gserviceaccount.com
+  role: roles/firestore.serviceAgent
+- members:
+  - serviceAccount:manus-chatbot-deployer@glass-core-467907-e9.iam.gserviceaccount.com
+  role: roles/iam.serviceAccountUser
+- members:
+  - user:m.kubiak@novahouse.pl
+  - user:marini19944@gmail.com
+  role: roles/owner
+- members:
+  - serviceAccount:glass-core-467907-e9@appspot.gserviceaccount.com
+  role: roles/storage.admin
+- members:
+  - serviceAccount:manus-chatbot-deployer@glass-core-467907-e9.iam.gserviceaccount.com
+  role: roles/storage.folderAdmin
+etag: BwY-JTo2-YM=
+version: 1
+marini19944@cloudshell:~ (glass-core-467907-e9)$ gcloud projects get-iam-policy glass-core-467907-e9 --format=json
+{
+  "bindings": [
+    {
+      "members": [
+        "serviceAccount:manus-chatbot-deployer@glass-core-467907-e9.iam.gserviceaccount.com"
+      ],
+      "role": "roles/appengine.deployer"
+    },
+    {
+      "members": [
+        "serviceAccount:service-894348317208@gcp-gae-service.iam.gserviceaccount.com"
+      ],
+      "role": "roles/appengine.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:service-894348317208@gcp-sa-artifactregistry.iam.gserviceaccount.com"
+      ],
+      "role": "roles/artifactregistry.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:service-894348317208@gcp-sa-cloudaicompanion.iam.gserviceaccount.com"
+      ],
+      "role": "roles/cloudaicompanion.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:894348317208@cloudbuild.gserviceaccount.com"
+      ],
+      "role": "roles/cloudbuild.builds.builder"
+    },
+    {
+      "members": [
+        "serviceAccount:service-894348317208@gcp-sa-cloudbuild.iam.gserviceaccount.com"
+      ],
+      "role": "roles/cloudbuild.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:894348317208-compute@developer.gserviceaccount.com",
+        "serviceAccount:glass-core-467907-e9@appspot.gserviceaccount.com"
+      ],
+      "role": "roles/editor"
+    },
+    {
+      "members": [
+        "serviceAccount:service-894348317208@gcp-sa-firestore.iam.gserviceaccount.com"
+      ],
+      "role": "roles/firestore.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:manus-chatbot-deployer@glass-core-467907-e9.iam.gserviceaccount.com"
+      ],
+      "role": "roles/iam.serviceAccountUser"
+    },
+    {
+      "members": [
+        "serviceAccount:manus-chatbot-deployer@glass-core-467907-e9.iam.gserviceaccount.com"
+      ],
+      "role": "roles/logging.viewer"
+    },
+    {
+      "members": [
+        "user:m.kubiak@novahouse.pl",
+        "user:marini19944@gmail.com"
+      ],
+      "role": "roles/owner"
+    },
+    {
+      "members": [
+        "serviceAccount:glass-core-467907-e9@appspot.gserviceaccount.com"
+      ],
+      "role": "roles/storage.admin"
+    },
+    {
+      "members": [
+        "serviceAccount:manus-chatbot-deployer@glass-core-467907-e9.iam.gserviceaccount.com"
+      ],
+      "role": "roles/storage.folderAdmin"
+    }
+  ],
+  "etag": "BwY-JUoEzek=",
+  "version": 1
+}
+marini19944@cloudshell:~ (glass-core-467907-e9)$ gcloud auth activate-service-account --key-file=/home/ubuntu/gcp_key.json --project glass-core-467907-e9
+ERROR: (gcloud.auth.activate-service-account) Unable to read file [/home/ubuntu/gcp_key.json]: [Errno 2] No such file or directory: '/home/ubuntu/gcp_key.json'
+marini19944@cloudshell:~ (glass-core-467907-e9)$ gcloud config set project glass-core-467907-e9
+Updated property [core/project].
+marini19944@cloudshell:~ (glass-core-467907-e9)$ gcloud app logs read --service=default --limit=100 --project glass-core-467907-e9
+2025-08-11 17:52:26 default[20250811t175008]  "GET /api/health HTTP/1.1" 500
+2025-08-11 17:52:27 default[20250811t175008]  [2025-08-11 17:52:27 +0000] [11] [INFO] Starting gunicorn 21.2.0
+2025-08-11 17:52:27 default[20250811t175008]  [2025-08-11 17:52:27 +0000] [11] [INFO] Listening at: http://0.0.0.0:8081 (11)
+2025-08-11 17:52:27 default[20250811t175008]  [2025-08-11 17:52:27 +0000] [11] [INFO] Using worker: gthread
+2025-08-11 17:52:27 default[20250811t175008]  [2025-08-11 17:52:27 +0000] [18] [INFO] Booting worker with pid: 18
+2025-08-11 17:52:27 default[20250811t175008]  [2025-08-11 17:52:27 +0000] [21] [INFO] Booting worker with pid: 21
+2025-08-11 17:52:27 default[20250811t175008]  [2025-08-11 17:52:27 +0000] [22] [INFO] Booting worker with pid: 22
+2025-08-11 17:52:27 default[20250811t175008]  [2025-08-11 17:52:27 +0000] [23] [INFO] Booting worker with pid: 23
+2025-08-11 17:57:43 default[20250811t175603]  "GET /api/health HTTP/1.1" 200
+2025-08-11 17:57:43 default[20250811t175603]  [2025-08-11 17:57:43 +0000] [11] [INFO] Starting gunicorn 21.2.0
+2025-08-11 17:57:43 default[20250811t175603]  [2025-08-11 17:57:43 +0000] [11] [INFO] Listening at: http://0.0.0.0:8081 (11)
+2025-08-11 17:57:43 default[20250811t175603]  [2025-08-11 17:57:43 +0000] [11] [INFO] Using worker: gthread
+2025-08-11 17:57:43 default[20250811t175603]  [2025-08-11 17:57:43 +0000] [18] [INFO] Booting worker with pid: 18
+2025-08-11 17:57:43 default[20250811t175603]  [2025-08-11 17:57:43 +0000] [21] [INFO] Booting worker with pid: 21
+2025-08-11 17:57:43 default[20250811t175603]  [2025-08-11 17:57:43 +0000] [22] [INFO] Booting worker with pid: 22
+2025-08-11 17:57:43 default[20250811t175603]  [2025-08-11 17:57:43 +0000] [23] [INFO] Booting worker with pid: 23
+2025-08-11 18:07:37 default[20250811t175008]  [2025-08-11 18:07:37 +0000] [11] [INFO] Handling signal: term
+2025-08-11 18:07:37 default[20250811t175008]  [2025-08-11 18:07:37 +0000] [23] [INFO] Worker exiting (pid: 23)
+2025-08-11 18:07:37 default[20250811t175008]  [2025-08-11 18:07:37 +0000] [22] [INFO] Worker exiting (pid: 22)
+2025-08-11 18:07:37 default[20250811t175008]  [2025-08-11 18:07:37 +0000] [18] [INFO] Worker exiting (pid: 18)
+2025-08-11 18:07:37 default[20250811t175008]  [2025-08-11 18:07:37 +0000] [21] [INFO] Worker exiting (pid: 21)
+2025-08-14 00:14:48 default[20250811t175603]  [2025-08-14 00:14:48 +0000] [11] [INFO] Handling signal: term
+2025-08-14 00:14:49 default[20250811t175603]  [2025-08-14 00:14:49 +0000] [22] [INFO] Worker exiting (pid: 22)
+2025-08-14 00:14:49 default[20250811t175603]  [2025-08-14 00:14:49 +0000] [18] [INFO] Worker exiting (pid: 18)
+2025-08-14 00:14:49 default[20250811t175603]  [2025-08-14 00:14:49 +0000] [21] [INFO] Worker exiting (pid: 21)
+2025-08-14 00:14:49 default[20250811t175603]  [2025-08-14 00:14:49 +0000] [23] [INFO] Worker exiting (pid: 23)
+2025-09-02 17:34:44 default[20250811t175603]  "GET / HTTP/1.1" 200
+2025-09-02 17:34:44 default[20250811t175603]  [2025-09-02 17:34:44 +0000] [11] [INFO] Starting gunicorn 21.2.0
+2025-09-02 17:34:44 default[20250811t175603]  [2025-09-02 17:34:44 +0000] [11] [INFO] Listening at: http://0.0.0.0:8081 (11)
+2025-09-02 17:34:44 default[20250811t175603]  [2025-09-02 17:34:44 +0000] [11] [INFO] Using worker: gthread
+2025-09-02 17:34:44 default[20250811t175603]  [2025-09-02 17:34:44 +0000] [18] [INFO] Booting worker with pid: 18
+2025-09-02 17:34:44 default[20250811t175603]  [2025-09-02 17:34:44 +0000] [21] [INFO] Booting worker with pid: 21
+2025-09-02 17:34:45 default[20250811t175603]  [2025-09-02 17:34:45 +0000] [22] [INFO] Booting worker with pid: 22
+2025-09-02 17:34:45 default[20250811t175603]  [2025-09-02 17:34:45 +0000] [23] [INFO] Booting worker with pid: 23
+2025-09-02 17:34:47 default[20250811t175603]  "GET /favicon.ico HTTP/1.1" 200
+2025-09-02 17:34:47 default[20250811t175603]  "GET / HTTP/1.1" 200
+2025-09-02 17:34:47 default[20250811t175603]  "GET /favicon.ico HTTP/1.1" 200
+2025-09-02 17:34:48 default[20250811t175603]  "GET /favicon.ico HTTP/1.1" 200
+2025-09-02 17:35:09 default[20250811t175603]  "GET /chat HTTP/1.1" 200
+2025-09-02 19:19:37 default[20250811t175603]  "GET /chat HTTP/1.1" 304
+2025-09-02 19:19:38 default[20250811t175603]  "GET /favicon.ico HTTP/1.1" 304
+2025-09-03 09:31:55 default[20250811t175603]  [2025-09-03 09:31:55 +0000] [11] [INFO] Handling signal: term
+2025-09-03 09:31:55 default[20250811t175603]  [2025-09-03 09:31:55 +0000] [23] [INFO] Worker exiting (pid: 23)
+2025-09-03 09:31:55 default[20250811t175603]  [2025-09-03 09:31:55 +0000] [21] [INFO] Worker exiting (pid: 21)
+2025-09-03 09:31:55 default[20250811t175603]  [2025-09-03 09:31:55 +0000] [18] [INFO] Worker exiting (pid: 18)
+2025-09-03 09:31:56 default[20250811t175603]  [2025-09-03 09:31:56 +0000] [22] [INFO] Worker exiting (pid: 22)
+2025-09-05 14:11:04 default[20250811t175603]  "GET /chat HTTP/1.1" 206
+2025-09-05 14:11:05 default[20250811t175603]  [2025-09-05 14:11:05 +0000] [11] [INFO] Starting gunicorn 21.2.0
+2025-09-05 14:11:05 default[20250811t175603]  [2025-09-05 14:11:05 +0000] [11] [INFO] Listening at: http://0.0.0.0:8081 (11)
+2025-09-05 14:11:05 default[20250811t175603]  [2025-09-05 14:11:05 +0000] [11] [INFO] Using worker: gthread
+2025-09-05 14:11:05 default[20250811t175603]  [2025-09-05 14:11:05 +0000] [19] [INFO] Booting worker with pid: 19
+2025-09-05 14:11:05 default[20250811t175603]  [2025-09-05 14:11:05 +0000] [21] [INFO] Booting worker with pid: 21
+2025-09-05 14:11:05 default[20250811t175603]  [2025-09-05 14:11:05 +0000] [23] [INFO] Booting worker with pid: 23
+2025-09-05 14:11:05 default[20250811t175603]  [2025-09-05 14:11:05 +0000] [24] [INFO] Booting worker with pid: 24
+2025-09-05 14:11:07 default[20250811t175603]  "GET /favicon.ico HTTP/1.1" 206
+2025-09-05 14:11:07 default[20250811t175603]  "GET /favicon.ico HTTP/1.1" 206
+2025-09-06 15:50:51 default[20250811t175603]  "GET /chat HTTP/1.1" 304
+2025-09-06 15:50:52 default[20250811t175603]  "GET /favicon.ico HTTP/1.1" 304
+2025-09-06 15:52:31 default[20250811t175603]  "GET /static/chatbot.html HTTP/1.1" 200
+2025-09-06 15:53:33 default[20250811t175603]  "POST /api/chatbot/chat HTTP/1.1" 500
+2025-09-06 15:53:39 default[20250811t175603]  "POST /api/chatbot/chat HTTP/1.1" 500
+2025-09-06 15:55:41 default[20250811t175603]  "GET /static/chatbot.html HTTP/1.1" 204
+2025-09-06 15:55:42 default[20250811t175603]  "GET /favicon.ico HTTP/1.1" 304
+2025-09-06 15:55:59 default[20250811t175603]  "POST /api/chatbot/chat HTTP/1.1" 500
+2025-09-06 16:08:40 default[20250811t175603]  "GET /static/chatbot.html HTTP/1.1" 200
+2025-09-06 16:08:46 default[20250811t175603]  "POST /api/chatbot/chat HTTP/1.1" 500
+2025-09-06 16:08:53 default[20250811t175603]  "POST /api/chatbot/chat HTTP/1.1" 500
+2025-09-06 16:13:52 default[20250811t175603]  "POST /api/chatbot/chat HTTP/1.1" 500
+2025-09-06 16:17:57 default[20250811t175603]  "POST /api/chatbot/chat HTTP/1.1" 500
+2025-09-06 16:18:49 default[20250811t175603]  "GET /static/chatbot.html HTTP/1.1" 304
+2025-09-06 16:18:54 default[20250811t175603]  "POST /api/chatbot/chat HTTP/1.1" 500
+2025-09-06 16:20:48 default[20250811t175603]  "POST /api/chatbot/chat HTTP/1.1" 500
+2025-09-06 16:29:00 default[20250811t175603]  "GET /static/chatbot.html HTTP/1.1" 304
+2025-09-06 16:29:06 default[20250811t175603]  "POST /api/chatbot/chat HTTP/1.1" 500
+marini19944@cloudshell:~ (glass-core-467907-e9)$ mv ~/download/moj_klucz.json /home/ubuntu/gcp_key.json
+mv: cannot stat '/home/marini19944/download/moj_klucz.json': No such file or directory
+marini19944@cloudshell:~ (glass-core-467907-e9)$ gcloud app logs read --service=default --limit=100 --project glass-core-467907-e9
+2025-08-11 17:52:26 default[20250811t175008]  "GET /api/health HTTP/1.1" 500
+2025-08-11 17:52:27 default[20250811t175008]  [2025-08-11 17:52:27 +0000] [11] [INFO] Starting gunicorn 21.2.0
+2025-08-11 17:52:27 default[20250811t175008]  [2025-08-11 17:52:27 +0000] [11] [INFO] Listening at: http://0.0.0.0:8081 (11)
+2025-08-11 17:52:27 default[20250811t175008]  [2025-08-11 17:52:27 +0000] [11] [INFO] Using worker: gthread
+2025-08-11 17:52:27 default[20250811t175008]  [2025-08-11 17:52:27 +0000] [18] [INFO] Booting worker with pid: 18
+2025-08-11 17:52:27 default[20250811t175008]  [2025-08-11 17:52:27 +0000] [21] [INFO] Booting worker with pid: 21
+2025-08-11 17:52:27 default[20250811t175008]  [2025-08-11 17:52:27 +0000] [22] [INFO] Booting worker with pid: 22
+2025-08-11 17:52:27 default[20250811t175008]  [2025-08-11 17:52:27 +0000] [23] [INFO] Booting worker with pid: 23
+2025-08-11 17:57:43 default[20250811t175603]  "GET /api/health HTTP/1.1" 200
+2025-08-11 17:57:43 default[20250811t175603]  [2025-08-11 17:57:43 +0000] [11] [INFO] Starting gunicorn 21.2.0
+2025-08-11 17:57:43 default[20250811t175603]  [2025-08-11 17:57:43 +0000] [11] [INFO] Listening at: http://0.0.0.0:8081 (11)
+2025-08-11 17:57:43 default[20250811t175603]  [2025-08-11 17:57:43 +0000] [11] [INFO] Using worker: gthread
+2025-08-11 17:57:43 default[20250811t175603]  [2025-08-11 17:57:43 +0000] [18] [INFO] Booting worker with pid: 18
+2025-08-11 17:57:43 default[20250811t175603]  [2025-08-11 17:57:43 +0000] [21] [INFO] Booting worker with pid: 21
+2025-08-11 17:57:43 default[20250811t175603]  [2025-08-11 17:57:43 +0000] [22] [INFO] Booting worker with pid: 22
+2025-08-11 17:57:43 default[20250811t175603]  [2025-08-11 17:57:43 +0000] [23] [INFO] Booting worker with pid: 23
+2025-08-11 18:07:37 default[20250811t175008]  [2025-08-11 18:07:37 +0000] [11] [INFO] Handling signal: term
+2025-08-11 18:07:37 default[20250811t175008]  [2025-08-11 18:07:37 +0000] [23] [INFO] Worker exiting (pid: 23)
+2025-08-11 18:07:37 default[20250811t175008]  [2025-08-11 18:07:37 +0000] [22] [INFO] Worker exiting (pid: 22)
+2025-08-11 18:07:37 default[20250811t175008]  [2025-08-11 18:07:37 +0000] [18] [INFO] Worker exiting (pid: 18)
+2025-08-11 18:07:37 default[20250811t175008]  [2025-08-11 18:07:37 +0000] [21] [INFO] Worker exiting (pid: 21)
+2025-08-14 00:14:48 default[20250811t175603]  [2025-08-14 00:14:48 +0000] [11] [INFO] Handling signal: term
+2025-08-14 00:14:49 default[20250811t175603]  [2025-08-14 00:14:49 +0000] [22] [INFO] Worker exiting (pid: 22)
+2025-08-14 00:14:49 default[20250811t175603]  [2025-08-14 00:14:49 +0000] [18] [INFO] Worker exiting (pid: 18)
+2025-08-14 00:14:49 default[20250811t175603]  [2025-08-14 00:14:49 +0000] [21] [INFO] Worker exiting (pid: 21)
+2025-08-14 00:14:49 default[20250811t175603]  [2025-08-14 00:14:49 +0000] [23] [INFO] Worker exiting (pid: 23)
+2025-09-02 17:34:44 default[20250811t175603]  "GET / HTTP/1.1" 200
+2025-09-02 17:34:44 default[20250811t175603]  [2025-09-02 17:34:44 +0000] [11] [INFO] Starting gunicorn 21.2.0
+2025-09-02 17:34:44 default[20250811t175603]  [2025-09-02 17:34:44 +0000] [11] [INFO] Listening at: http://0.0.0.0:8081 (11)
+2025-09-02 17:34:44 default[20250811t175603]  [2025-09-02 17:34:44 +0000] [11] [INFO] Using worker: gthread
+2025-09-02 17:34:44 default[20250811t175603]  [2025-09-02 17:34:44 +0000] [18] [INFO] Booting worker with pid: 18
+2025-09-02 17:34:44 default[20250811t175603]  [2025-09-02 17:34:44 +0000] [21] [INFO] Booting worker with pid: 21
+2025-09-02 17:34:45 default[20250811t175603]  [2025-09-02 17:34:45 +0000] [22] [INFO] Booting worker with pid: 22
+2025-09-02 17:34:45 default[20250811t175603]  [2025-09-02 17:34:45 +0000] [23] [INFO] Booting worker with pid: 23
+2025-09-02 17:34:47 default[20250811t175603]  "GET /favicon.ico HTTP/1.1" 200
+2025-09-02 17:34:47 default[20250811t175603]  "GET / HTTP/1.1" 200
+2025-09-02 17:34:47 default[20250811t175603]  "GET /favicon.ico HTTP/1.1" 200
+2025-09-02 17:34:48 default[20250811t175603]  "GET /favicon.ico HTTP/1.1" 200
+2025-09-02 17:35:09 default[20250811t175603]  "GET /chat HTTP/1.1" 200
+2025-09-02 19:19:37 default[20250811t175603]  "GET /chat HTTP/1.1" 304
+2025-09-02 19:19:38 default[20250811t175603]  "GET /favicon.ico HTTP/1.1" 304
+2025-09-03 09:31:55 default[20250811t175603]  [2025-09-03 09:31:55 +0000] [11] [INFO] Handling signal: term
+2025-09-03 09:31:55 default[20250811t175603]  [2025-09-03 09:31:55 +0000] [23] [INFO] Worker exiting (pid: 23)
+2025-09-03 09:31:55 default[20250811t175603]  [2025-09-03 09:31:55 +0000] [21] [INFO] Worker exiting (pid: 21)
+2025-09-03 09:31:55 default[20250811t175603]  [2025-09-03 09:31:55 +0000] [18] [INFO] Worker exiting (pid: 18)
+2025-09-03 09:31:56 default[20250811t175603]  [2025-09-03 09:31:56 +0000] [22] [INFO] Worker exiting (pid: 22)
+2025-09-05 14:11:04 default[20250811t175603]  "GET /chat HTTP/1.1" 206
+2025-09-05 14:11:05 default[20250811t175603]  [2025-09-05 14:11:05 +0000] [11] [INFO] Starting gunicorn 21.2.0
+2025-09-05 14:11:05 default[20250811t175603]  [2025-09-05 14:11:05 +0000] [11] [INFO] Listening at: http://0.0.0.0:8081 (11)
+2025-09-05 14:11:05 default[20250811t175603]  [2025-09-05 14:11:05 +0000] [11] [INFO] Using worker: gthread
+2025-09-05 14:11:05 default[20250811t175603]  [2025-09-05 14:11:05 +0000] [19] [INFO] Booting worker with pid: 19
+2025-09-05 14:11:05 default[20250811t175603]  [2025-09-05 14:11:05 +0000] [21] [INFO] Booting worker with pid: 21
+2025-09-05 14:11:05 default[20250811t175603]  [2025-09-05 14:11:05 +0000] [23] [INFO] Booting worker with pid: 23
+2025-09-05 14:11:05 default[20250811t175603]  [2025-09-05 14:11:05 +0000] [24] [INFO] Booting worker with pid: 24
+2025-09-05 14:11:07 default[20250811t175603]  "GET /favicon.ico HTTP/1.1" 206
+2025-09-05 14:11:07 default[20250811t175603]  "GET /favicon.ico HTTP/1.1" 206
+2025-09-06 15:50:51 default[20250811t175603]  "GET /chat HTTP/1.1" 304
+2025-09-06 15:50:52 default[20250811t175603]  "GET /favicon.ico HTTP/1.1" 304
+2025-09-06 15:52:31 default[20250811t175603]  "GET /static/chatbot.html HTTP/1.1" 200
+2025-09-06 15:53:33 default[20250811t175603]  "POST /api/chatbot/chat HTTP/1.1" 500
+2025-09-06 15:53:39 default[20250811t175603]  "POST /api/chatbot/chat HTTP/1.1" 500
+2025-09-06 15:55:41 default[20250811t175603]  "GET /static/chatbot.html HTTP/1.1" 204
+2025-09-06 15:55:42 default[20250811t175603]  "GET /favicon.ico HTTP/1.1" 304
+2025-09-06 15:55:59 default[20250811t175603]  "POST /api/chatbot/chat HTTP/1.1" 500
+2025-09-06 16:08:40 default[20250811t175603]  "GET /static/chatbot.html HTTP/1.1" 200
+2025-09-06 16:08:46 default[20250811t175603]  "POST /api/chatbot/chat HTTP/1.1" 500
+2025-09-06 16:08:53 default[20250811t175603]  "POST /api/chatbot/chat HTTP/1.1" 500
+2025-09-06 16:13:52 default[20250811t175603]  "POST /api/chatbot/chat HTTP/1.1" 500
+2025-09-06 16:17:57 default[20250811t175603]  "POST /api/chatbot/chat HTTP/1.1" 500
+2025-09-06 16:18:49 default[20250811t175603]  "GET /static/chatbot.html HTTP/1.1" 304
+2025-09-06 16:18:54 default[20250811t175603]  "POST /api/chatbot/chat HTTP/1.1" 500
+2025-09-06 16:20:48 default[20250811t175603]  "POST /api/chatbot/chat HTTP/1.1" 500
+2025-09-06 16:29:00 default[20250811t175603]  "GET /static/chatbot.html HTTP/1.1" 304
+2025-09-06 16:29:06 default[20250811t175603]  "POST /api/chatbot/chat HTTP/1.1" 500
+marini19944@cloudshell:~ (glass-core-467907-e9)$ gcloud app logs read --service=default --limit=100 --project glass-core-467907-e9

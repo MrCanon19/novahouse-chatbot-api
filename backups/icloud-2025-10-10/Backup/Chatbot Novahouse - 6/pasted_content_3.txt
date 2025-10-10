@@ -1,0 +1,141 @@
+Your Cloud Platform project in this session is set to glass-core-467907-e9.
+Use `gcloud config set project [PROJECT_ID]` to change to a different project.
+marini19944@cloudshell:~ (glass-core-467907-e9)$ gcloud projects get-iam-policy glass-core-467907-e9 --format=json > iam-policy.json
+marini19944@cloudshell:~ (glass-core-467907-e9)$ {
+  "role": "jakas/rola",
+  "members": [
+    "typ:email@example.com"
+  ]
+}
+-bash: role:: command not found
+-bash: members:: command not found
+marini19944@cloudshell:~ (glass-core-467907-e9)$ gcloud projects get-iam-policy glass-core-467907-e9 --format=json > iam-policy.json
+marini19944@cloudshell:~ (glass-core-467907-e9)$ {
+  "role": "jakas/rola",
+  "members": [
+    "typ:email@example.com"
+  ]
+}
+-bash: role:: command not found
+-bash: members:: command not found
+-bash: typ:email@example.com: command not found
+-bash: ]: command not found
+marini19944@cloudshell:~ (glass-core-467907-e9)$ gcloud projects get-iam-policy glass-core-467907-e9 --format=json
+{
+  "bindings": [
+    {
+      "members": [
+        "serviceAccount:manus-chatbot-deployer@glass-core-467907-e9.iam.gserviceaccount.com"
+      ],
+      "role": "roles/appengine.deployer"
+    },
+    {
+      "members": [
+        "serviceAccount:service-894348317208@gcp-gae-service.iam.gserviceaccount.com"
+      ],
+      "role": "roles/appengine.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:service-894348317208@gcp-sa-artifactregistry.iam.gserviceaccount.com"
+      ],
+      "role": "roles/artifactregistry.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:service-894348317208@gcp-sa-cloudaicompanion.iam.gserviceaccount.com"
+      ],
+      "role": "roles/cloudaicompanion.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:894348317208@cloudbuild.gserviceaccount.com"
+      ],
+      "role": "roles/cloudbuild.builds.builder"
+    },
+    {
+      "members": [
+        "serviceAccount:service-894348317208@gcp-sa-cloudbuild.iam.gserviceaccount.com"
+      ],
+      "role": "roles/cloudbuild.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:894348317208-compute@developer.gserviceaccount.com",
+        "serviceAccount:glass-core-467907-e9@appspot.gserviceaccount.com"
+      ],
+      "role": "roles/editor"
+    },
+    {
+      "members": [
+        "serviceAccount:service-894348317208@gcp-sa-firestore.iam.gserviceaccount.com"
+      ],
+      "role": "roles/firestore.serviceAgent"
+    },
+    {
+      "members": [
+        "user:m.kubiak@novahouse.pl",
+        "user:marini19944@gmail.com"
+      ],
+      "role": "roles/owner"
+    },
+    {
+      "members": [
+        "serviceAccount:glass-core-467907-e9@appspot.gserviceaccount.com"
+      ],
+      "role": "roles/storage.admin"
+    },
+    {
+      "members": [
+        "serviceAccount:manus-chatbot-deployer@glass-core-467907-e9.iam.gserviceaccount.com"
+      ],
+      "role": "roles/storage.folderAdmin"
+    }
+  ],
+  "etag": "BwY-JJ8ZTnE=",
+  "version": 1
+}
+marini19944@cloudshell:~ (glass-core-467907-e9)$ gcloud projects set-iam-policy glass-core-467907-e9 iam-policy.json
+Updated IAM policy for project [glass-core-467907-e9].
+bindings:
+- members:
+  - serviceAccount:manus-chatbot-deployer@glass-core-467907-e9.iam.gserviceaccount.com
+  role: roles/appengine.deployer
+- members:
+  - serviceAccount:service-894348317208@gcp-gae-service.iam.gserviceaccount.com
+  role: roles/appengine.serviceAgent
+- members:
+  - serviceAccount:service-894348317208@gcp-sa-artifactregistry.iam.gserviceaccount.com
+  role: roles/artifactregistry.serviceAgent
+- members:
+  - serviceAccount:service-894348317208@gcp-sa-cloudaicompanion.iam.gserviceaccount.com
+  role: roles/cloudaicompanion.serviceAgent
+- members:
+  - serviceAccount:894348317208@cloudbuild.gserviceaccount.com
+  role: roles/cloudbuild.builds.builder
+- members:
+  - serviceAccount:service-894348317208@gcp-sa-cloudbuild.iam.gserviceaccount.com
+  role: roles/cloudbuild.serviceAgent
+- members:
+  - serviceAccount:894348317208-compute@developer.gserviceaccount.com
+  - serviceAccount:glass-core-467907-e9@appspot.gserviceaccount.com
+  role: roles/editor
+- members:
+  - serviceAccount:service-894348317208@gcp-sa-firestore.iam.gserviceaccount.com
+  role: roles/firestore.serviceAgent
+- members:
+  - serviceAccount:manus-chatbot-deployer@glass-core-467907-e9.iam.gserviceaccount.com
+  role: roles/iam.serviceAccountUser
+- members:
+  - user:m.kubiak@novahouse.pl
+  - user:marini19944@gmail.com
+  role: roles/owner
+- members:
+  - serviceAccount:glass-core-467907-e9@appspot.gserviceaccount.com
+  role: roles/storage.admin
+- members:
+  - serviceAccount:manus-chatbot-deployer@glass-core-467907-e9.iam.gserviceaccount.com
+  role: roles/storage.folderAdmin
+etag: BwY-JTo2-YM=
+version: 1
+marini19944@cloudshell:~ (glass-core-467907-e9)$ 
