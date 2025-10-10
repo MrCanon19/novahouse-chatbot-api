@@ -1,27 +1,21 @@
 #!/bin/bash
 set -e
 
-# Skrypt automatycznego dodawania i wysyłania zmian do GitHub
+# Automatyczny push wszystkich zmian do GitHuba
 REPO_DIR="$HOME/novahouse-import/novahouse-chatbot-api"
 cd "$REPO_DIR"
 
-# Sprawdź status
 echo "📦 Sprawdzam zmiany..."
 git status --short
 
-# Zapytaj o opis commita
-echo
-read -p "✏️  Podaj opis commita: " MSG
-if [ -z "$MSG" ]; then
-  MSG="Aktualizacja $(date +%F_%H-%M)"
-fi
+# Automatyczny opis commita z datą i godziną
+MSG="Auto-commit $(date '+%Y-%m-%d %H:%M:%S')"
 
-# Dodaj, commituj i pushuj
 git add .
 git commit -m "$MSG" || echo "Brak nowych zmian."
 git push
 
 echo
-echo "✅ Zmiany zostały wysłane do GitHuba!"
+echo "✅ Zmiany zostały wysłane do GitHuba o $(date '+%H:%M:%S')"
 git status -sb
 
