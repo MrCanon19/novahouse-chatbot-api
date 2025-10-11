@@ -233,10 +233,27 @@
 
     <script>
         let weeklyChart = null;
+        const API_BASE = window.location.origin;
 
         async function loadDashboard() {
             try {
                 showLoading();
+                
+                // Try new analytics API first
+                try {
+                    const overviewResponse = await fetch(`${API_BASE}/api/analytics/overview?days=7`);
+                    const overviewData = await overviewResponse.json();
+                    
+                    if (overviewData.status === 'success') {
+                        updateFromNewAPI(overviewData);
+                        hideError();
+                        return;
+                    }
+                } catch (apiError) {
+                    console.log('New API not available, trying legacy endpoint:', apiError);
+                }
+                
+                // Fallback to legacy endpoint
                 const response = await fetch('/api/analytics/dashboard/summary?budget=10');
                 const result = await response.json();
 
@@ -253,6 +270,57 @@
             } catch (error) {
                 showError('Błąd połączenia: ' + error.message);
             }
+        }
+
+        async function updateFromNewAPI(overviewData) {
+            const overview = overviewData.overview;
+            
+            // Fetch additional data
+            const [conversationsData, engagementData, leadsData] = await Promise.all([
+                fetch(`${API_BASE}/api/analytics/conversations?days=7`).then(r => r.json()).catch(() => null),
+                fetch(`${API_BASE}/api/analytics/engagement?days=7`).then(r => r.json()).catch(() => null),
+                fetch(`${API_BASE}/api/analytics/leads?days=7`).then(r => r.json()).catch(() => null)
+            ]);
+            
+            // Update today metrics
+            const todayData = {
+                conversations: overview.total_conversations || 0,
+                leads: overview.total_leads || 0,
+                cost_usd: 0,
+                avg_response_time_ms: (overview.avg_session_duration_seconds || 0) * 1000
+            };
+            updateTodayMetrics(todayData);
+            
+            // Update budget status (mock data for now)
+            const budgetData = {
+                budget_usd: 10,
+                spent_usd: 0,
+                usage_percent: 0,
+                remaining_usd: 10,
+                projected_monthly_usd: 0,
+                status: 'OK'
+            };
+            updateBudgetStatus(budgetData);
+            
+            // Update weekly chart
+            if (conversationsData && conversationsData.conversations_by_day) {
+                updateWeeklyChart(conversationsData.conversations_by_day.map(d => ({
+                    date: d.date,
+                    conversations: d.count,
+                    cost: 0
+                })));
+            }
+            
+            // Update top questions (use top intents)
+            if (overview.top_intents) {
+                updateTopQuestions(overview.top_intents.map(i => ({
+                    question: i.intent,
+                    count: i.count
+                })));
+            }
+            
+            // Update performance metrics
+            updatePerformanceMetrics(todayData);
         }
 
         function updateTodayMetrics(data) {
