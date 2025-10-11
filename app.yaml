@@ -3,10 +3,11 @@ runtime: python311
 # Konfiguracja dla Google App Engine
 service: default
 
-# Zmienne środowiskowe
+# Zmienne środowiskowe + Cloud SQL
 env_variables:
   FLASK_ENV: production
   SECRET_KEY: "asdf#FGSgvasgf$5$WGT"
+  DATABASE_URL: "postgresql://chatbot_user:NovaH0use2025!DB@/chatbot?host=/cloudsql/glass-core-467907-e9:europe-west1:novahouse-chatbot-db"
 
 # Automatyczne skalowanie
 automatic_scaling:
@@ -28,13 +29,6 @@ handlers:
 - url: /.*
   script: auto
 
-
-beta_settings:
-  cloud_sql_instances: "glass-core-467907-e9:europe-west1:novahouse-chatbot-db"
-
 # Cloud SQL Configuration
-env_variables:
-  DATABASE_URL: "postgresql://chatbot_user:NovaH0use2025!DB@/chatbot?host=/cloudsql/glass-core-467907-e9:europe-west1:novahouse-chatbot-db"
-
 beta_settings:
   cloud_sql_instances: "glass-core-467907-e9:europe-west1:novahouse-chatbot-db"
