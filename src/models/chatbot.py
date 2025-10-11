@@ -81,7 +81,13 @@ class Lead(db.Model):
     property_type = db.Column(db.String(50))
     location = db.Column(db.String(100))
     additional_info = db.Column(db.Text)
+    message = db.Column(db.Text)
+    source = db.Column(db.String(50), default='chatbot')
+    status = db.Column(db.String(50), default='new')
+    notes = db.Column(db.Text)
+    monday_item_id = db.Column(db.String(100))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     def to_dict(self):
         return {
@@ -95,6 +101,12 @@ class Lead(db.Model):
             'property_type': self.property_type,
             'location': self.location,
             'additional_info': self.additional_info,
-            'created_at': self.created_at.isoformat()
+            'message': self.message,
+            'source': self.source,
+            'status': self.status,
+            'notes': self.notes,
+            'monday_item_id': self.monday_item_id,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
 
