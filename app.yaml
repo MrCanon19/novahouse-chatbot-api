@@ -28,3 +28,10 @@ handlers:
 - url: /.*
   script: auto
 
+
+# Cloud SQL Configuration
+env_variables:
+  DATABASE_URL: "postgresql://chatbot_user:NovaH0use2025!DB@/chatbot?host=/cloudsql/glass-core-467907-e9:europe-west1:novahouse-chatbot-db"
+
+beta_settings:
+  cloud_sql_instances: "glass-core-467907-e9:europe-west1:novahouse-chatbot-db"
