@@ -26,11 +26,13 @@ db.init_app(app)
 from src.routes.user import user_bp
 from src.routes.chatbot import chatbot_bp
 from src.routes.health import health_bp
+from src.routes.analytics import analytics_bp
 
 # KROK 5: Rejestrujemy nasze trasy w aplikacji.
 app.register_blueprint(user_bp, url_prefix='/api')
 app.register_blueprint(chatbot_bp, url_prefix='/api/chatbot')
 app.register_blueprint(health_bp, url_prefix='/api')
+app.register_blueprint(analytics_bp, url_prefix='/api/analytics')
 
 # KROK 6: Tworzymy tabele w kontekście w pełni skonfigurowanej aplikacji.
 with app.app_context():

@@ -1,12 +1,18 @@
 from flask import Blueprint, request, jsonify
 from datetime import datetime
+from src.models.chatbot import db
+from src.models.analytics import ChatAnalytics, PerformanceMetrics
 import json
+import time
 
 chatbot_bp = Blueprint('chatbot', __name__)
 
 @chatbot_bp.route('/chat', methods=['POST'])
 def chat():
     """Chatbot endpoint - database disabled"""
+    # Start timing for analytics
+    start_time = time.time()
+    
     try:
         data = request.get_json()
         
@@ -25,6 +31,36 @@ def chat():
             response = "Ceny zależą od wybranego pakietu. Czy chcesz umówić się na konsultację?"
         else:
             response = f"Dziękuję za wiadomość! Chatbot NovaHouse jest tutaj aby pomóc. Możesz zapytać o pakiety, ceny lub konsultację."
+        
+        # Track analytics
+        try:
+            # Calculate response time
+            response_time_ms = int((time.time() - start_time) * 1000)
+            
+            # Track chat analytics
+            chat_analytics = ChatAnalytics(
+                session_id=session_id,
+                user_id=user_id,
+                message_count=1,
+                intent_detected='general',
+                sentiment='neutral',
+                response_time_ms=response_time_ms
+            )
+            db.session.add(chat_analytics)
+            
+            # Track performance metrics
+            perf_metric = PerformanceMetrics(
+                endpoint='/api/chatbot/chat',
+                response_time_ms=response_time_ms,
+                status_code=200
+            )
+            db.session.add(perf_metric)
+            
+            db.session.commit()
+        except Exception as e:
+            print(f"Analytics tracking error: {e}")
+            db.session.rollback()
+            # Don't fail the chat if analytics fails
         
         return jsonify({
             'response': response,
