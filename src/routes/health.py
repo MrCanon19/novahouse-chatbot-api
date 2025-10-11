@@ -55,3 +55,11 @@ def readiness_check():
             'error': str(e)
         }), 503
 
+
+@health_bp.route('/init-db', methods=['POST'])
+def init_database():
+    try:
+        db.create_all()
+        return {"success": True, "message": "Database initialized"}
+    except Exception as e:
+        return {"success": False, "error": str(e)}, 500
