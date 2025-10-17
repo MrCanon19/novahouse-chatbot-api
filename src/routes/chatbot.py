@@ -1,86 +1,182 @@
 from flask import Blueprint, request, jsonify
 from datetime import datetime
-from src.models.chatbot import db
-from src.models.analytics import ChatAnalytics, PerformanceMetrics
-import json
-import time
+import google.generativeai as genai
+import os
+
+from src.models.chatbot import db, ChatConversation, ChatMessage
+from src.knowledge.novahouse_info import PACKAGES, FAQ, COMPANY_INFO, get_package_description, get_all_packages_summary
 
 chatbot_bp = Blueprint('chatbot', __name__)
 
+# Konfiguracja Gemini
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '')
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
+    model = genai.GenerativeModel('gemini-pro')
+else:
+    model = None
+
+SYSTEM_PROMPT = f"""Jesteś asystentem NovaHouse - firmy specjalizującej się w wykończeniu mieszkań.
+
+{COMPANY_INFO}
+
+PAKIETY WYKOŃCZENIOWE:
+{get_all_packages_summary()}
+
+Twoje zadania:
+1. Pomóż klientowi wybrać odpowiedni pakiet wykończeniowy
+2. Odpowiadaj na pytania o usługi NovaHouse
+3. Zbieraj informacje o potrzebach klienta (metraż, budżet, preferencje)
+4. Bądź profesjonalny, pomocny i konkretny
+5. Jeśli klient jest zainteresowany, zachęć do pozostawienia danych kontaktowych
+
+WAŻNE:
+- Zawsze odpowiadaj po polsku
+- Bądź konkretny i pomocny
+- Jeśli nie znasz odpowiedzi, powiedz że skontaktujesz klienta z ekspertem
+- Nie wymyślaj cen - powiedz że wycena jest indywidualna
+- Zachęcaj do zostawienia danych kontaktowych dla szczegółowej wyceny
+"""
+
 @chatbot_bp.route('/chat', methods=['POST'])
 def chat():
-    """Chatbot endpoint - database disabled"""
-    # Start timing for analytics
-    start_time = time.time()
-    
+    """Handle chat messages"""
     try:
         data = request.get_json()
         
-        message = data.get('message', '').strip()
+        if not data or 'message' not in data:
+            return jsonify({'error': 'Message is required'}), 400
+        
+        user_message = data['message']
         session_id = data.get('session_id', 'default')
-        user_id = data.get('user_id', 'anonymous')
         
-        # Simple response logic
-        if not message:
-            response = "Proszę wpisać wiadomość."
-        elif 'cześć' in message.lower() or 'witaj' in message.lower():
-            response = "Witaj! 👋 Jestem chatbotem NovaHouse. Mogę pomóc Ci z informacjami o naszych pakietach wykończeniowych!"
-        elif 'pakiet' in message.lower():
-            response = "Oferujemy różne pakiety wykończeniowe! Mogę Cię połączyć z konsultantem, który pomoże wybrać najlepszy dla Ciebie."
-        elif 'cena' in message.lower():
-            response = "Ceny zależą od wybranego pakietu. Czy chcesz umówić się na konsultację?"
-        else:
-            response = f"Dziękuję za wiadomość! Chatbot NovaHouse jest tutaj aby pomóc. Możesz zapytać o pakiety, ceny lub konsultację."
-        
-        # Track analytics
-        try:
-            # Calculate response time
-            response_time_ms = int((time.time() - start_time) * 1000)
-            
-            # Track chat analytics
-            chat_analytics = ChatAnalytics(
+        # Znajdź lub utwórz konwersację
+        conversation = ChatConversation.query.filter_by(session_id=session_id).first()
+        if not conversation:
+            conversation = ChatConversation(
                 session_id=session_id,
-                user_id=user_id,
-                message_count=1,
-                intent_detected='general',
-                sentiment='neutral',
-                response_time_ms=response_time_ms
+                started_at=datetime.utcnow()
             )
-            db.session.add(chat_analytics)
-            
-            # Track performance metrics
-            perf_metric = PerformanceMetrics(
-                endpoint='/api/chatbot/chat',
-                response_time_ms=response_time_ms,
-                status_code=200
-            )
-            db.session.add(perf_metric)
-            
+            db.session.add(conversation)
             db.session.commit()
-        except Exception as e:
-            print(f"Analytics tracking error: {e}")
-            db.session.rollback()
-            # Don't fail the chat if analytics fails
+        
+        # Zapisz wiadomość użytkownika
+        user_msg = ChatMessage(
+            conversation_id=conversation.id,
+            message=user_message,
+            sender='user',
+            timestamp=datetime.utcnow()
+        )
+        db.session.add(user_msg)
+        
+        # Sprawdź czy wiadomość dotyczy FAQ
+        bot_response = check_faq(user_message)
+        
+        # Jeśli nie znaleziono w FAQ, użyj Gemini
+        if not bot_response and model:
+            try:
+                # Pobierz historię konwersacji
+                history = ChatMessage.query.filter_by(
+                    conversation_id=conversation.id
+                ).order_by(ChatMessage.timestamp.desc()).limit(10).all()
+                
+                context = SYSTEM_PROMPT + "\n\nHistoria rozmowy:\n"
+                for msg in reversed(history):
+                    context += f"{msg.sender}: {msg.message}\n"
+                
+                context += f"\nuser: {user_message}\n\nOdpowiedz jako asystent NovaHouse:"
+                
+                response = model.generate_content(context)
+                bot_response = response.text
+                
+            except Exception as e:
+                print(f"Gemini API error: {e}")
+                bot_response = "Przepraszam, mam problem z odpowiedzią. Czy mogę pomóc w czymś konkretnym dotyczącym naszych pakietów wykończeniowych?"
+        
+        # Fallback jeśli nie ma Gemini i nie ma FAQ
+        if not bot_response:
+            bot_response = get_default_response(user_message)
+        
+        # Zapisz odpowiedź bota
+        bot_msg = ChatMessage(
+            conversation_id=conversation.id,
+            message=bot_response,
+            sender='bot',
+            timestamp=datetime.utcnow()
+        )
+        db.session.add(bot_msg)
+        db.session.commit()
         
         return jsonify({
-            'response': response,
+            'response': bot_response,
             'session_id': session_id,
-            'timestamp': datetime.now().isoformat(),
-            'status': 'success'
-        })
+            'conversation_id': conversation.id
+        }), 200
         
     except Exception as e:
-        return jsonify({
-            'error': f'Error processing request: {str(e)}',
-            'status': 'error'
-        }), 500
+        print(f"Chat error: {e}")
+        db.session.rollback()
+        return jsonify({'error': 'Internal server error'}), 500
 
-@chatbot_bp.route('/health', methods=['GET'])
-def health():
-    """Health check endpoint"""
-    return jsonify({
-        'status': 'healthy',
-        'service': 'novahouse-chatbot',
-        'database': 'disabled (readonly filesystem)',
-        'timestamp': datetime.now().isoformat()
-    })
+def check_faq(message):
+    """Sprawdź czy wiadomość dotyczy FAQ"""
+    message_lower = message.lower()
+    
+    if any(word in message_lower for word in ['jak długo', 'ile trwa', 'czas', 'termin']):
+        return FAQ['jak_dlugo_trwa']
+    
+    if any(word in message_lower for word in ['materiały', 'cena obejmuje', 'co zawiera']):
+        return FAQ['czy_wlaczone_materialy']
+    
+    if any(word in message_lower for word in ['dostosować', 'zmienić', 'modyfikacja', 'elastyczny']):
+        return FAQ['mozna_dostosowac']
+    
+    if 'gwarancja' in message_lower:
+        return FAQ['gwarancja']
+    
+    if any(word in message_lower for word in ['płatność', 'zapłata', 'koszt', 'ile kosztuje']):
+        return FAQ['platnosc']
+    
+    # Sprawdź pytania o konkretne pakiety
+    if 'premium' in message_lower:
+        return get_package_description('premium')
+    if 'standard' in message_lower:
+        return get_package_description('standard')
+    if 'luxury' in message_lower or 'luksus' in message_lower:
+        return get_package_description('luxury')
+    
+    # Pytania ogólne o pakiety
+    if any(word in message_lower for word in ['pakiety', 'oferta', 'jakie macie']):
+        return get_all_packages_summary() + "\n\nO który pakiet chciałbyś dowiedzieć się więcej?"
+    
+    message_lower = message.lower()
+    
+    greetings = ['cześć', 'dzień dobry', 'witam', 'hej', 'hello', 'siema']
+    if any(greeting in message_lower for greeting in greetings):
+        return "Cześć! Jestem asystentem NovaHouse. Pomagam w wyborze pakietu wykończeniowego. Oferujemy pakiety Standard, Premium i Luxury. O którym chciałbyś dowiedzieć się więcej?"
+    
+    return "Dziękuję za wiadomość! Oferujemy kompleksowe wykończenie mieszkań w trzech pakietach: Standard, Premium i Luxury. Czy mogę odpowiedzieć na jakieś konkretne pytanie?"
+
+@chatbot_bp.route('/history/<session_id>', methods=['GET'])
+def get_history(session_id):
+    """Get conversation history"""
+    try:
+        conversation = ChatConversation.query.filter_by(session_id=session_id).first()
+        
+        if not conversation:
+            return jsonify({'messages': []}), 200
+        
+        messages = ChatMessage.query.filter_by(
+            conversation_id=conversation.id
+        ).order_by(ChatMessage.timestamp.asc()).all()
+        
+        return jsonify({
+            'messages': [{
+                'message': msg.message,
+                'sender': msg.sender,
+                'timestamp': msg.timestamp.isoformat()
+            } for msg in messages]
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
