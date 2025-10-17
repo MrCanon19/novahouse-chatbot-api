@@ -1,20 +1,30 @@
 """
 Monday.com API Client
+Handles all interactions with Monday.com boards
 """
+
 import os
 import requests
-from typing import Dict, Optional
+import json
+from typing import Dict, Optional, List
+
 
 class MondayClient:
-    """Client do komunikacji z Monday.com API"""
+    """Client for Monday.com GraphQL API"""
     
     def __init__(self):
-        self.api_key = os.getenv('MONDAY_API_KEY', '')
+        self.api_key = os.getenv('MONDAY_API_KEY')
+        self.board_id = os.getenv('MONDAY_BOARD_ID')
         self.api_url = 'https://api.monday.com/v2'
-        self.board_id = os.getenv('MONDAY_BOARD_ID', '')
+        
+        if not self.api_key:
+            print("WARNING: MONDAY_API_KEY not found in environment variables")
+        if not self.board_id:
+            print("WARNING: MONDAY_BOARD_ID not found in environment variables")
     
     def _make_request(self, query: str, variables: Optional[Dict] = None) -> Dict:
-        """Wykonaj request do Monday.com API"""
+        """Make a GraphQL request to Monday.com API"""
+        
         headers = {
             'Authorization': self.api_key,
             'Content-Type': 'application/json'
@@ -36,18 +46,31 @@ class MondayClient:
             )
             response.raise_for_status()
             return response.json()
-            
+        
         except requests.exceptions.RequestException as e:
-            print(f"Monday.com API error: {e}")
+            print(f"Monday.com API Error: {e}")
             return {'errors': [str(e)]}
     
     def create_lead_item(self, lead_data: Dict) -> Optional[str]:
-        """Utwórz nowy item w Monday.com z danych leadu"""
+        """Create a new item on Monday.com board"""
+        
         if not self.api_key or not self.board_id:
-            print("Monday.com credentials not configured")
+            print("Monday.com not configured, skipping lead creation")
             return None
         
-        # GraphQL mutation do utworzenia itemu
+        item_name = lead_data.get('name', 'Nowy Lead')
+        
+        column_values = {}
+        
+        if lead_data.get('email'):
+            column_values['email'] = {'email': lead_data['email'], 'text': lead_data['email']}
+        
+        if lead_data.get('phone'):
+            column_values['phone'] = lead_data['phone']
+        
+        if lead_data.get('message'):
+            column_values['text'] = lead_data['message']
+        
         mutation = """
         mutation ($boardId: ID!, $itemName: String!, $columnValues: JSON!) {
             create_item (
@@ -56,67 +79,33 @@ class MondayClient:
                 column_values: $columnValues
             ) {
                 id
+                name
             }
         }
         """
         
-        # Przygotuj dane
-        item_name = lead_data.get('name', 'New Lead')
-        column_values = {
-            'email': lead_data.get('email', ''),
-            'phone': lead_data.get('phone', ''),
-            'status': {'label': 'New'},
-            'text': lead_data.get('message', '')
-        }
-        
         variables = {
-            'boardId': self.board_id,
+            'boardId': int(self.board_id),
             'itemName': item_name,
-            'columnValues': str(column_values).replace("'", '"')
+            'columnValues': json.dumps(column_values)
         }
         
         result = self._make_request(mutation, variables)
         
         if 'errors' in result:
-            print(f"Error creating Monday item: {result['errors']}")
+            print(f"Failed to create Monday.com item: {result['errors']}")
             return None
         
         if 'data' in result and 'create_item' in result['data']:
             item_id = result['data']['create_item']['id']
-            print(f"✅ Created Monday.com item: {item_id}")
+            print(f"Created Monday.com item: {item_id}")
             return item_id
         
         return None
     
-    def update_lead_status(self, item_id: str, status: str) -> bool:
-        """Zaktualizuj status leadu w Monday.com"""
-        mutation = """
-        mutation ($boardId: ID!, $itemId: ID!, $columnValues: JSON!) {
-            change_multiple_column_values (
-                board_id: $boardId,
-                item_id: $itemId,
-                column_values: $columnValues
-            ) {
-                id
-            }
-        }
-        """
-        
-        column_values = {
-            'status': {'label': status}
-        }
-        
-        variables = {
-            'boardId': self.board_id,
-            'itemId': item_id,
-            'columnValues': str(column_values).replace("'", '"')
-        }
-        
-        result = self._make_request(mutation, variables)
-        return 'errors' not in result
-    
     def test_connection(self) -> bool:
-        """Testuj połączenie z Monday.com"""
+        """Test connection to Monday.com API"""
+        
         if not self.api_key:
             return False
         
@@ -125,9 +114,20 @@ class MondayClient:
             me {
                 id
                 name
+                email
             }
         }
         """
         
         result = self._make_request(query)
-        return 'errors' not in result and 'data' in result
+        
+        if 'errors' in result:
+            print(f"Monday.com connection failed: {result['errors']}")
+            return False
+        
+        if 'data' in result and 'me' in result['data']:
+            user = result['data']['me']
+            print(f"Monday.com connected as: {user.get('name')} ({user.get('email')})")
+            return True
+        
+        return False
