@@ -95,3 +95,84 @@ def get_all_packages_summary():
     for key, package in PACKAGES.items():
         summary += f"**{package['name']}** - {package['description']}\n"
     return summary
+
+QUALIFICATION_QUESTIONS = [
+    {
+        "id": 1,
+        "question": "Jaki jest metraż Twojego mieszkania?",
+        "type": "number",
+        "weight": 10,
+        "scoring": {
+            "0-40": {"points": 5, "package": "standard"},
+            "41-70": {"points": 10, "package": "premium"},
+            "71+": {"points": 15, "package": "luxury"}
+        }
+    },
+    {
+        "id": 2,
+        "question": "Jaki jest Twój budżet na wykończenie (PLN)?",
+        "type": "range",
+        "weight": 20,
+        "scoring": {
+            "0-100000": {"points": 5, "package": "standard"},
+            "100001-200000": {"points": 10, "package": "premium"},
+            "200001+": {"points": 15, "package": "luxury"}
+        }
+    },
+    {
+        "id": 3,
+        "question": "Czy zależy Ci na szybkim terminie realizacji?",
+        "type": "boolean",
+        "weight": 5,
+        "scoring": {
+            "tak": {"points": 5, "package": "standard"},
+            "nie": {"points": 10, "package": "premium"}
+        }
+    },
+    {
+        "id": 4,
+        "question": "Jakie materiały Cię interesują?",
+        "type": "choice",
+        "options": ["Podstawowe", "Średniej jakości", "Premium", "Luksusowe"],
+        "weight": 15,
+        "scoring": {
+            "Podstawowe": {"points": 5, "package": "standard"},
+            "Średniej jakości": {"points": 8, "package": "standard"},
+            "Premium": {"points": 12, "package": "premium"},
+            "Luksusowe": {"points": 15, "package": "luxury"}
+        }
+    },
+    {
+        "id": 5,
+        "question": "Czy planujesz automatykę domową (smart home)?",
+        "type": "boolean",
+        "weight": 10,
+        "scoring": {
+            "tak": {"points": 10, "package": "premium"},
+            "nie": {"points": 5, "package": "standard"}
+        }
+    },
+    {
+        "id": 6,
+        "question": "Czy potrzebujesz indywidualnego projektu wnętrz?",
+        "type": "boolean",
+        "weight": 15,
+        "scoring": {
+            "tak": {"points": 15, "package": "luxury"},
+            "nie": {"points": 5, "package": "standard"}
+        }
+    },
+    {
+        "id": 7,
+        "question": "Jakie są Twoje priorytety?",
+        "type": "choice",
+        "options": ["Cena", "Jakość", "Czas realizacji", "Ekskluzywność"],
+        "weight": 15,
+        "scoring": {
+            "Cena": {"points": 5, "package": "standard"},
+            "Jakość": {"points": 10, "package": "premium"},
+            "Czas realizacji": {"points": 8, "package": "standard"},
+            "Ekskluzywność": {"points": 15, "package": "luxury"}
+        }
+    }
+]
