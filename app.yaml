@@ -1,34 +1,22 @@
 runtime: python311
-
-# Konfiguracja dla Google App Engine
 service: default
 
-# Zmienne środowiskowe + Cloud SQL
 env_variables:
   FLASK_ENV: production
   SECRET_KEY: "asdf#FGSgvasgf$5$WGT"
   DATABASE_URL: "postgresql://chatbot_user:NovaH0use2025!DB@/chatbot?host=/cloudsql/glass-core-467907-e9:europe-west1:novahouse-chatbot-db"
+  MONDAY_API_KEY: "eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjU2MTI0OTM2MiwiYWFpIjoxMSwidWlkIjo2NzA0MDY5NCwiaWFkIjoiMjAyNS0wOS0xMlQwNjo1ODoxOC4yNzVaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6MjU4NDk4NzEsInJnbiI6ImV1YzEifQ.Z-5M7pm_QZa1YBQ4a5caSg6XZlM4X1_fTcnF5JmQJyw"
+  MONDAY_BOARD_ID: "2145240699"
 
-# Automatyczne skalowanie
 automatic_scaling:
   min_instances: 1
   max_instances: 10
   target_cpu_utilization: 0.6
 
-# Zasoby instancji
 resources:
   cpu: 1
   memory_gb: 0.5
   disk_size_gb: 10
 
-# Obsługa plików statycznych
-handlers:
-- url: /static
-  static_dir: src/static
-  
-- url: /.*
-  script: auto
-
-# Cloud SQL Configuration
 beta_settings:
   cloud_sql_instances: "glass-core-467907-e9:europe-west1:novahouse-chatbot-db"
