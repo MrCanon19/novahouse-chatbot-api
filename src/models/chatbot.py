@@ -110,3 +110,26 @@ class Lead(db.Model):
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
 
+
+
+class ChatConversation(db.Model):
+    """Model for chat conversations"""
+    __tablename__ = 'chat_conversations'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.String(100), unique=True, nullable=False)
+    started_at = db.Column(db.DateTime, nullable=False)
+    ended_at = db.Column(db.DateTime)
+    
+    messages = db.relationship('ChatMessage', backref='conversation', lazy=True, cascade='all, delete-orphan')
+
+
+class ChatMessage(db.Model):
+    """Model for individual chat messages"""
+    __tablename__ = 'chat_messages'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    conversation_id = db.Column(db.Integer, db.ForeignKey('chat_conversations.id'), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    sender = db.Column(db.String(20), nullable=False)  # 'user' or 'bot'
+    timestamp = db.Column(db.DateTime, nullable=False)
