@@ -131,3 +131,41 @@ class MondayClient:
             return True
         
         return False
+
+    def update_item_status(self, item_id, status):
+        """Update item status on Monday.com"""
+        if not self.api_key or not self.board_id:
+            return False
+        
+        status_map = {
+            'new': 'New Lead',
+            'contacted': 'Contacted',
+            'qualified': 'Qualified',
+            'converted': 'Done',
+            'lost': 'Stuck'
+        }
+        
+        status_label = status_map.get(status, status)
+        
+        mutation = """
+        mutation ($boardId: ID!, $itemId: ID!, $columnId: String!, $value: JSON!) {
+            change_column_value(
+                board_id: $boardId,
+                item_id: $itemId,
+                column_id: $columnId,
+                value: $value
+            ) {
+                id
+            }
+        }
+        """
+        
+        variables = {
+            'boardId': int(self.board_id),
+            'itemId': int(item_id),
+            'columnId': 'status',
+            'value': f'{{"label":"{status_label}"}}'
+        }
+        
+        result = self._make_request(mutation, variables)
+        return 'errors' not in result
