@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kwalifikacja - NovaHouse</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .card { background: white; padding: 40px; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        h1 { color: #667eea; margin-bottom: 10px; }
+        .subtitle { color: #666; margin-bottom: 30px; }
+        .progress { background: #f0f0f0; height: 8px; border-radius: 4px; margin-bottom: 30px; overflow: hidden; }
+        .progress-bar { background: #667eea; height: 100%; transition: width 0.3s; }
+        .question-number { color: #667eea; font-size: 14px; margin-bottom: 5px; }
+        .question-title { font-size: 18px; font-weight: 600; color: #333; margin-bottom: 15px; }
+        input[type="number"] { width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 16px; }
+        .options { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
+        .option { padding: 15px; border: 2px solid #e0e0e0; border-radius: 8px; cursor: pointer; transition: all 0.3s; }
+        .option:hover { border-color: #667eea; background: #f8f9ff; }
+        .option.selected { border-color: #667eea; background: #667eea; color: white; }
+        .btn { background: #667eea; color: white; padding: 15px 30px; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 20px; }
+        .btn:hover { background: #5568d3; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .hidden { display: none; }
+        .result { text-align: center; padding: 40px 20px; }
+        .result h2 { color: #667eea; margin-bottom: 20px; font-size: 32px; }
+        .package-card { background: #f8f9ff; padding: 30px; border-radius: 12px; margin: 20px 0; text-align: left; }
+        .package-card h3 { color: #667eea; margin-bottom: 15px; }
+        .package-card ul { list-style: none; padding: 0; }
+        .package-card li { padding: 8px 0; padding-left: 25px; position: relative; }
+        .package-card li:before { content: "✓"; position: absolute; left: 0; color: #667eea; font-weight: bold; }
+        .confidence { display: inline-block; padding: 8px 16px; background: #667eea; color: white; border-radius: 20px; font-size: 14px; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card" id="intro-screen">
+            <h1>🏠 System Kwalifikacji Klienta</h1>
+            <p class="subtitle">Odpowiedz na 7 pytań, a pomożemy Ci wybrać idealny pakiet wykończeniowy</p>
+            <button class="btn" onclick="startQualification()">Rozpocznij Kwalifikację</button>
+        </div>
+
+        <div class="card hidden" id="questions-screen">
+            <div class="progress"><div class="progress-bar" id="progress-bar"></div></div>
+            <div id="question-container"></div>
+            <button class="btn" id="next-btn" onclick="nextQuestion()" disabled>Dalej</button>
+        </div>
+
+        <div class="card hidden" id="result-screen">
+            <div class="result">
+                <h2>🎉 Twoja Rekomendacja</h2>
+                <div id="recommendation-content"></div>
+                <button class="btn" onclick="restart()">Rozpocznij Od Nowa</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let questions = [];
+        let currentQuestion = 0;
+        let answers = [];
+
+        async function startQualification() {
+            const response = await fetch('/api/qualification/questions');
+            const data = await response.json();
+            questions = data.questions;
+            document.getElementById('intro-screen').classList.add('hidden');
+            document.getElementById('questions-screen').classList.remove('hidden');
+            showQuestion();
+        }
+
+        function showQuestion() {
+            const q = questions[currentQuestion];
+            updateProgress();
+            let html = `<div class="question-number">Pytanie ${currentQuestion + 1} z ${questions.length}</div><div class="question-title">${q.question}</div>`;
+            
+            if (q.type === 'choice') {
+                html += '<div class="options">';
+                q.options.forEach(opt => html += `<div class="option" onclick="selectOption('${opt}')">${opt}</div>`);
+                html += '</div>';
+            } else if (q.type === 'boolean') {
+                html += '<div class="options"><div class="option" onclick="selectOption(\'tak\')">Tak</div><div class="option" onclick="selectOption(\'nie\')">Nie</div></div>';
+            } else {
+                html += `<input type="number" id="answer-input" onchange="inputAnswer(this.value)" placeholder="Wpisz wartość">`;
+            }
+            
+            document.getElementById('question-container').innerHTML = html;
+            document.getElementById('next-btn').disabled = true;
+        }
+
+        function selectOption(value) {
+            document.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+            event.target.classList.add('selected');
+            answers[currentQuestion] = { question_id: questions[currentQuestion].id, answer: value };
+            document.getElementById('next-btn').disabled = false;
+        }
+
+        function inputAnswer(value) {
+            if (value) {
+                answers[currentQuestion] = { question_id: questions[currentQuestion].id, answer: value };
+                document.getElementById('next-btn').disabled = false;
+            }
+        }
+
+        function updateProgress() {
+            document.getElementById('progress-bar').style.width = ((currentQuestion + 1) / questions.length * 100) + '%';
+        }
+
+        async function nextQuestion() {
+            currentQuestion++;
+            if (currentQuestion < questions.length) {
+                showQuestion();
+            } else {
+                const response = await fetch('/api/qualification/submit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ answers: answers })
+                });
+                const data = await response.json();
+                showResult(data.recommendation);
+            }
+        }
+
+        function showResult(rec) {
+            document.getElementById('questions-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+            const pkg = rec.package_details;
+            document.getElementById('recommendation-content').innerHTML = `
+                <div class="package-card">
+                    <h3>${pkg.name}</h3>
+                    <p>${pkg.description}</p>
+                    <p><strong>Przedział cenowy:</strong> ${pkg.price_range}</p>
+                    <h4 style="margin-top:20px">Co zawiera:</h4>
+                    <ul>${pkg.features.map(f => `<li>${f}</li>`).join('')}</ul>
+                    <p style="margin-top:15px"><strong>Dla kogo:</strong> ${pkg.ideal_for}</p>
+                    <div class="confidence">Pewność: ${rec.confidence}%</div>
+                </div>
+            `;
+        }
+
+        function restart() {
+            currentQuestion = 0;
+            answers = [];
+            document.getElementById('result-screen').classList.add('hidden');
+            document.getElementById('intro-screen').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
