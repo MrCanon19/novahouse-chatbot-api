@@ -46,6 +46,10 @@ with app.app_context():
     db.create_all()
 
 # Reszta kodu do serwowania plików statycznych pozostaje bez zmian.
+@app.route('/admin')
+def admin_dashboard():
+    return app.send_static_file('admin-dashboard.html')
+
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve(path):
