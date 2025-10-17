@@ -144,3 +144,47 @@ def update_lead(lead_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+
+@leads_bp.route('/<int:lead_id>/status', methods=['PATCH'])
+def update_lead_status(lead_id):
+    """Update lead status and sync with Monday.com"""
+    try:
+        lead = Lead.query.get(lead_id)
+        
+        if not lead:
+            return jsonify({'error': 'Lead not found'}), 404
+        
+        data = request.get_json()
+        new_status = data.get('status')
+        
+        if not new_status:
+            return jsonify({'error': 'Status is required'}), 400
+        
+        valid_statuses = ['new', 'contacted', 'qualified', 'converted', 'lost']
+        if new_status not in valid_statuses:
+            return jsonify({'error': f'Invalid status. Must be one of: {", ".join(valid_statuses)}'}), 400
+        
+        old_status = lead.status
+        lead.status = new_status
+        db.session.commit()
+        
+        # Sync with Monday.com
+        if lead.monday_item_id:
+            try:
+                from src.integrations.monday_client import MondayClient
+                monday = MondayClient()
+                monday.update_item_status(lead.monday_item_id, new_status)
+                print(f"Updated Monday.com item {lead.monday_item_id} status to {new_status}")
+            except Exception as e:
+                print(f"Monday.com status sync error: {e}")
+        
+        return jsonify({
+            'id': lead.id,
+            'old_status': old_status,
+            'new_status': lead.status,
+            'monday_synced': bool(lead.monday_item_id)
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
