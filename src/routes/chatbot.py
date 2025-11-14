@@ -3,7 +3,7 @@ from datetime import datetime
 import google.generativeai as genai
 import os
 
-from src.models.chatbot import db, ChatConversation, ChatMessage
+from src.models.chatbot import db, ChatConversation, ChatMessage, RodoConsent, Lead
 from src.knowledge.novahouse_info import PACKAGES, FAQ, COMPANY_INFO, get_package_description, get_all_packages_summary
 
 chatbot_bp = Blueprint('chatbot', __name__)
@@ -179,4 +179,80 @@ def get_history(session_id):
         }), 200
         
     except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@chatbot_bp.route('/rodo-consent', methods=['POST'])
+def save_rodo_consent():
+    """Zapisz zgodę RODO użytkownika"""
+    try:
+        data = request.get_json()
+        session_id = data.get('session_id')
+        
+        if not session_id:
+            return jsonify({'error': 'Session ID is required'}), 400
+        
+        # Sprawdź czy zgoda już istnieje
+        existing_consent = RodoConsent.query.filter_by(session_id=session_id).first()
+        
+        if existing_consent:
+            return jsonify({
+                'success': True,
+                'message': 'Zgoda RODO już zapisana'
+            }), 200
+        
+        # Zapisz nową zgodę
+        consent = RodoConsent(
+            session_id=session_id,
+            consent_given=data.get('consent_given', True),
+            consent_date=datetime.utcnow(),
+            ip_address=request.remote_addr,
+            user_agent=request.headers.get('User-Agent', '')[:500]
+        )
+        
+        db.session.add(consent)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Zgoda RODO zapisana pomyślnie'
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error saving RODO consent: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@chatbot_bp.route('/delete-my-data', methods=['DELETE'])
+def delete_user_data():
+    """Usuń dane użytkownika (prawo do bycia zapomnianym - RODO Art. 17)"""
+    try:
+        data = request.get_json()
+        session_id = data.get('session_id')
+        
+        if not session_id:
+            return jsonify({'error': 'Session ID is required'}), 400
+        
+        # Usuń konwersację i wszystkie powiązane wiadomości (cascade)
+        conversation = ChatConversation.query.filter_by(session_id=session_id).first()
+        if conversation:
+            db.session.delete(conversation)
+        
+        # Usuń leady powiązane z sesją
+        Lead.query.filter_by(session_id=session_id).delete()
+        
+        # Usuń zgodę RODO
+        RodoConsent.query.filter_by(session_id=session_id).delete()
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Wszystkie Twoje dane zostały usunięte zgodnie z RODO'
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error deleting user data: {e}")
         return jsonify({'error': str(e)}), 500
