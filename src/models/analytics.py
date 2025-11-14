@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 from src.models.chatbot import db
 
@@ -16,7 +16,7 @@ class ChatAnalytics(db.Model):
     response_time_ms = db.Column(db.Integer)
     user_satisfied = db.Column(db.Boolean)
     lead_generated = db.Column(db.Boolean, default=False)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
     
     def to_dict(self):
         return {
@@ -40,8 +40,8 @@ class UserEngagement(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     session_id = db.Column(db.String(100), nullable=False, unique=True, index=True)
     user_id = db.Column(db.String(100), default='anonymous')
-    first_interaction = db.Column(db.DateTime, default=datetime.utcnow)
-    last_interaction = db.Column(db.DateTime, default=datetime.utcnow)
+    first_interaction = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    last_interaction = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     total_messages = db.Column(db.Integer, default=0)
     session_duration_seconds = db.Column(db.Integer)
     pages_visited = db.Column(db.Text)  # JSON array
@@ -72,7 +72,7 @@ class IntentAnalytics(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     intent_name = db.Column(db.String(100), nullable=False, index=True)
-    date = db.Column(db.Date, default=datetime.utcnow, index=True)
+    date = db.Column(db.Date, default=lambda: datetime.now(timezone.utc).date(), index=True)
     trigger_count = db.Column(db.Integer, default=0)
     success_count = db.Column(db.Integer, default=0)
     failure_count = db.Column(db.Integer, default=0)
@@ -96,7 +96,7 @@ class PerformanceMetrics(db.Model):
     __tablename__ = 'performance_metrics'
     
     id = db.Column(db.Integer, primary_key=True)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
     endpoint = db.Column(db.String(100), nullable=False)
     response_time_ms = db.Column(db.Integer)
     status_code = db.Column(db.Integer)
