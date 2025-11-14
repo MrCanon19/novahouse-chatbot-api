@@ -15,6 +15,10 @@ app.config['SECRET_KEY'] = 'asdf#FGSgvasgf$5$WGT'
 # Włączenie CORS dla wszystkich endpointów.
 CORS(app)
 
+# Initialize WebSocket support (v2.3)
+from src.services.websocket_service import socketio
+socketio.init_app(app)
+
 # KROK 3: Konfigurujemy i łączymy bazę danych z aplikacją.
 # Od tego momentu 'db' wie o istnieniu 'app'.
 db_url = os.getenv('DATABASE_URL', f"sqlite:///{os.path.join(os.path.dirname(__file__), 'database', 'app.db')}")
@@ -37,6 +41,11 @@ from src.routes.knowledge import knowledge_bp
 from src.routes.docs import docs_bp
 from src.routes.ab_testing import ab_testing_bp
 from src.routes.i18n import i18n_bp
+# New v2.3 routes
+from src.routes.dashboard_widgets import dashboard_widgets
+from src.routes.backup import backup_routes
+from src.routes.search import search_routes
+from src.routes.file_upload import file_upload_routes
 
 # KROK 5: Rejestrujemy nasze trasy w aplikacji.
 app.register_blueprint(user_bp, url_prefix='/api')
@@ -52,10 +61,37 @@ app.register_blueprint(knowledge_bp, url_prefix='/api/knowledge')
 app.register_blueprint(docs_bp)
 app.register_blueprint(ab_testing_bp, url_prefix='/api/ab-testing')
 app.register_blueprint(i18n_bp, url_prefix='/api/i18n')
+# Register v2.3 routes
+app.register_blueprint(dashboard_widgets)
+app.register_blueprint(backup_routes)
+app.register_blueprint(search_routes)
+app.register_blueprint(file_upload_routes)
 
 # KROK 6: Tworzymy tabele w kontekście w pełni skonfigurowanej aplikacji.
 with app.app_context():
     db.create_all()
+    
+    # Initialize v2.3 services
+    try:
+        from src.services.redis_service import warm_redis_cache
+        warm_redis_cache()
+        print("✅ Redis cache warmed")
+    except Exception as e:
+        print(f"⚠️  Redis cache warming skipped: {e}")
+    
+    try:
+        from src.services.search_service import search_service
+        search_service.index_knowledge_base()
+        print("✅ Search index built")
+    except Exception as e:
+        print(f"⚠️  Search indexing skipped: {e}")
+    
+    try:
+        from src.services.backup_service import backup_service
+        backup_service.schedule_automated_backup()
+        print("✅ Automated backup scheduled")
+    except Exception as e:
+        print(f"⚠️  Backup scheduling skipped: {e}")
 
 # Reszta kodu do serwowania plików statycznych pozostaje bez zmian.
 @app.route('/admin')
@@ -86,4 +122,5 @@ def serve(path):
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
     debug = os.environ.get('FLASK_ENV') != 'production'
-    app.run(host='0.0.0.0', port=port, debug=debug)
+    # Use socketio.run instead of app.run for WebSocket support
+    socketio.run(app, host='0.0.0.0', port=port, debug=debug)
