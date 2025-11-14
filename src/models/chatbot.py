@@ -133,3 +133,24 @@ class ChatMessage(db.Model):
     message = db.Column(db.Text, nullable=False)
     sender = db.Column(db.String(20), nullable=False)  # 'user' or 'bot'
     timestamp = db.Column(db.DateTime, nullable=False)
+
+
+class RodoConsent(db.Model):
+    """Model for RODO/GDPR consent tracking"""
+    __tablename__ = 'rodo_consents'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.String(100), nullable=False)
+    consent_given = db.Column(db.Boolean, default=False, nullable=False)
+    consent_date = db.Column(db.DateTime, nullable=False)
+    ip_address = db.Column(db.String(50))
+    user_agent = db.Column(db.String(500))
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'session_id': self.session_id,
+            'consent_given': self.consent_given,
+            'consent_date': self.consent_date.isoformat() if self.consent_date else None,
+            'ip_address': self.ip_address
+        }
