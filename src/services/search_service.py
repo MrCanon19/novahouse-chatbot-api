@@ -208,25 +208,25 @@ class AdvancedSearchService:
                 FAQ, PORTFOLIO, CLIENT_REVIEWS, BLOG_ARTICLES, PROCESS_STEPS
             )
             
-            # Index FAQ
-            for i, faq in enumerate(FAQ):
+            # Index FAQ (FAQ is a dict with key=question, value=answer)
+            for i, (question, answer) in enumerate(FAQ.items()):
                 self.index_document(
                     doc_id=f"faq_{i}",
                     doc_type='faq',
-                    title=faq['question'],
-                    content=faq['answer'],
+                    title=question.replace('_', ' ').title(),
+                    content=answer,
                     tags=['faq', 'question'],
                     language='pl'
                 )
             
-            # Index Portfolio
-            for i, project in enumerate(PORTFOLIO):
+            # Index Portfolio (PORTFOLIO is a dict with project_id as key)
+            for i, (project_id, project) in enumerate(PORTFOLIO.items()):
                 self.index_document(
                     doc_id=f"portfolio_{i}",
                     doc_type='portfolio',
                     title=project['title'],
-                    content=f"{project['category']} - {project['area']} - {project['duration']}",
-                    tags=['portfolio', 'project', project['package'].lower()],
+                    content=f"{project['type']} - {project['location']} - {project.get('url', '')}",
+                    tags=['portfolio', 'project', project['type'].lower()],
                     language='pl'
                 )
             
@@ -247,7 +247,7 @@ class AdvancedSearchService:
                     doc_id=f"blog_{i}",
                     doc_type='blog',
                     title=article['title'],
-                    content=article['excerpt'],
+                    content=article.get('url', ''),
                     tags=['blog', 'article'] + article.get('tags', []),
                     language='pl'
                 )
