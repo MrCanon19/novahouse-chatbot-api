@@ -8,10 +8,12 @@ from flask import Blueprint, jsonify, request
 from datetime import datetime, timedelta, timezone
 from sqlalchemy import func, desc
 from typing import Dict, Any
+from src.middleware.security import require_api_key
 
 dashboard_widgets = Blueprint('dashboard_widgets', __name__)
 
 @dashboard_widgets.route('/api/widgets/metrics/summary', methods=['GET'])
+@require_api_key
 def get_metrics_summary():
     """
     Get summary metrics for dashboard
@@ -67,6 +69,7 @@ def get_metrics_summary():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @dashboard_widgets.route('/api/widgets/metrics/timeline', methods=['GET'])
+@require_api_key
 def get_metrics_timeline():
     """
     Get timeline data for charts (daily/weekly/monthly)
@@ -133,6 +136,7 @@ def get_metrics_timeline():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @dashboard_widgets.route('/api/widgets/top/intents', methods=['GET'])
+@require_api_key
 def get_top_intents():
     """
     Get top detected intents
@@ -173,6 +177,7 @@ def get_top_intents():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @dashboard_widgets.route('/api/widgets/top/packages', methods=['GET'])
+@require_api_key
 def get_top_packages():
     """
     Get most popular design packages
@@ -213,6 +218,7 @@ def get_top_packages():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @dashboard_widgets.route('/api/widgets/active/sessions', methods=['GET'])
+@require_api_key
 def get_active_sessions():
     """
     Get active chat sessions (last 5 minutes)
@@ -251,6 +257,7 @@ def get_active_sessions():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @dashboard_widgets.route('/api/widgets/response/times', methods=['GET'])
+@require_api_key
 def get_response_times():
     """
     Get average response times
@@ -288,6 +295,7 @@ def get_response_times():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @dashboard_widgets.route('/api/widgets/satisfaction/scores', methods=['GET'])
+@require_api_key
 def get_satisfaction_scores():
     """
     Get satisfaction ratings distribution
@@ -337,6 +345,7 @@ def get_satisfaction_scores():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @dashboard_widgets.route('/api/widgets/custom', methods=['POST'])
+@require_api_key
 def save_custom_widget():
     """
     Save custom widget configuration
