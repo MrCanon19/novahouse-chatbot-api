@@ -32,6 +32,7 @@ from src.routes.leads import leads_bp
 from src.routes.intents import intents_bp
 from src.routes.entities import entities_bp
 from src.routes.qualification import qualification_bp
+from src.routes.booking import booking_bp
 
 # KROK 5: Rejestrujemy nasze trasy w aplikacji.
 app.register_blueprint(user_bp, url_prefix='/api')
@@ -42,6 +43,7 @@ app.register_blueprint(leads_bp, url_prefix='/api/leads')
 app.register_blueprint(intents_bp, url_prefix='/api/intents')
 app.register_blueprint(entities_bp, url_prefix='/api/entities')
 app.register_blueprint(qualification_bp, url_prefix='/api/qualification')
+app.register_blueprint(booking_bp, url_prefix='/api/booking')
 
 # KROK 6: Tworzymy tabele w kontekście w pełni skonfigurowanej aplikacji.
 with app.app_context():

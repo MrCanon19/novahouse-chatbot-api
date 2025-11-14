@@ -441,3 +441,58 @@ def export_analytics():
             'status': 'error',
             'error': str(e)
         }), 500
+
+
+@analytics_bp.route('/dashboard/summary', methods=['GET'])
+def dashboard_summary():
+    """Dashboard summary - legacy endpoint for compatibility"""
+    try:
+        days = request.args.get('days', 30, type=int)
+        budget = request.args.get('budget', 0, type=int)  # For future use
+        
+        start_date = datetime.now(timezone.utc) - timedelta(days=days)
+        
+        # Get all analytics
+        conversations_count = Conversation.query.filter(
+            Conversation.timestamp >= start_date
+        ).count()
+        
+        leads_count = Lead.query.filter(
+            Lead.created_at >= start_date
+        ).count()
+        
+        intents = IntentAnalytics.query.filter(
+            IntentAnalytics.created_at >= start_date
+        ).all()
+        
+        top_intent = "unknown"
+        if intents:
+            top_intent = max(
+                ((i.intent_name, i.success_count) for i in intents),
+                key=lambda x: x[1]
+            )
+            top_intent_name, top_intent_count = top_intent
+        else:
+            top_intent_name = "unknown"
+            top_intent_count = 0
+        
+        # Calculate conversion
+        conversion_rate = (leads_count / conversations_count * 100) if conversations_count > 0 else 0
+        
+        return jsonify({
+            'period_days': days,
+            'conversations': conversations_count,
+            'leads': leads_count,
+            'conversion_rate': round(conversion_rate, 1),
+            'top_intent': {
+                'name': top_intent_name,
+                'count': top_intent_count
+            },
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'error': str(e)
+        }), 500
