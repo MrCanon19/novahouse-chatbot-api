@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from sqlalchemy import func, and_
 from src.models.chatbot import db, Conversation, Lead
 from src.models.analytics import (
@@ -17,7 +17,7 @@ def get_overview():
     try:
         # Parametry zapytania
         days = request.args.get('days', 7, type=int)
-        start_date = datetime.utcnow() - timedelta(days=days)
+        start_date = datetime.now(timezone.utc) - timedelta(days=days)
         
         # Statystyki konwersacji
         total_conversations = Conversation.query.filter(
@@ -72,7 +72,7 @@ def get_overview():
                     for intent, count in top_intents
                 ]
             },
-            'timestamp': datetime.utcnow().isoformat()
+            'timestamp': datetime.now(timezone.utc).isoformat()
         })
         
     except Exception as e:
@@ -86,7 +86,7 @@ def get_conversation_analytics():
     """Pobierz analitykę konwersacji"""
     try:
         days = request.args.get('days', 7, type=int)
-        start_date = datetime.utcnow() - timedelta(days=days)
+        start_date = datetime.now(timezone.utc) - timedelta(days=days)
         
         # Konwersacje według dnia
         conversations_by_day = db.session.query(
@@ -127,7 +127,7 @@ def get_conversation_analytics():
                 for sentiment, count in sentiment_stats
             ],
             'total_analyzed': len(chat_analytics),
-            'timestamp': datetime.utcnow().isoformat()
+            'timestamp': datetime.now(timezone.utc).isoformat()
         })
         
     except Exception as e:
@@ -141,7 +141,7 @@ def get_engagement_analytics():
     """Pobierz analitykę zaangażowania użytkowników"""
     try:
         days = request.args.get('days', 7, type=int)
-        start_date = datetime.utcnow() - timedelta(days=days)
+        start_date = datetime.now(timezone.utc) - timedelta(days=days)
         
         # Zaangażowanie użytkowników
         engagements = UserEngagement.query.filter(
@@ -198,7 +198,7 @@ def get_engagement_analytics():
                 'messages_per_session': round(avg_messages, 2) if avg_messages else 0,
                 'session_duration_seconds': round(avg_duration, 2) if avg_duration else 0
             },
-            'timestamp': datetime.utcnow().isoformat()
+            'timestamp': datetime.now(timezone.utc).isoformat()
         })
         
     except Exception as e:
@@ -212,7 +212,7 @@ def get_intent_analytics():
     """Pobierz analitykę intencji"""
     try:
         days = request.args.get('days', 7, type=int)
-        start_date = (datetime.utcnow() - timedelta(days=days)).date()
+        start_date = (datetime.now(timezone.utc) - timedelta(days=days)).date()
         
         # Analityka intencji
         intent_analytics = IntentAnalytics.query.filter(
@@ -248,7 +248,7 @@ def get_intent_analytics():
                 for intent, triggers, success, failures, confidence in intent_summary
             ],
             'total_intents': len(intent_summary),
-            'timestamp': datetime.utcnow().isoformat()
+            'timestamp': datetime.now(timezone.utc).isoformat()
         })
         
     except Exception as e:
@@ -262,7 +262,7 @@ def get_performance_metrics():
     """Pobierz metryki wydajności"""
     try:
         hours = request.args.get('hours', 24, type=int)
-        start_time = datetime.utcnow() - timedelta(hours=hours)
+        start_time = datetime.now(timezone.utc) - timedelta(hours=hours)
         
         # Metryki wydajności
         metrics = PerformanceMetrics.query.filter(
@@ -319,7 +319,7 @@ def get_performance_metrics():
                 'avg_cpu_percent': round(avg_cpu, 2) if avg_cpu else 0
             },
             'total_requests': len(metrics),
-            'timestamp': datetime.utcnow().isoformat()
+            'timestamp': datetime.now(timezone.utc).isoformat()
         })
         
     except Exception as e:
@@ -333,7 +333,7 @@ def get_lead_analytics():
     """Pobierz analitykę leadów"""
     try:
         days = request.args.get('days', 7, type=int)
-        start_date = datetime.utcnow() - timedelta(days=days)
+        start_date = datetime.now(timezone.utc) - timedelta(days=days)
         
         # Leady według dnia
         leads_by_day = db.session.query(
@@ -388,7 +388,7 @@ def get_lead_analytics():
                 {'property_type': prop_type, 'count': count}
                 for prop_type, count in leads_by_property
             ],
-            'timestamp': datetime.utcnow().isoformat()
+            'timestamp': datetime.now(timezone.utc).isoformat()
         })
         
     except Exception as e:
@@ -403,7 +403,7 @@ def export_analytics():
     try:
         export_type = request.args.get('type', 'overview')
         days = request.args.get('days', 30, type=int)
-        start_date = datetime.utcnow() - timedelta(days=days)
+        start_date = datetime.now(timezone.utc) - timedelta(days=days)
         
         data = {}
         
@@ -433,7 +433,7 @@ def export_analytics():
             'export_type': export_type,
             'period_days': days,
             'data': data,
-            'exported_at': datetime.utcnow().isoformat()
+            'exported_at': datetime.now(timezone.utc).isoformat()
         })
         
     except Exception as e:

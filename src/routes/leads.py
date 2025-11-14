@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from src.models.chatbot import db, Lead
 from src.integrations.monday_client import MondayClient
-from datetime import datetime
+from datetime import datetime, timezone
 
 leads_bp = Blueprint('leads', __name__)
 
@@ -25,7 +25,7 @@ def create_lead():
             phone=data.get('phone'),
             message=data.get('message'),
             status='new',
-            created_at=datetime.utcnow()
+            created_at=datetime.now(timezone.utc)
         )
         
         db.session.add(lead)

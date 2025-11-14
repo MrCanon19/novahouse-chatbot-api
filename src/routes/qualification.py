@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from src.models.chatbot import db, Lead
 from src.knowledge.novahouse_info import QUALIFICATION_QUESTIONS, PACKAGES
-from datetime import datetime
+from datetime import datetime, timezone
 
 qualification_bp = Blueprint('qualification', __name__)
 
@@ -103,7 +103,7 @@ def submit_qualification():
                 phone=contact_info.get('phone'),
                 message=f"Kwalifikacja: {recommendation['recommended_package']} ({recommendation['confidence']}% pewności)",
                 status='qualified',
-                created_at=datetime.utcnow()
+                created_at=datetime.now(timezone.utc)
             )
             db.session.add(lead)
             db.session.commit()
