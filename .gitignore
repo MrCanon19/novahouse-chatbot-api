@@ -27,6 +27,11 @@ pip-delete-this-directory.txt
 secrets.json
 credentials.json
 
+# GCP deployment with secrets - NEVER COMMIT!
+app.yaml.secret
+app.yaml.prod
+*.secret.yaml
+
 # GCP & Backups
 backups/
 *.backup
