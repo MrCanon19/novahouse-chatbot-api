@@ -1,33 +1,51 @@
 # 🏠 NovaHouse Chatbot API
 
+**Version:** 2.3.0 "Production Ready" 🚀  
 AI Chatbot dla NovaHouse - pomoc klientom w wyborze pakietów wykończeniowych.
 
 ## 🚀 Live Demo
 
 - **Chatbot:** https://glass-core-467907-e9.ey.r.appspot.com/static/chatbot.html
 - **Dashboard:** https://glass-core-467907-e9.ey.r.appspot.com/static/dashboard.html
+- **API Docs:** https://glass-core-467907-e9.ey.r.appspot.com/docs
 - **Health Check:** https://glass-core-467907-e9.ey.r.appspot.com/api/chatbot/health
 
 ## 🛠️ Tech Stack
 
-- **Backend:** Python 3.11, Flask, SQLAlchemy
+- **Backend:** Python 3.13, Flask 3.1, SQLAlchemy 2.0
 - **Frontend:** HTML/CSS/JavaScript
-- **Hosting:** Google Cloud App Engine (Free Tier)
-- **Database:** SQLite (in-memory dla produkcji)
+- **Real-time:** Socket.IO, WebSockets
+- **Cache:** Redis (with in-memory fallback)
+- **Search:** Whoosh full-text engine
+- **Storage:** Google Cloud Storage (with local fallback)
+- **Notifications:** Email (SMTP) + SMS (Twilio)
+- **Hosting:** Google Cloud App Engine
+- **Database:** PostgreSQL / SQLite
 
 ## ✨ Features
 
+### Core (v1.0 - v2.2)
 - ✅ 17+ FAQ inteligentnych odpowiedzi
 - ✅ Email notifications (lead confirmations, booking confirmations)
-- ✅ Rate limiting & security (100 req/min default)
-- ✅ Simple caching system (FAQ, session management)
+- ✅ Advanced Analytics & A/B Testing
+- ✅ Multi-language support (PL/EN/DE)
+- ✅ Admin Dashboard with filters
 - ✅ Lead filtering & CSV export
 - ✅ Bulk operations (mass status updates)
 - ✅ 9 Knowledge API endpoints (portfolio, process, reviews, partners)
 - ✅ Session management
 - ✅ Responsive design
 - ✅ Health monitoring
-- ✅ Zero kosztów hostingu
+- ✅ Swagger API Documentation
+
+### New in v2.3 🎉
+- ✅ **Redis Integration** - Production-ready caching & rate limiting
+- ✅ **WebSocket Support** - Real-time chat & live dashboard updates
+- ✅ **File Upload & Optimization** - Multi-size image variants + GCS
+- ✅ **Appointment Reminders** - SMS (Twilio) + Email multi-channel
+- ✅ **Advanced Search** - Full-text search with fuzzy matching
+- ✅ **Dashboard Widgets** - Real-time metrics & interactive charts
+- ✅ **Backup & Export** - Automated backups + RODO compliance
 
 ## 🚀 Quick Start
 
