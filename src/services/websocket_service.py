@@ -82,13 +82,27 @@ def handle_chat_message(data):
         'status': 'received'
     }, room=request.sid)
     
-    # TODO: Process message with chatbot AI
-    # For now, echo back
-    emit('bot_response', {
-        'session_id': session_id,
-        'response': f"Echo: {message}",
-        'timestamp': datetime.now(timezone.utc).isoformat()
-    }, room=request.sid)
+    # Process message with chatbot AI
+    try:
+        from src.routes.chatbot import process_chat_message
+        
+        result = process_chat_message(message, session_id)
+        
+        emit('bot_response', {
+            'session_id': session_id,
+            'response': result.get('response', 'Przepraszam, wystąpił błąd.'),
+            'conversation_id': result.get('conversation_id'),
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }, room=request.sid)
+        
+    except Exception as e:
+        print(f"❌ WebSocket AI processing error: {e}")
+        emit('bot_response', {
+            'session_id': session_id,
+            'response': 'Przepraszam, wystąpił problem z przetwarzaniem wiadomości. Spróbuj ponownie.',
+            'timestamp': datetime.now(timezone.utc).isoformat(),
+            'error': True
+        }, room=request.sid)
 
 @socketio.on('typing')
 def handle_typing(data):
