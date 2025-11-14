@@ -17,11 +17,16 @@ AI Chatbot dla NovaHouse - pomoc klientom w wyborze pakietów wykończeniowych.
 
 ## ✨ Features
 
-- ✅ 17 intencji rozpoznawania języka naturalnego
+- ✅ 17+ FAQ inteligentnych odpowiedzi
+- ✅ Email notifications (lead confirmations, booking confirmations)
+- ✅ Rate limiting & security (100 req/min default)
+- ✅ Simple caching system (FAQ, session management)
+- ✅ Lead filtering & CSV export
+- ✅ Bulk operations (mass status updates)
+- ✅ 9 Knowledge API endpoints (portfolio, process, reviews, partners)
 - ✅ Session management
 - ✅ Responsive design
 - ✅ Health monitoring
-- ✅ Lead generation ready
 - ✅ Zero kosztów hostingu
 
 ## 🚀 Quick Start
