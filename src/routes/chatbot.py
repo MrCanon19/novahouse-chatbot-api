@@ -4,7 +4,12 @@ import google.generativeai as genai
 import os
 
 from src.models.chatbot import db, ChatConversation, ChatMessage, RodoConsent, Lead, AuditLog
-from src.knowledge.novahouse_info import PACKAGES, FAQ, COMPANY_INFO, get_package_description, get_all_packages_summary
+from src.knowledge.novahouse_info import (
+    PACKAGES, FAQ, COMPANY_INFO, COMPANY_STATS, COVERAGE_AREAS, 
+    PRODUCT_PARTNERS, WHY_CHOOSE_US, TEAM_INFO,
+    get_package_description, get_all_packages_summary, 
+    get_process_overview, get_portfolio_list, get_client_reviews_summary
+)
 
 chatbot_bp = Blueprint('chatbot', __name__)
 
@@ -32,37 +37,53 @@ SYSTEM_PROMPT = f"""Jesteś pomocnym asystentem NovaHouse — eksperta od wykoń
 
 {COMPANY_INFO}
 
+📊 NASZE LICZBY:
+• {COMPANY_STATS['completed_projects']} zrealizowanych projektów
+• {COMPANY_STATS['satisfied_clients']} zadowolonych klientów
+• {COMPANY_STATS['projects_before_deadline']} projektów oddanych przed terminem
+• {COMPANY_STATS['warranty_years']} lata gwarancji
+• Realizacja od {COMPANY_STATS['min_project_duration']}
+
+📍 OBSZARY DZIAŁANIA:
+{', '.join(COVERAGE_AREAS['primary'])}
+
 PAKIETY WYKOŃCZENIOWE:
 {get_all_packages_summary()}
 
-📋 TW OJE ZADANIA:
+🤝 PARTNERZY PRODUKTOWI:
+Współpracujemy z najlepszymi: {', '.join(PRODUCT_PARTNERS[:8])} i innymi.
+
+📋 TWOJE ZADANIA:
 1. Powitaj ciepło i profesjonalnie każdego gościa
-2. Zadawaj pytania by zrozumieć potrzeby klienta (metraż, budżet, styl)
+2. Zadawaj pytania by zrozumieć potrzeby klienta (metraż, budżet, styl, lokalizacja)
 3. Rekomenduj odpowiedni pakiet na podstawie odpowiedzi
-4. Odpowiadaj krótko, precyzyjnie i profesjonalnie (ale "na luzie" - nie formalno)
-5. Zachęcaj do konsultacji i pozostawienia kontaktu
+4. Pokaż proces realizacji jeśli klient pyta "jak to działa"
+5. Pokaż portfolio gdy klient pyta o realizacje
+6. Zachęcaj do konsultacji i pozostawienia kontaktu
 
 🎯 STYL KOMUNIKACJI:
 - Krótkie, klarowne zdania (maksymalnie 2-3 zdania na raz)
 - Naturalne, nie sztywne sformułowania
-- Empaticzny ton - słuchamy, rozumiemy, pomagamy
+- Empatyczny ton - słuchamy, rozumiemy, pomagamy
 - Na "ty" - bądź przyjazny ale profesjonalny
+- Podkreślaj nasze USP: 94% przed terminem, 36 miesięcy gwarancji, sprawdzone ekipy
 - Jeśli pytanie jest skomplikowane - zaproponuj rozmowę z ekspertem
 
 💡 WAŻNE ZASADY:
 - Zawsze odpowiadaj PO POLSKU
 - Nie wymyślaj faktów - jeśli nie wiesz - powiedz że sprawdzisz
-- Nie gwarantuj cen - mów "orientacyjnie" lub "od... do..."
+- Nie gwarantuj cen - mów "orientacyjnie" lub "od 949 do 1990 zł/m²"
 - Zawsze miej gotową rekomendację kontaktu: +48 585 004 663
 - Jeśli ktoś wykaże zainteresowanie - zawsze zaproponuj pozostawienie maila/telefonu
+- Sprawdź czy klient jest z Trójmiasta, Warszawy lub Wrocławia
 
 🚫 CZEGO NIE ROBIĆ:
 - Nie bądź zbyt formalny lub rzeczowy
 - Nie udzielaj porad poza tematem wykończenia
-- Nie obiecuj niemożliwych terminów bez konsultacji z szefem
+- Nie obiecuj niemożliwych terminów bez konsultacji z zespołem
 
 ROZPOCZĘCIE KONWERSACJI:
-Zawsze zaczynaj od powitania i pytania co klienta interesuje. Bądź ciepły!
+Zawsze zaczynaj od ciepłego powitania i pytania co klienta interesuje oraz skąd jest (lokalizacja). Bądź ciepły!
 """
 
 @chatbot_bp.route('/chat', methods=['POST'])
@@ -149,6 +170,7 @@ def check_faq(message):
     """Sprawdź czy wiadomość dotyczy FAQ"""
     message_lower = message.lower()
     
+    # Podstawowe FAQ
     if any(word in message_lower for word in ['jak długo', 'ile trwa', 'czas', 'termin', 'ile czasu']):
         return FAQ['jak_dlugo_trwa']
     
@@ -167,14 +189,67 @@ def check_faq(message):
     if any(word in message_lower for word in ['produkt', 'materiały', 'wyposażenie', 'urządzenia']):
         return FAQ.get('produkty', 'Mamy szeroką gamę produktów od standardowych do luksusowych marek.')
     
-    if any(word in message_lower for word in ['etap', 'proces', 'przebieg', 'jak działacie']):
-        return FAQ.get('etapy', 'Nasz proces to: konsultacja → projekt → wycena → umowa → realizacja → odbiór.')
+    # Nowe FAQ - proces i przebieg
+    if any(word in message_lower for word in ['etap', 'proces', 'przebieg', 'jak działacie', 'jak to wygląda', 'workflow']):
+        return get_process_overview()
     
     if 'projekt' in message_lower and any(word in message_lower for word in ['potrzebny', 'czy', 'konieczny']):
         return FAQ.get('czy_potrzebny_projekt', 'Projekt jest bardzo pomocny w pełnym zaplanowaniu budżetu.')
     
     if any(word in message_lower for word in ['smart', 'automatyka', 'inteligentny dom', 'automatyzacja']):
         return FAQ.get('smart_home', 'Smart home jest dostępne w pakietach Premium i Luxury.')
+    
+    # Nowe FAQ - terminowość i ekipy
+    if any(word in message_lower for word in ['terminowo', 'na czas', 'dotrzymanie', 'opóźnienie', 'spóźnienie']):
+        return FAQ['terminowosc']
+    
+    if any(word in message_lower for word in ['ekipa', 'ekipy', 'fachowcy', 'wykonawcy', 'pracownicy']):
+        return FAQ['ekipy']
+    
+    # Zakres usług
+    if any(word in message_lower for word in ['zakres', 'co robicie', 'czym się zajmujecie', 'usługi']):
+        return FAQ['zakres_uslug']
+    
+    if any(word in message_lower for word in ['co obejmuje', 'co wchodzi', 'co jest w cenie']):
+        return FAQ['co_obejmuje_usluga']
+    
+    # Zabudowy stolarskie
+    if any(word in message_lower for word in ['stolars', 'zabudow', 'meble', 'kuchnia na wymiar', 'szafa']):
+        return FAQ['zabudowy_stolarskie']
+    
+    # Lokalizacje
+    if any(word in message_lower for word in ['gdzie', 'lokalizacja', 'obszar', 'region', 'miasto']):
+        return FAQ['gdzie_dzialamy']
+    
+    # Cennik dodatkowy
+    if any(word in message_lower for word in ['cennik', 'dodatkow', 'extra', 'niespodzianki', 'ukryte koszty']):
+        return FAQ['cennik_dodatkowy']
+    
+    # Po odbiorze
+    if any(word in message_lower for word in ['po odbiorze', 'po skończeniu', 'gotowe', 'zakończeni']):
+        return FAQ['po_odbiorze']
+    
+    # Portfolio i realizacje
+    if any(word in message_lower for word in ['realizacj', 'portfolio', 'przykład', 'zdjęcia', 'fotki', 'referencje']):
+        return get_portfolio_list()
+    
+    # Opinie klientów
+    if any(word in message_lower for word in ['opini', 'recenzj', 'rekomendacj', 'co mówią', 'feedback']):
+        return get_client_reviews_summary()
+    
+    # Partnerzy produktowi
+    if any(word in message_lower for word in ['partner', 'producent', 'marka', 'firmy']):
+        partners = ', '.join(PRODUCT_PARTNERS)
+        return f"🤝 Współpracujemy z najlepszymi producentami:\n\n{partners}\n\nTo gwarancja jakości materiałów i trwałości wykończenia!"
+    
+    # Dlaczego NovaHouse
+    if any(word in message_lower for word in ['dlaczego', 'czemu wy', 'jakie macie przewagi', 'co was wyróżnia']):
+        why = "\n".join([f"✅ {key.title()}: {value}" for key, value in WHY_CHOOSE_US.items()])
+        return f"💎 DLACZEGO NOVAHOUSE?\n\n{why}"
+    
+    # Zespół
+    if any(word in message_lower for word in ['zespół', 'team', 'pracownicy', 'kto', 'agnieszka']):
+        return f"👥 NASZ ZESPÓŁ:\n\n{TEAM_INFO['wiceprezes']['name']} - {TEAM_INFO['wiceprezes']['position']}\n\"{TEAM_INFO['wiceprezes']['quote']}\"\n\n{TEAM_INFO['projektanci']['count']}\n{TEAM_INFO['projektanci']['role']}\n\n📌 {TEAM_INFO['projektanci']['note']}"
     
     # Sprawdź pytania o konkretne pakiety
     if 'premium' in message_lower:
@@ -191,7 +266,7 @@ def check_faq(message):
     # Powitania
     greetings = ['cześć', 'dzień dobry', 'witam', 'hej', 'hello', 'siema', 'elo', 'co tam']
     if any(greeting in message_lower for greeting in greetings):
-        return "Cześć! 👋 Jestem asystentem NovaHouse. Pomagam w wyborze idealnego pakietu wykończeniowego. Jakie są Twoje potrzeby — remontujemy mieszkanie czy dom?"
+        return f"Cześć! 👋 Jestem asystentem NovaHouse.\n\n📊 {COMPANY_STATS['completed_projects']} projektów | {COMPANY_STATS['satisfied_clients']} zadowolonych | {COMPANY_STATS['projects_before_deadline']} przed terminem\n\nPomagam w wyborze idealnego pakietu wykończeniowego. Z jakiego jesteś miasta i co planujesz — mieszkanie czy dom?"
     
     return None
 
