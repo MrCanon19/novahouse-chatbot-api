@@ -347,6 +347,64 @@ class BackupService:
             print(f"❌ User data deletion failed: {e}")
             raise
     
+    def cleanup_old_backups(self, days_to_keep: int = 30):
+        """
+        Delete backups older than X days
+        
+        Args:
+            days_to_keep: Number of days to keep backups (default: 30)
+        
+        Returns:
+            Number of deleted backups
+        """
+        try:
+            from datetime import timedelta
+            
+            deleted_count = 0
+            cutoff_date = datetime.now(timezone.utc) - timedelta(days=days_to_keep)
+            
+            for filename in os.listdir(self.backup_dir):
+                if filename.startswith('backup_') and filename.endswith('.json'):
+                    filepath = os.path.join(self.backup_dir, filename)
+                    
+                    # Check file creation time
+                    file_time = datetime.fromtimestamp(
+                        os.path.getctime(filepath), 
+                        tz=timezone.utc
+                    )
+                    
+                    if file_time < cutoff_date:
+                        os.remove(filepath)
+                        deleted_count += 1
+                        print(f"🗑️  Deleted old backup: {filename}")
+            
+            if deleted_count > 0:
+                print(f"✅ Cleaned up {deleted_count} old backup(s)")
+            else:
+                print(f"✅ No old backups to clean (keeping last {days_to_keep} days)")
+            
+            return deleted_count
+            
+        except Exception as e:
+            print(f"❌ Backup cleanup failed: {e}")
+            return 0
+    
+    def automated_backup_with_cleanup(self):
+        """
+        Perform backup and cleanup old files
+        This is the main function called by scheduler
+        """
+        try:
+            # Create new backup
+            filepath = self.export_all_data(format='json')
+            print(f"✅ Automated backup created: {filepath}")
+            
+            # Clean up old backups (keep last 30 days)
+            self.cleanup_old_backups(days_to_keep=30)
+            
+        except Exception as e:
+            print(f"❌ Automated backup failed: {e}")
+    
     def schedule_automated_backup(self):
         """
         Schedule daily backup using APScheduler
@@ -360,18 +418,17 @@ class BackupService:
             
             scheduler = BackgroundScheduler()
             
-            # Daily backup at 3 AM
+            # Daily backup at 3 AM with automatic cleanup
             scheduler.add_job(
-                func=self.export_all_data,
+                func=self.automated_backup_with_cleanup,
                 trigger=CronTrigger(hour=3, minute=0),
-                args=['json'],
                 id='daily_backup',
-                name='Daily Automated Backup',
+                name='Daily Automated Backup + Cleanup',
                 replace_existing=True
             )
             
             scheduler.start()
-            print("✅ Automated backup scheduled (daily at 3 AM)")
+            print("✅ Automated backup scheduled (daily at 3 AM, keeps last 30 days)")
             
             return scheduler
             
