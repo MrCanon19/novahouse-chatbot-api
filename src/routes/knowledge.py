@@ -9,11 +9,13 @@ from src.knowledge.novahouse_info import (
     WHY_CHOOSE_US, TEAM_INFO, COVERAGE_AREAS, COMPANY_STATS, BLOG_ARTICLES,
     get_process_overview, get_portfolio_list, get_client_reviews_summary
 )
+from src.middleware.security import rate_limit
 
 knowledge_bp = Blueprint('knowledge', __name__)
 
 
 @knowledge_bp.route('/portfolio', methods=['GET'])
+@rate_limit(max_requests=100, window_seconds=60)  # 100 req/min
 def get_portfolio():
     """Zwraca listę portfolio - realizacje NovaHouse"""
     try:

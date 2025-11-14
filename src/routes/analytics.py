@@ -496,3 +496,155 @@ def dashboard_summary():
             'status': 'error',
             'error': str(e)
         }), 500
+
+# ========================================
+# ADVANCED ANALYTICS ENDPOINTS
+# ========================================
+
+@analytics_bp.route('/advanced/sentiment', methods=['POST'])
+def analyze_sentiment():
+    """
+    Analyze sentiment of a message
+    POST /api/analytics/advanced/sentiment
+    Body: {"message": "text to analyze"}
+    """
+    try:
+        from src.services.analytics_service import AdvancedAnalytics
+        
+        data = request.get_json()
+        message = data.get('message', '')
+        
+        if not message:
+            return jsonify({'error': 'Message is required'}), 400
+        
+        result = AdvancedAnalytics.analyze_sentiment(message)
+        
+        return jsonify({
+            'status': 'success',
+            'message': message,
+            'sentiment_analysis': result
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'error': str(e)
+        }), 500
+
+@analytics_bp.route('/advanced/heatmap', methods=['GET'])
+def get_activity_heatmap():
+    """
+    Get activity heatmap (hour x day of week)
+    GET /api/analytics/advanced/heatmap?days=30
+    """
+    try:
+        from src.services.analytics_service import AdvancedAnalytics
+        
+        days = request.args.get('days', 30, type=int)
+        end_date = datetime.now(timezone.utc)
+        start_date = end_date - timedelta(days=days)
+        
+        result = AdvancedAnalytics.get_activity_heatmap(start_date, end_date)
+        
+        return jsonify({
+            'status': 'success',
+            'period': {
+                'start': start_date.isoformat(),
+                'end': end_date.isoformat(),
+                'days': days
+            },
+            'heatmap_data': result
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'error': str(e)
+        }), 500
+
+@analytics_bp.route('/advanced/funnel', methods=['GET'])
+def get_conversion_funnel():
+    """
+    Get conversion funnel analysis
+    GET /api/analytics/advanced/funnel?days=30
+    """
+    try:
+        from src.services.analytics_service import AdvancedAnalytics
+        
+        days = request.args.get('days', 30, type=int)
+        end_date = datetime.now(timezone.utc)
+        start_date = end_date - timedelta(days=days)
+        
+        result = AdvancedAnalytics.get_conversion_funnel(start_date, end_date)
+        
+        return jsonify({
+            'status': 'success',
+            'period': {
+                'start': start_date.isoformat(),
+                'end': end_date.isoformat(),
+                'days': days
+            },
+            'funnel_data': result
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'error': str(e)
+        }), 500
+
+@analytics_bp.route('/advanced/cohort', methods=['GET'])
+def get_cohort_analysis():
+    """
+    Get cohort retention analysis
+    GET /api/analytics/advanced/cohort?period=week&num_cohorts=8
+    """
+    try:
+        from src.services.analytics_service import AdvancedAnalytics
+        
+        period = request.args.get('period', 'week')  # day/week/month
+        num_cohorts = request.args.get('num_cohorts', 8, type=int)
+        
+        if period not in ['day', 'week', 'month']:
+            return jsonify({'error': 'Period must be day, week, or month'}), 400
+        
+        result = AdvancedAnalytics.get_cohort_analysis(period, num_cohorts)
+        
+        return jsonify({
+            'status': 'success',
+            'cohort_data': result
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'error': str(e)
+        }), 500
+
+@analytics_bp.route('/advanced/journey/<session_id>', methods=['GET'])
+def get_user_journey(session_id):
+    """
+    Get detailed user journey for a specific session
+    GET /api/analytics/advanced/journey/{session_id}
+    """
+    try:
+        from src.services.analytics_service import AdvancedAnalytics
+        
+        result = AdvancedAnalytics.get_user_journey_insights(session_id)
+        
+        if 'error' in result:
+            return jsonify({
+                'status': 'error',
+                'error': result['error']
+            }), 404
+        
+        return jsonify({
+            'status': 'success',
+            'journey_data': result
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'error': str(e)
+        }), 500

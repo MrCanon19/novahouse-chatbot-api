@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from src.models.chatbot import db, Lead
 from src.integrations.monday_client import MondayClient
+from src.services.email_service import email_service
 from datetime import datetime, timezone
 
 leads_bp = Blueprint('leads', __name__)
@@ -31,6 +32,7 @@ def create_lead():
         db.session.add(lead)
         db.session.commit()
         
+        # Sync to Monday.com
         try:
             monday = MondayClient()
             monday_item_id = monday.create_lead_item({
@@ -47,6 +49,25 @@ def create_lead():
         
         except Exception as e:
             print(f"Monday.com sync error: {e}")
+        
+        # Send email notifications
+        try:
+            # Email do admina
+            email_service.send_new_lead_notification({
+                'name': lead.name,
+                'email': lead.email,
+                'phone': lead.phone,
+                'message': lead.message,
+                'status': lead.status
+            })
+            
+            # Email potwierdzenie do klienta
+            email_service.send_lead_confirmation({
+                'name': lead.name,
+                'email': lead.email
+            })
+        except Exception as e:
+            print(f"Email notification error: {e}")
         
         return jsonify({
             'id': lead.id,
@@ -185,6 +206,175 @@ def update_lead_status(lead_id):
             'monday_synced': bool(lead.monday_item_id)
         }), 200
         
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@leads_bp.route('/filter', methods=['GET'])
+def filter_leads():
+    """Filter leads by status, date, package, etc."""
+    try:
+        query = Lead.query
+        
+        # Filter by status
+        status = request.args.get('status')
+        if status:
+            query = query.filter(Lead.status == status)
+        
+        # Filter by date range
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+        
+        if start_date:
+            start = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+            query = query.filter(Lead.created_at >= start)
+        
+        if end_date:
+            end = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+            query = query.filter(Lead.created_at <= end)
+        
+        # Filter by package (if exists in message/metadata)
+        package = request.args.get('package')
+        if package:
+            query = query.filter(Lead.message.contains(package))
+        
+        # Sorting
+        sort_by = request.args.get('sort_by', 'created_at')
+        sort_order = request.args.get('sort_order', 'desc')
+        
+        if hasattr(Lead, sort_by):
+            column = getattr(Lead, sort_by)
+            if sort_order == 'asc':
+                query = query.order_by(column.asc())
+            else:
+                query = query.order_by(column.desc())
+        
+        # Pagination
+        page = int(request.args.get('page', 1))
+        per_page = int(request.args.get('per_page', 50))
+        
+        paginated = query.paginate(page=page, per_page=per_page, error_out=False)
+        
+        return jsonify({
+            'leads': [{
+                'id': lead.id,
+                'name': lead.name,
+                'email': lead.email,
+                'phone': lead.phone,
+                'message': lead.message,
+                'status': lead.status,
+                'monday_item_id': lead.monday_item_id,
+                'created_at': lead.created_at.isoformat()
+            } for lead in paginated.items],
+            'pagination': {
+                'page': page,
+                'per_page': per_page,
+                'total': paginated.total,
+                'pages': paginated.pages
+            }
+        }), 200
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@leads_bp.route('/export', methods=['GET'])
+def export_leads():
+    """Export leads to CSV"""
+    try:
+        import csv
+        from io import StringIO
+        from flask import make_response
+        
+        # Get filtered leads (reuse filter logic)
+        query = Lead.query
+        
+        status = request.args.get('status')
+        if status:
+            query = query.filter(Lead.status == status)
+        
+        start_date = request.args.get('start_date')
+        if start_date:
+            start = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+            query = query.filter(Lead.created_at >= start)
+        
+        end_date = request.args.get('end_date')
+        if end_date:
+            end = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+            query = query.filter(Lead.created_at <= end)
+        
+        leads = query.order_by(Lead.created_at.desc()).all()
+        
+        # Create CSV
+        output = StringIO()
+        writer = csv.writer(output)
+        
+        # Header
+        writer.writerow(['ID', 'Data', 'Imię', 'Email', 'Telefon', 'Wiadomość', 'Status', 'Monday.com ID'])
+        
+        # Data rows
+        for lead in leads:
+            writer.writerow([
+                lead.id,
+                lead.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                lead.name,
+                lead.email,
+                lead.phone or '',
+                lead.message or '',
+                lead.status,
+                lead.monday_item_id or ''
+            ])
+        
+        # Create response
+        output.seek(0)
+        response = make_response(output.getvalue())
+        response.headers['Content-Type'] = 'text/csv; charset=utf-8'
+        response.headers['Content-Disposition'] = f'attachment; filename=leads_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+        
+        return response
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@leads_bp.route('/bulk-update', methods=['POST'])
+def bulk_update_leads():
+    """Bulk update lead statuses"""
+    try:
+        data = request.get_json()
+        lead_ids = data.get('lead_ids', [])
+        new_status = data.get('status')
+        
+        if not lead_ids or not new_status:
+            return jsonify({'error': 'lead_ids and status are required'}), 400
+        
+        valid_statuses = ['new', 'contacted', 'qualified', 'converted', 'lost']
+        if new_status not in valid_statuses:
+            return jsonify({'error': f'Invalid status. Must be one of: {", ".join(valid_statuses)}'}), 400
+        
+        updated_count = 0
+        errors = []
+        
+        for lead_id in lead_ids:
+            try:
+                lead = Lead.query.get(lead_id)
+                if lead:
+                    lead.status = new_status
+                    updated_count += 1
+                else:
+                    errors.append(f"Lead {lead_id} not found")
+            except Exception as e:
+                errors.append(f"Lead {lead_id}: {str(e)}")
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'updated': updated_count,
+            'errors': errors if errors else None
+        }), 200
+    
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
