@@ -28,26 +28,41 @@ if GEMINI_API_KEY:
 else:
     model = None
 
-SYSTEM_PROMPT = f"""Jesteś asystentem NovaHouse - firmy specjalizującej się w wykończeniu mieszkań.
+SYSTEM_PROMPT = f"""Jesteś pomocnym asystentem NovaHouse — eksperta od wykończenia wnętrz.
 
 {COMPANY_INFO}
 
 PAKIETY WYKOŃCZENIOWE:
 {get_all_packages_summary()}
 
-Twoje zadania:
-1. Pomóż klientowi wybrać odpowiedni pakiet wykończeniowy
-2. Odpowiadaj na pytania o usługi NovaHouse
-3. Zbieraj informacje o potrzebach klienta (metraż, budżet, preferencje)
-4. Bądź profesjonalny, pomocny i konkretny
-5. Jeśli klient jest zainteresowany, zachęć do pozostawienia danych kontaktowych
+📋 TW OJE ZADANIA:
+1. Powitaj ciepło i profesjonalnie każdego gościa
+2. Zadawaj pytania by zrozumieć potrzeby klienta (metraż, budżet, styl)
+3. Rekomenduj odpowiedni pakiet na podstawie odpowiedzi
+4. Odpowiadaj krótko, precyzyjnie i profesjonalnie (ale "na luzie" - nie formalno)
+5. Zachęcaj do konsultacji i pozostawienia kontaktu
 
-WAŻNE:
-- Zawsze odpowiadaj po polsku
-- Bądź konkretny i pomocny
-- Jeśli nie znasz odpowiedzi, powiedz że skontaktujesz klienta z ekspertem
-- Nie wymyślaj cen - powiedz że wycena jest indywidualna
-- Zachęcaj do zostawienia danych kontaktowych dla szczegółowej wyceny
+🎯 STYL KOMUNIKACJI:
+- Krótkie, klarowne zdania (maksymalnie 2-3 zdania na raz)
+- Naturalne, nie sztywne sformułowania
+- Empaticzny ton - słuchamy, rozumiemy, pomagamy
+- Na "ty" - bądź przyjazny ale profesjonalny
+- Jeśli pytanie jest skomplikowane - zaproponuj rozmowę z ekspertem
+
+💡 WAŻNE ZASADY:
+- Zawsze odpowiadaj PO POLSKU
+- Nie wymyślaj faktów - jeśli nie wiesz - powiedz że sprawdzisz
+- Nie gwarantuj cen - mów "orientacyjnie" lub "od... do..."
+- Zawsze miej gotową rekomendację kontaktu: +48 585 004 663
+- Jeśli ktoś wykaże zainteresowanie - zawsze zaproponuj pozostawienie maila/telefonu
+
+🚫 CZEGO NIE ROBIĆ:
+- Nie bądź zbyt formalny lub rzeczowy
+- Nie udzielaj porad poza tematem wykończenia
+- Nie obiecuj niemożliwych terminów bez konsultacji z szefem
+
+ROZPOCZĘCIE KONWERSACJI:
+Zawsze zaczynaj od powitania i pytania co klienta interesuje. Bądź ciepły!
 """
 
 @chatbot_bp.route('/chat', methods=['POST'])
@@ -134,20 +149,32 @@ def check_faq(message):
     """Sprawdź czy wiadomość dotyczy FAQ"""
     message_lower = message.lower()
     
-    if any(word in message_lower for word in ['jak długo', 'ile trwa', 'czas', 'termin']):
+    if any(word in message_lower for word in ['jak długo', 'ile trwa', 'czas', 'termin', 'ile czasu']):
         return FAQ['jak_dlugo_trwa']
     
-    if any(word in message_lower for word in ['materiały', 'cena obejmuje', 'co zawiera']):
+    if any(word in message_lower for word in ['materiały', 'cena obejmuje', 'co zawiera', 'co dostanę']):
         return FAQ['czy_wlaczone_materialy']
     
-    if any(word in message_lower for word in ['dostosować', 'zmienić', 'modyfikacja', 'elastyczny']):
+    if any(word in message_lower for word in ['dostosować', 'zmienić', 'modyfikacja', 'elastyczny', 'zmiana']):
         return FAQ['mozna_dostosowac']
     
     if 'gwarancja' in message_lower:
         return FAQ['gwarancja']
     
-    if any(word in message_lower for word in ['płatność', 'zapłata', 'koszt', 'ile kosztuje']):
-        return FAQ['platnosc']
+    if any(word in message_lower for word in ['płatność', 'zapłata', 'koszt', 'ile kosztuje', 'cena', 'wycena']):
+        return FAQ.get('ile_kosztuje', FAQ['platnosc'])
+    
+    if any(word in message_lower for word in ['produkt', 'materiały', 'wyposażenie', 'urządzenia']):
+        return FAQ.get('produkty', 'Mamy szeroką gamę produktów od standardowych do luksusowych marek.')
+    
+    if any(word in message_lower for word in ['etap', 'proces', 'przebieg', 'jak działacie']):
+        return FAQ.get('etapy', 'Nasz proces to: konsultacja → projekt → wycena → umowa → realizacja → odbiór.')
+    
+    if 'projekt' in message_lower and any(word in message_lower for word in ['potrzebny', 'czy', 'konieczny']):
+        return FAQ.get('czy_potrzebny_projekt', 'Projekt jest bardzo pomocny w pełnym zaplanowaniu budżetu.')
+    
+    if any(word in message_lower for word in ['smart', 'automatyka', 'inteligentny dom', 'automatyzacja']):
+        return FAQ.get('smart_home', 'Smart home jest dostępne w pakietach Premium i Luxury.')
     
     # Sprawdź pytania o konkretne pakiety
     if 'premium' in message_lower:
@@ -158,24 +185,28 @@ def check_faq(message):
         return get_package_description('luxury')
     
     # Pytania ogólne o pakiety
-    if any(word in message_lower for word in ['pakiety', 'oferta', 'jakie macie']):
+    if any(word in message_lower for word in ['pakiety', 'oferta', 'jakie macie', 'co oferujesz', 'co mają']):
         return get_all_packages_summary() + "\n\nO który pakiet chciałbyś dowiedzieć się więcej?"
     
-    message_lower = message.lower()
-    
-    greetings = ['cześć', 'dzień dobry', 'witam', 'hej', 'hello', 'siema']
+    # Powitania
+    greetings = ['cześć', 'dzień dobry', 'witam', 'hej', 'hello', 'siema', 'elo', 'co tam']
     if any(greeting in message_lower for greeting in greetings):
-        return "Cześć! Jestem asystentem NovaHouse. Pomagam w wyborze pakietu wykończeniowego. Oferujemy pakiety Standard, Premium i Luxury. O którym chciałbyś dowiedzieć się więcej?"
+        return "Cześć! 👋 Jestem asystentem NovaHouse. Pomagam w wyborze idealnego pakietu wykończeniowego. Jakie są Twoje potrzeby — remontujemy mieszkanie czy dom?"
     
-    return "Dziękuję za wiadomość! Oferujemy kompleksowe wykończenie mieszkań w trzech pakietach: Standard, Premium i Luxury. Czy mogę odpowiedzieć na jakieś konkretne pytanie?"
+    return None
 
 
 def get_default_response(message: str) -> str:
     """Fallback response when no FAQ or model answer is available."""
-    # Keep it simple and helpful; avoid making assertions about pricing or terms.
     return (
-        "Dziękuję za wiadomość! Jeśli chcesz, mogę przekazać informacje o naszych pakietach "
-        "(Standard, Premium, Luxury) lub przekierować do konsultanta. Czy chcesz zostawić dane kontaktowe?"
+        "Dziękuję za pytanie! 😊\n\n"
+        "Oferujemy kompleksowe wykończenie mieszkań w trzech pakietach: Standard, Premium i Luxury.\n\n"
+        "Chętnie odpowiem na Twoje pytania — możesz zapytać o:\n"
+        "• Cenę i budżet\n"
+        "• Dostępne materiały\n"
+        "• Czas realizacji\n"
+        "• Gwarancję i warunki\n\n"
+        "Lub jeśli wolisz — skontaktuj się z nami: +48 585 004 663"
     )
 
 @chatbot_bp.route('/history/<session_id>', methods=['GET'])

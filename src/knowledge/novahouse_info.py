@@ -2,6 +2,23 @@
 NovaHouse - Baza Wiedzy o Pakietach Wykończeniowych
 """
 
+# Godziny pracy
+BUSINESS_HOURS = {
+    "monday_friday": "09:00 - 17:00",
+    "saturday": "10:00 - 14:00",
+    "sunday": "zamknięte",
+    "timezone": "CET"
+}
+
+# Informacje kontaktowe
+CONTACT_INFO = {
+    "phone": "+48 585 004 663",
+    "email": "kontakt@novahouse.pl",
+    "website": "https://novahouse.pl",
+    "address": "Warszawa",
+    "nip": "Dostępna na wniosek"
+}
+
 PACKAGES = {
     "standard": {
         "name": "Pakiet Standard",
@@ -50,28 +67,47 @@ PACKAGES = {
 }
 
 FAQ = {
-    "jak_dlugo_trwa": "Standardowo wykończenie mieszkania 50-60m2 trwa od 6 do 12 tygodni, w zależności od wybranego pakietu i zakresu prac.",
-    "czy_wlaczone_materialy": "Tak, nasze pakiety są kompleksowe i zawierają zarówno robociznę jak i wszystkie niezbędne materiały.",
-    "mozna_dostosowac": "Oczywiście! Wszystkie pakiety są elastyczne. Możesz wymienić materiały, dodać dodatkowe elementy lub zmienić zakres prac.",
-    "gwarancja": "Tak, udzielamy 2-letniej gwarancji na wykonane prace oraz zgodnie z gwarancją producenta na materiały.",
-    "platnosc": "Płatność realizowana jest etapami - zaliczka 30%, kolejne transze po zakończeniu poszczególnych etapów prac, końcowe 10% po odbiorze."
+    "jak_dlugo_trwa": "Wykończenie mieszkania 50-60m² trwa zwykle 6-12 tygodni w zależności od pakietu i zakresu prac. W naszym harmonogramie postaramy się znaleźć Ci dogodny czas.",
+    "czy_wlaczone_materialy": "Tak, nasze pakiety zawierają zarówno robociznę jak i wszystkie materiały potrzebne do realizacji prac.",
+    "mozna_dostosowac": "Zdecydowanie! Wszystkie pakiety są elastyczne. Możesz wymienić materiały, dodać dodatkowe usługi lub zmienić zakres prac — dostosujemy ofertę do Twoich potrzeb.",
+    "gwarancja": "Udzielamy 2-letniej gwarancji na wykonane prace. Na materiały obowiązuje gwarancja producenta.",
+    "platnosc": "Płatności realizujemy etapowo: zaliczka 30%, kolejne transze po ukończeniu poszczególnych etapów, końcowe 10% po odbiorze prac.",
+    "ile_kosztuje": "Ceny zaczynają się od 949 zł/m² (pakiet Standard) do 1990 zł/m² (pakiet Luxury). Wycena indywidualna jest bezpłatna.",
+    "produkty": "Współpracujemy z najlepszymi producentami materiałów budowlanych. W zależności od pakietu oferujemy różne opcje — od standardowych do luksusowych marek.",
+    "etapy": "Współpraca z nami przebiega w kilku etapach: wstępna konsultacja, projekt, wycena, zawarcie umowy, realizacja, inspekcja, odbiór.",
+    "czy_potrzebny_projekt": "Dla pełnego zakresu prac rekomendujemy projekt indywidualny. Pozwoli Ci to w pełni kontrolować budżet i wynik końcowy.",
+    "smart_home": "Smart home jest dostępna w pakiecie Premium i Luxury. Możesz wybrać automatykę oświetlenia, temperatury lub bezpieczeństwa.",
 }
 
 COMPANY_INFO = """
-NovaHouse to firma specjalizująca się w kompleksowym wykończeniu mieszkań i domów.
-Oferujemy trzy pakiety wykończeniowe: Standard, Premium i Luxury.
+NovaHouse to profesjonalna firma specjalizująca się w kompleksowym wykończeniu mieszkań i domów w Warszawie.
 
-Nasze atuty:
-- Kompleksowa obsługa od A do Z
-- Doświadczony zespół fachowców
-- Materiały najwyższej jakości
-- Terminowość i rzetelność
-- 2 lata gwarancji na wykonane prace
-- Elastyczne formy płatności
+📊 O NAS:
+Oferujemy kompleksowe usługi wykończeniowe od A do Z. Nasz zespół ma wieloletnie doświadczenie w realizacji projektów dla wymagających klientów.
 
-Kontakt:
+✨ NASZE ATUTY:
+• Kompleksowa obsługa projektu od A do Z
+• Doświadczony zespół fachowców
+• Materiały najwyższej jakości
+• Terminowość i rzetelność
+• 2 lata gwarancji na wykonane prace
+• Elastyczne formy płatności
+• Indywidualne podejście do każdego projektu
+
+📞 KONTAKT:
+Telefon: +48 585 004 663
 Email: kontakt@novahouse.pl
-Telefon: +48 123 456 789
+Strona: https://novahouse.pl
+
+🕐 GODZINY PRACY:
+Poniedziałek - Piątek: 09:00 - 17:00
+Sobota: 10:00 - 14:00
+Niedziela: zamknięte
+
+💰 CENY ORIENTACYJNIE:
+Wykończenie szacujemy od 949 zł/m² do 1990 zł/m² (w zależności od pakietu i zakresu prac).
+
+Chętnie odpowiemy na wszystkie Twoje pytania. Zapraszamy do kontaktu!
 """
 
 def get_package_description(package_name):
