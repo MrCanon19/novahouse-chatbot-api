@@ -66,6 +66,39 @@ def list_backups():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@backup_routes.route('/api/backup/cleanup', methods=['POST'])
+@require_api_key
+def cleanup_old_backups():
+    """
+    Manually trigger cleanup of old backups
+    
+    Body:
+        {
+            "days_to_keep": 30  // Optional, default 30
+        }
+    
+    Returns:
+        JSON with cleanup results
+    """
+    try:
+        from src.services.backup_service import backup_service
+        
+        data = request.get_json() or {}
+        days_to_keep = data.get('days_to_keep', 30)
+        
+        # Clean up old backups
+        deleted_count = backup_service.cleanup_old_backups(days_to_keep=days_to_keep)
+        
+        return jsonify({
+            'success': True,
+            'message': f'Cleanup completed',
+            'deleted_count': deleted_count,
+            'days_kept': days_to_keep
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @backup_routes.route('/api/backup/download/<filename>', methods=['GET'])
 @require_api_key
 def download_backup(filename: str):
