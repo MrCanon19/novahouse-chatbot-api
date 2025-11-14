@@ -19,10 +19,13 @@ pip-delete-this-directory.txt
 *.sqlite
 *.sqlite3
 
-# Environment variables
+# Environment variables - CRITICAL SECURITY!
 .env
 .env.local
 .env.*.local
+.env.production
+secrets.json
+credentials.json
 
 # GCP & Backups
 backups/
@@ -48,6 +51,18 @@ Desktop.ini
 
 # Logs
 *.log
+logs/
+
+# Uploads (don't commit user files!)
+uploads/
+/tmp/
+*.tmp
+
+# Search index
+search_index/
+
+# Redis dumps
+dump.rdb
 logs/
 
 # Testing

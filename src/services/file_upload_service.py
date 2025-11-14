@@ -50,6 +50,25 @@ class FileUploadService:
         return '.' in filename and \
                filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
     
+    def validate_mime_type(self, file_bytes: bytes) -> bool:
+        """
+        SECURITY: Validate actual MIME type, not just extension
+        Prevents shell scripts disguised as images
+        """
+        try:
+            # Check magic bytes for real image format
+            if file_bytes[:4] == b'\x89PNG':
+                return True  # PNG
+            elif file_bytes[:3] == b'\xff\xd8\xff':
+                return True  # JPEG
+            elif file_bytes[:6] in (b'GIF87a', b'GIF89a'):
+                return True  # GIF
+            elif file_bytes[:4] == b'RIFF' and file_bytes[8:12] == b'WEBP':
+                return True  # WEBP
+            return False
+        except:
+            return False
+    
     def generate_filename(self, original_filename: str, prefix: str = '') -> str:
         """Generate unique filename with timestamp and hash"""
         ext = original_filename.rsplit('.', 1)[1].lower()
@@ -138,6 +157,18 @@ class FileUploadService:
             dict with URLs for each variant
         """
         try:
+            # SECURITY: Validate file extension
+            if not self.allowed_file(filename):
+                raise ValueError(f"File type not allowed. Allowed: {ALLOWED_EXTENSIONS}")
+            
+            # SECURITY: Validate actual MIME type (prevent disguised files)
+            if not self.validate_mime_type(file_bytes):
+                raise ValueError("Invalid image file. File content does not match image format.")
+            
+            # SECURITY: Check file size
+            if len(file_bytes) > MAX_FILE_SIZE:
+                raise ValueError(f"File too large. Maximum size: {MAX_FILE_SIZE / 1024 / 1024}MB")
+            
             # Generate unique filename
             secure_name = secure_filename(filename)
             unique_filename = self.generate_filename(secure_name, prefix=folder)

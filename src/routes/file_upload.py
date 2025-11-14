@@ -9,7 +9,23 @@ from werkzeug.utils import secure_filename
 
 file_upload_routes = Blueprint('file_upload_routes', __name__)
 
+# Rate limiting decorator
+def rate_limit_upload(f):
+    """Rate limit: 10 uploads per minute"""
+    from functools import wraps
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        try:
+            from src.services.redis_rate_limiter import rate_limit_redis
+            # Apply 10 uploads/min limit
+            return rate_limit_redis(limit=10, window=60)(f)(*args, **kwargs)
+        except:
+            # Fallback: no rate limiting if Redis unavailable
+            return f(*args, **kwargs)
+    return decorated_function
+
 @file_upload_routes.route('/api/upload/image', methods=['POST'])
+@rate_limit_upload
 def upload_image():
     """
     Upload and optimize image
@@ -60,6 +76,7 @@ def upload_image():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @file_upload_routes.route('/api/upload/multiple', methods=['POST'])
+@rate_limit_upload
 def upload_multiple_images():
     """
     Upload multiple images

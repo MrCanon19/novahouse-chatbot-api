@@ -10,7 +10,13 @@ from src.models.chatbot import db
 
 # KROK 2: Tworzymy główną instancję aplikacji Flask.
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), 'static'))
-app.config['SECRET_KEY'] = 'asdf#FGSgvasgf$5$WGT'
+
+# SECURITY: Secret key from environment (NEVER hardcode!)
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-change-in-production-' + os.urandom(24).hex())
+
+# SECURITY: File upload limits
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max request size
+app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER', '/tmp/uploads')
 
 # Włączenie CORS dla wszystkich endpointów.
 CORS(app)
@@ -92,6 +98,86 @@ with app.app_context():
         print("✅ Automated backup scheduled")
     except Exception as e:
         print(f"⚠️  Backup scheduling skipped: {e}")
+
+# ═══════════════════════════════════════════════════════════════
+# GLOBAL ERROR HANDLERS
+# ═══════════════════════════════════════════════════════════════
+
+@app.errorhandler(413)
+def request_entity_too_large(error):
+    """File too large"""
+    return {'error': 'File too large. Maximum size is 50MB.'}, 413
+
+@app.errorhandler(404)
+def not_found(error):
+    """Page not found"""
+    return {'error': 'Resource not found'}, 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    """Internal server error - hide details in production"""
+    if os.getenv('FLASK_ENV') == 'production':
+        return {'error': 'Internal server error'}, 500
+    else:
+        return {'error': 'Internal server error', 'details': str(error)}, 500
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    """Catch-all for unhandled exceptions"""
+    import traceback
+    print(f"❌ Unhandled exception: {e}")
+    if os.getenv('FLASK_ENV') != 'production':
+        traceback.print_exc()
+    return {'error': 'An unexpected error occurred'}, 500
+
+# ═══════════════════════════════════════════════════════════════
+# ENHANCED HEALTH CHECK
+# ═══════════════════════════════════════════════════════════════
+
+@app.route('/api/health/deep', methods=['GET'])
+def deep_health_check():
+    """Deep health check with all dependencies"""
+    status = {
+        'status': 'healthy',
+        'timestamp': __import__('datetime').datetime.now(__import__('datetime').timezone.utc).isoformat(),
+        'checks': {}
+    }
+    
+    # Check database
+    try:
+        from src.database import db
+        db.session.execute(__import__('sqlalchemy').text('SELECT 1'))
+        status['checks']['database'] = 'ok'
+    except Exception as e:
+        status['checks']['database'] = f'error: {str(e)}'
+        status['status'] = 'degraded'
+    
+    # Check Redis
+    try:
+        from src.services.redis_service import redis_cache
+        redis_cache.set('health_check', 'ok', ttl=10)
+        status['checks']['redis'] = 'ok' if redis_cache.get('health_check') == 'ok' else 'fallback'
+    except Exception as e:
+        status['checks']['redis'] = 'fallback (in-memory)'
+    
+    # Check Search index
+    try:
+        from src.services.search_service import search_service
+        stats = search_service.get_stats()
+        status['checks']['search'] = f"ok ({stats.get('total_documents', 0)} docs)"
+    except Exception as e:
+        status['checks']['search'] = f'error: {str(e)}'
+        status['status'] = 'degraded'
+    
+    # Check WebSocket
+    try:
+        from src.services.websocket_service import get_active_connections_count
+        count = get_active_connections_count()
+        status['checks']['websocket'] = f'ok ({count} active)'
+    except Exception as e:
+        status['checks']['websocket'] = f'error: {str(e)}'
+    
+    return status, 200 if status['status'] == 'healthy' else 503
 
 # Reszta kodu do serwowania plików statycznych pozostaje bez zmian.
 @app.route('/admin')
