@@ -44,6 +44,30 @@
                         <button id="novahouse-close" class="novahouse-close">×</button>
                     </div>
                     
+                    <!-- Stats Banner -->
+                    <div class="novahouse-stats">
+                        <div class="stat-item">
+                            <span class="stat-value">30+</span>
+                            <span class="stat-label">projektów</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value">95%</span>
+                            <span class="stat-label">zadowolonych</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value">94%</span>
+                            <span class="stat-label">przed terminem</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Actions -->
+                    <div class="novahouse-quick-actions">
+                        <button class="quick-action" data-action="portfolio">📸 Realizacje</button>
+                        <button class="quick-action" data-action="process">🔧 Jak działamy</button>
+                        <button class="quick-action" data-action="price">💰 Cennik</button>
+                        <button class="quick-action" data-action="contact">📞 Kontakt</button>
+                    </div>
+                    
                     <!-- Messages -->
                     <div id="novahouse-messages" class="novahouse-messages">
                         <div class="novahouse-message bot">
@@ -143,6 +167,65 @@
                 margin: 0;
                 font-size: 18px;
                 font-weight: 600;
+            }
+            
+            .novahouse-stats {
+                display: flex;
+                justify-content: space-around;
+                padding: 12px 16px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                gap: 8px;
+            }
+            
+            .stat-item {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 4px;
+            }
+            
+            .stat-value {
+                font-size: 18px;
+                font-weight: 700;
+                line-height: 1;
+            }
+            
+            .stat-label {
+                font-size: 11px;
+                opacity: 0.9;
+                text-align: center;
+            }
+            
+            .novahouse-quick-actions {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+                padding: 12px 16px;
+                background: #f9fafb;
+                border-bottom: 1px solid #e0e0e0;
+            }
+            
+            .quick-action {
+                padding: 10px 12px;
+                background: white;
+                border: 1px solid #e0e0e0;
+                border-radius: 8px;
+                font-size: 13px;
+                cursor: pointer;
+                transition: all 0.2s;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+                font-weight: 500;
+            }
+            
+            .quick-action:hover {
+                background: ${WIDGET_CONFIG.primaryColor};
+                color: white;
+                border-color: ${WIDGET_CONFIG.primaryColor};
+                transform: translateY(-1px);
             }
             
             .novahouse-close {
@@ -260,6 +343,28 @@
         input.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') sendMessage();
         });
+        
+        // Quick actions
+        document.querySelectorAll('.quick-action').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const action = e.target.dataset.action || e.target.closest('.quick-action').dataset.action;
+                handleQuickAction(action);
+            });
+        });
+    }
+    
+    // Handle quick actions
+    function handleQuickAction(action) {
+        const messages = {
+            'portfolio': 'Pokaż mi wasze realizacje',
+            'process': 'Jak wygląda proces realizacji?',
+            'price': 'Ile kosztuje wykończenie?',
+            'contact': 'Jak mogę się z wami skontaktować?'
+        };
+        
+        const input = document.getElementById('novahouse-input');
+        input.value = messages[action] || '';
+        sendMessage();
     }
     
     // Toggle chat window
