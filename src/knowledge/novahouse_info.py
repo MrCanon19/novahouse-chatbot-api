@@ -180,35 +180,51 @@ QUALIFICATION_QUESTIONS = [
     },
     {
         "id": 5,
-        "question": "Czy planujesz automatykę domową (smart home)?",
-        "type": "boolean",
-        "weight": 10,
+        "question": "Jaki jest typ Twojej nieruchomości?",
+        "type": "choice",
+        "options": ["Mieszkanie", "Dom", "Apartamentowiec", "Powierzchnia komercyjna"],
+        "weight": 8,
+        "data_field": "property_type",
         "scoring": {
-            "tak": {"points": 10, "package": "premium"},
-            "nie": {"points": 5, "package": "standard"}
+            "Mieszkanie": {"points": 5, "package": "standard"},
+            "Dom": {"points": 10, "package": "premium"},
+            "Apartamentowiec": {"points": 8, "package": "premium"},
+            "Powierzchnia komercyjna": {"points": 12, "package": "luxury"}
         }
     },
     {
         "id": 6,
-        "question": "Czy potrzebujesz indywidualnego projektu wnętrz?",
+        "question": "Jaki styl wnętrz Ciebie przyciąga?",
+        "type": "choice",
+        "options": ["Minimalistyczny", "Nowoczesny", "Klasyczny", "Industrial", "Skandynawski"],
+        "weight": 7,
+        "data_field": "interior_style",
+        "scoring": {
+            "Minimalistyczny": {"points": 8, "package": "premium"},
+            "Nowoczesny": {"points": 10, "package": "premium"},
+            "Klasyczny": {"points": 6, "package": "standard"},
+            "Industrial": {"points": 10, "package": "premium"},
+            "Skandynawski": {"points": 9, "package": "premium"}
+        }
+    },
+    {
+        "id": 7,
+        "question": "Czy chcesz integrację smart home?",
         "type": "boolean",
-        "weight": 15,
+        "weight": 12,
         "scoring": {
             "tak": {"points": 15, "package": "luxury"},
             "nie": {"points": 5, "package": "standard"}
         }
     },
     {
-        "id": 7,
-        "question": "Jakie są Twoje priorytety?",
-        "type": "choice",
-        "options": ["Cena", "Jakość", "Czas realizacji", "Ekskluzywność"],
-        "weight": 15,
+        "id": 8,
+        "question": "Czy jesteś zainteresowany konsultacją z naszym designerem?",
+        "type": "boolean",
+        "weight": 5,
         "scoring": {
-            "Cena": {"points": 5, "package": "standard"},
-            "Jakość": {"points": 10, "package": "premium"},
-            "Czas realizacji": {"points": 8, "package": "standard"},
-            "Ekskluzywność": {"points": 15, "package": "luxury"}
+            "tak": {"points": 10, "package": "premium"},
+            "nie": {"points": 3, "package": "standard"}
         }
     }
 ]

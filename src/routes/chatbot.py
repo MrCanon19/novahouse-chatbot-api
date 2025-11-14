@@ -463,3 +463,49 @@ def export_user_data(session_id):
         return jsonify(result), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+@chatbot_bp.route('/monday-test', methods=['POST'])
+def monday_test():
+    """Test Monday.com connection and create test item"""
+    # Admin key check
+    auth_error = _check_admin_key()
+    if auth_error:
+        return auth_error
+    
+    try:
+        from src.integrations.monday_client import MondayClient
+        
+        monday = MondayClient()
+        
+        # Test connection
+        if not monday.test_connection():
+            return jsonify({'error': 'Failed to connect to Monday.com'}), 500
+        
+        # Create test item
+        test_data = {
+            'name': 'Test Lead - Novahouse Chatbot',
+            'email': 'test@novahouse.pl',
+            'phone': '123456789',
+            'message': 'Test integration from chatbot',
+            'recommended_package': 'premium',
+            'confidence_score': 90.0,
+            'property_type': 'Dom',
+            'budget': '150000',
+            'interior_style': 'Nowoczesny'
+        }
+        
+        item_id = monday.create_lead_item(test_data)
+        
+        if not item_id:
+            return jsonify({'error': 'Failed to create test item'}), 500
+        
+        return jsonify({
+            'message': 'Monday.com connection successful',
+            'test_item_id': item_id,
+            'api_key_set': bool(monday.api_key),
+            'board_id_set': bool(monday.board_id)
+        }), 200
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
