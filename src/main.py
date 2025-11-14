@@ -18,8 +18,18 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-change-in-product
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max request size
 app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER', '/tmp/uploads')
 
-# Włączenie CORS dla wszystkich endpointów.
-CORS(app)
+# CORS Configuration
+# Production: Restrict to your domain
+# Development: Allow all for testing
+if os.getenv('FLASK_ENV') == 'production':
+    CORS(app, origins=[
+        'https://novahouse.pl',
+        'https://www.novahouse.pl',
+        'https://glass-core-467907-e9.ey.r.appspot.com'
+    ])
+else:
+    # Development mode - allow all
+    CORS(app)
 
 # Initialize WebSocket support (v2.3)
 from src.services.websocket_service import socketio
