@@ -15,9 +15,17 @@ class BackupService:
     """Automated backup and data export"""
     
     def __init__(self):
-        self.backup_dir = os.path.join(
-            os.path.dirname(__file__), '..', '..', 'backups', 'automated'
-        )
+        # Use /tmp for App Engine (only writable directory)
+        # In production, backups should be moved to Google Cloud Storage
+        if os.environ.get('GAE_ENV', '').startswith('standard'):
+            # Running on App Engine - use /tmp
+            self.backup_dir = '/tmp/backups'
+        else:
+            # Local development - use project directory
+            self.backup_dir = os.path.join(
+                os.path.dirname(__file__), '..', '..', 'backups', 'automated'
+            )
+        
         os.makedirs(self.backup_dir, exist_ok=True)
     
     def export_all_data(self, format: str = 'json') -> str:
