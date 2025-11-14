@@ -71,6 +71,25 @@ class MondayClient:
         if lead_data.get('message'):
             column_values['text'] = lead_data['message']
         
+        # Kwalifikacja - jeśli dostępne
+        if lead_data.get('recommended_package'):
+            column_values['package'] = lead_data.get('recommended_package')
+        
+        if lead_data.get('confidence_score'):
+            column_values['confidence'] = str(lead_data.get('confidence_score'))
+        
+        if lead_data.get('property_type'):
+            column_values['property_type'] = lead_data.get('property_type')
+        
+        if lead_data.get('budget'):
+            column_values['budget'] = lead_data.get('budget')
+        
+        if lead_data.get('interior_style'):
+            column_values['interior_style'] = lead_data.get('interior_style')
+        
+        # Status - domyślnie "Nowy Lead"
+        column_values['status'] = 'New Lead'
+        
         mutation = """
         mutation ($boardId: ID!, $itemName: String!, $columnValues: JSON!) {
             create_item (
@@ -102,6 +121,20 @@ class MondayClient:
             return item_id
         
         return None
+    
+    def create_lead_item_with_qualification(self, lead_data: Dict, qualification_result: Dict) -> Optional[str]:
+        """Create a lead item with qualification data from questionnaire"""
+        
+        enriched_data = {
+            **lead_data,
+            'recommended_package': qualification_result.get('recommended_package'),
+            'confidence_score': qualification_result.get('confidence', 0),
+            'property_type': qualification_result.get('property_type'),
+            'budget': qualification_result.get('budget'),
+            'interior_style': qualification_result.get('interior_style'),
+        }
+        
+        return self.create_lead_item(enriched_data)
     
     def test_connection(self) -> bool:
         """Test connection to Monday.com API"""

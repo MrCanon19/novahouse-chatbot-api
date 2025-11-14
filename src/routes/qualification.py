@@ -87,6 +87,7 @@ def submit_qualification():
     
     answers = data['answers']
     contact_info = data.get('contact_info', {})
+    qualification_data = data.get('qualification_data', {})
     
     recommendation = calculate_recommendation(answers)
     
@@ -109,19 +110,30 @@ def submit_qualification():
             db.session.commit()
             lead_id = lead.id
             
-            # Sync z Monday.com
+            # Sync z Monday.com - z danymi kwalifikacji
             try:
                 from src.integrations.monday_client import MondayClient
                 monday = MondayClient()
-                monday_item_id = monday.create_lead_item({
+                
+                # Przygotuj dane dla Monday z kwalifikacją
+                monday_lead_data = {
                     'name': lead.name,
                     'email': lead.email,
                     'phone': lead.phone,
-                    'message': lead.message
-                })
+                    'message': lead.message,
+                    'recommended_package': recommendation['recommended_package'],
+                    'confidence_score': recommendation['confidence'],
+                    'property_type': qualification_data.get('property_type'),
+                    'budget': qualification_data.get('budget'),
+                    'interior_style': qualification_data.get('interior_style'),
+                }
+                
+                monday_item_id = monday.create_lead_item(monday_lead_data)
+                
                 if monday_item_id:
                     lead.monday_item_id = monday_item_id
                     db.session.commit()
+                    print(f"Lead synced to Monday: {monday_item_id}")
             except Exception as e:
                 print(f"Monday.com sync error: {e}")
         
