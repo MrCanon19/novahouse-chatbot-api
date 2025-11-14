@@ -1,5 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 
 db = SQLAlchemy()
@@ -12,8 +12,8 @@ class Intent(db.Model):
     name = db.Column(db.String(100), unique=True, nullable=False)
     training_phrases = db.Column(db.Text, nullable=False)  # JSON string
     response_templates = db.Column(db.Text, nullable=False)  # JSON string
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
     def to_dict(self):
         return {
@@ -32,8 +32,8 @@ class Entity(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True, nullable=False)
     values = db.Column(db.Text, nullable=False)  # JSON string
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
     def to_dict(self):
         return {
@@ -54,7 +54,7 @@ class Conversation(db.Model):
     bot_response = db.Column(db.Text, nullable=False)
     intent = db.Column(db.String(100))
     entities = db.Column(db.Text)  # JSON string
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     
     def to_dict(self):
         return {
@@ -86,8 +86,8 @@ class Lead(db.Model):
     status = db.Column(db.String(50), default='new')
     notes = db.Column(db.Text)
     monday_item_id = db.Column(db.String(100))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
     def to_dict(self):
         return {
@@ -153,4 +153,28 @@ class RodoConsent(db.Model):
             'consent_given': self.consent_given,
             'consent_date': self.consent_date.isoformat() if self.consent_date else None,
             'ip_address': self.ip_address
+        }
+
+
+class AuditLog(db.Model):
+    """Simple audit log for admin actions (exports, deletions)."""
+    __tablename__ = 'audit_logs'
+
+    id = db.Column(db.Integer, primary_key=True)
+    action = db.Column(db.String(100), nullable=False)  # e.g. 'export', 'delete'
+    session_id = db.Column(db.String(100))
+    admin_user = db.Column(db.String(100))
+    ip_address = db.Column(db.String(50))
+    details = db.Column(db.Text)
+    timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'action': self.action,
+            'session_id': self.session_id,
+            'admin_user': self.admin_user,
+            'ip_address': self.ip_address,
+            'details': self.details,
+            'timestamp': self.timestamp.isoformat() if self.timestamp else None
         }
