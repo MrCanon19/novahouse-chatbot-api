@@ -8,19 +8,19 @@
 
 # 🚀 Produkcja
 
-## Deployment Info
+## Informacje o Wdrożeniu
 
 | Parametr | Wartość |
 |----------|---------|
 | **URL** | https://glass-core-467907-e9.ey.r.appspot.com |
-| **Version** | `20251114t152707` (SERVING) |
-| **Traffic** | 100% |
-| **Instance** | F2 (512 MB RAM, 1.2 GHz CPU) |
+| **Wersja** | `20251114t152707` (AKTYWNA) |
+| **Ruch** | 100% |
+| **Instancja** | F2 (512 MB RAM, 1.2 GHz CPU) |
 | **Region** | europe-west3 |
-| **Platform** | Google App Engine (Python 3.11) |
-| **Last Deploy** | 2025-11-14 15:27:50 |
+| **Platforma** | Google App Engine (Python 3.11) |
+| **Ostatnie Wdrożenie** | 2025-11-14 15:27:50 |
 
-## Health Status
+## Status Zdrowia
 
 ```bash
 curl https://glass-core-467907-e9.ey.r.appspot.com/api/health
@@ -39,29 +39,29 @@ curl https://glass-core-467907-e9.ey.r.appspot.com/api/health
 
 # 📦 Funkcjonalności
 
-## Core Features (v1.0 - v2.2)
+## Podstawowe Funkcje (v1.0 - v2.2)
 
 - ✅ **17+ FAQ** - Inteligentne odpowiedzi
-- ✅ **Email notifications** - Lead & booking confirmations
-- ✅ **Advanced Analytics** - Szczegółowe statystyki
-- ✅ **A/B Testing** - Optymalizacja konwersji
-- ✅ **Multi-language** - PL/EN/DE
-- ✅ **Admin Dashboard** - Zarządzanie leadami
-- ✅ **Lead Management** - Filtrowanie, CSV export, bulk operations
-- ✅ **9 Knowledge API** - Portfolio, reviews, partners, FAQ
-- ✅ **Session Management** - Tracking konwersacji
-- ✅ **Swagger Docs** - API documentation
-- ✅ **Health Monitoring** - Uptime tracking
+- ✅ **Powiadomienia Email** - Potwierdzenia leadów i rezerwacji
+- ✅ **Zaawansowana Analityka** - Szczegółowe statystyki
+- ✅ **Testy A/B** - Optymalizacja konwersji
+- ✅ **Wielojęzyczność** - PL/EN/DE
+- ✅ **Panel Administracyjny** - Zarządzanie leadami
+- ✅ **Zarządzanie Leadami** - Filtrowanie, eksport CSV, operacje masowe
+- ✅ **9 Endpointów Wiedzy** - Portfolio, opinie, partnerzy, FAQ
+- ✅ **Zarządzanie Sesjami** - Śledzenie konwersacji
+- ✅ **Dokumentacja Swagger** - Dokumentacja API
+- ✅ **Monitoring Zdrowia** - Monitorowanie czasu pracy
 
-## v2.3 Features 🎉
+## Funkcje v2.3 🎉
 
-- ✅ **Redis Integration** - Production-ready caching & rate limiting
-- ✅ **WebSocket Support** - Real-time chat & live dashboard
-- ✅ **File Upload & Optimization** - Multi-size variants + GCS
-- ✅ **Appointment Reminders** - SMS (Twilio) + Email
-- ✅ **Advanced Search** - Whoosh full-text search (33 documents indexed)
-- ✅ **Dashboard Widgets** - 8 real-time widgets
-- ✅ **Backup & Export** - Automated daily backups + RODO compliance
+- ✅ **Integracja Redis** - Cachowanie i limitowanie żądań gotowe na produkcję
+- ✅ **Wsparcie WebSocket** - Czat w czasie rzeczywistym i live dashboard
+- ✅ **Upload i Optymalizacja Plików** - Wiele rozmiarów + GCS
+- ✅ **Przypomnienia o Spotkaniach** - SMS (Twilio) + Email
+- ✅ **Zaawansowane Wyszukiwanie** - Whoosh full-text (33 dokumenty zaindeksowane)
+- ✅ **Widgety Dashboard** - 8 widgetów w czasie rzeczywistym
+- ✅ **Backup i Export** - Automatyczne codzienne backupy + zgodność RODO
 
 ## Latest Updates (Today) 🆕
 
@@ -76,22 +76,22 @@ curl https://glass-core-467907-e9.ey.r.appspot.com/api/health
 
 # 🏗️ Architektura
 
-## Tech Stack
+## Stos Technologiczny
 
 | Komponent | Technologia |
 |-----------|-------------|
-| **Backend** | Python 3.13.5 (local) / 3.11 (production) |
+| **Backend** | Python 3.13.5 (lokalnie) / 3.11 (produkcja) |
 | **Framework** | Flask 3.1.1 |
-| **Database** | PostgreSQL 15 (Cloud SQL) |
+| **Baza Danych** | PostgreSQL 15 (Cloud SQL) |
 | **ORM** | SQLAlchemy 2.0.44 |
-| **Cache** | Redis 5.0.1 (with in-memory fallback) |
-| **Search** | Whoosh 2.7.4 (full-text) |
-| **Real-time** | Flask-SocketIO 5.3.6 + eventlet 0.37.0 |
-| **Storage** | Google Cloud Storage |
-| **Scheduler** | APScheduler 3.10.4 |
-| **Server** | Gunicorn 21.2.0 (5 workers) |
+| **Cache** | Redis 5.0.1 (z fallbackiem in-memory) |
+| **Wyszukiwanie** | Whoosh 2.7.4 (pełnotekstowe) |
+| **Czas Rzeczywisty** | Flask-SocketIO 5.3.6 + eventlet 0.37.0 |
+| **Przechowywanie** | Google Cloud Storage |
+| **Harmonogramowanie** | APScheduler 3.10.4 |
+| **Serwer** | Gunicorn 21.2.0 (5 workerów) |
 
-## Dependencies (27 total)
+## Zależności (27 całkowicie)
 
 ```python
 Flask==3.1.1
@@ -111,7 +111,7 @@ requests==2.31.0
 # + 13 more
 ```
 
-## Project Structure
+## Struktura Projektu
 
 ```
 📦 novahouse-chatbot-api/
@@ -130,23 +130,23 @@ requests==2.31.0
 └── 📚 Documentation (25+ MD files)
 ```
 
-## Statistics
+## Statystyki
 
 | Metryka | Wartość |
 |---------|---------|
-| **Python files** | 48 |
-| **Lines of code** | 9,590 |
-| **Route modules** | 17 |
-| **Service modules** | 12 |
-| **Data models** | 4 |
+| **Pliki Python** | 48 |
+| **Linii kodu** | 9,590 |
+| **Moduły tras** | 17 |
+| **Moduły serwisów** | 12 |
+| **Modele danych** | 4 |
 
 ---
 
 # 🔌 API Endpoints
 
-## Public Endpoints (No API Key)
+## Endpointy Publiczne (Bez Klucza API)
 
-### Health & Status
+### Zdrowie i Status
 ```bash
 GET /api/health
 ```
@@ -158,7 +158,7 @@ GET /api/search/suggest?q=wykoń
 GET /api/search/stats
 ```
 
-### Dashboard Widgets
+### Widgety Dashboardu
 ```bash
 GET /api/widgets/metrics/summary
 GET /api/widgets/metrics/timeline?days=7
@@ -169,7 +169,7 @@ GET /api/widgets/response/times?hours=24
 GET /api/widgets/satisfaction/scores?days=30
 ```
 
-### Documentation
+### Dokumentacja
 ```bash
 GET /api/docs           # Swagger UI
 GET /api/docs/spec      # OpenAPI
@@ -183,11 +183,11 @@ POST /api/rodo/delete
 POST /api/rodo/consent/check
 ```
 
-## Protected Endpoints (Require API Key)
+## Endpointy Chronione (Wymagają Klucza API)
 
-> **API Key Required:** `-H "X-API-Key: V=iqRX16Zlp2TE+Hpz9pnT42it-L75SB"`
+> **Wymagany Klucz API:** `-H "X-API-Key: V=iqRX16Zlp2TE+Hpz9pnT42it-L75SB"`
 
-### Backup & Export
+### Backup i Export
 ```bash
 GET  /api/backup/list
 POST /api/backup/export
@@ -195,40 +195,40 @@ POST /api/backup/cleanup        # ⭐ NEW
 GET  /api/backup/download/<filename>
 ```
 
-### File Upload
+### Upload Plików
 ```bash
 POST /api/upload/image
 POST /api/upload/multiple
 POST /api/upload/delete
 ```
 
-### Search Management
+### Zarządzanie Wyszukiwaniem
 ```bash
 POST /api/search/reindex
 ```
 
-### Custom Widgets
+### Własne Widgety
 ```bash
 POST /api/widgets/custom
 ```
 
 ---
 
-# 🔄 Backup System
+# 🔄 System Backupów
 
-## Automated Backups
+## Automatyczne Backupy
 
 | Parametr | Wartość |
 |----------|---------|
-| **Schedule** | Daily at 3:00 AM (server time) |
+| **Harmonogram** | Codziennie o 3:00 (czas serwera) |
 | **Format** | JSON |
-| **Location** | `/tmp/backups` (App Engine) or `backups/automated/` (local) |
-| **Retention** | 30 days (automatic cleanup) |
-| **Content** | Users, sessions, messages, leads, bookings, analytics |
+| **Lokalizacja** | `/tmp/backups` (App Engine) lub `backups/automated/` (lokalnie) |
+| **Retencja** | 30 dni (automatyczne czyszczenie) |
+| **Zawartość** | Użytkownicy, sesje, wiadomości, leady, rezerwacje, analityka |
 
-## Manual Operations
+## Operacje Manualne
 
-### Create Backup
+### Tworzenie Backupu
 ```bash
 curl -X POST https://glass-core-467907-e9.ey.r.appspot.com/api/backup/export \
   -H "X-API-Key: V=iqRX16Zlp2TE+Hpz9pnT42it-L75SB" \
@@ -236,13 +236,13 @@ curl -X POST https://glass-core-467907-e9.ey.r.appspot.com/api/backup/export \
   -d '{"format": "json"}'
 ```
 
-### List Backups
+### Lista Backupów
 ```bash
 curl https://glass-core-467907-e9.ey.r.appspot.com/api/backup/list \
   -H "X-API-Key: V=iqRX16Zlp2TE+Hpz9pnT42it-L75SB"
 ```
 
-### Cleanup Old Backups
+### Czyszczenie Starych Backupów
 ```bash
 curl -X POST https://glass-core-467907-e9.ey.r.appspot.com/api/backup/cleanup \
   -H "X-API-Key: V=iqRX16Zlp2TE+Hpz9pnT42it-L75SB" \
@@ -252,30 +252,30 @@ curl -X POST https://glass-core-467907-e9.ey.r.appspot.com/api/backup/cleanup \
 
 ---
 
-# 🔐 Security
+# 🔐 Bezpieczeństwo
 
-## Credentials
+## Dane Uwierzytelniające
 
-> **⚠️ LOCAL ONLY - Never Committed**
-> Stored in: `app.yaml.secret` (in .gitignore)
+> **⚠️ TYLKO LOKALNIE - Nigdy Nie Commitowane**
+> Przechowywane w: `app.yaml.secret` (w .gitignore)
 
-| Credential | Value (do not share publicly!) |
+| Dane | Wartość (nie udostępniaj publicznie!) |
 |------------|-------------------------------|
 | **SECRET_KEY** | `2e2abf938bb057c9dea1515ec726a2ab4fc378399596e3309b1e310c4e3ff489` |
 | **API_KEY** | `V=iqRX16Zlp2TE+Hpz9pnT42it-L75SB` |
 | **PostgreSQL** | `vicNRNoO3TpLZzQ_BkAVbz886dW_J0Yo` |
 
-## Security Features
+## Funkcje Bezpieczeństwa
 
-- ✅ All secrets in `.gitignore`
-- ✅ API Key protection on admin endpoints
-- ✅ CORS configured for production
-- ✅ Rate limiting via Redis
-- ✅ RODO compliance (export, delete, consent)
-- ✅ SQL injection protection (SQLAlchemy ORM)
-- ✅ XSS protection (Flask auto-escaping)
+- ✅ Wszystkie sekrety w `.gitignore`
+- ✅ Ochrona kluczem API endpointów administracyjnych
+- ✅ CORS skonfigurowany dla produkcji
+- ✅ Limitowanie żądań przez Redis
+- ✅ Zgodność z RODO (eksport, usuwanie, zgoda)
+- ✅ Ochrona przed SQL injection (SQLAlchemy ORM)
+- ✅ Ochrona przed XSS (automatyczne escapowanie Flask)
 
-## Protected Resources
+## Chronione Zasoby
 
 ```
 ✅ /api/backup/* (except /list)
@@ -288,7 +288,7 @@ curl -X POST https://glass-core-467907-e9.ey.r.appspot.com/api/backup/cleanup \
 
 # 📚 Documentation
 
-## Setup & Deployment
+## Instalacja i Wdrożenie
 
 - `README.md` - Główna dokumentacja
 - `QUICK_START_V2.3.md` - Szybki start (v2.3)
@@ -296,7 +296,7 @@ curl -X POST https://glass-core-467907-e9.ey.r.appspot.com/api/backup/cleanup \
 - `DEPLOYMENT_SUCCESS_20251114.md` - Ostatnie wdrożenie
 - `PRODUKCJA_GOTOWA.md` - Przewodnik produkcyjny
 
-## Features & Implementation
+## Funkcje i Implementacja
 
 - `IMPLEMENTATION_COMPLETE_V2.3.md` - Implementacja v2.3
 - `RELEASE_NOTES_V2.3.md` - Release notes
@@ -306,7 +306,7 @@ curl -X POST https://glass-core-467907-e9.ey.r.appspot.com/api/backup/cleanup \
 - `MONDAY_INTEGRATION.md` - Monday.com
 - `BOOKSY_INTEGRATION.md` - Booksy
 
-## Security & Compliance
+## Bezpieczeństwo i Zgodność
 
 - `SECURITY.md` - Bezpieczeństwo
 - `RODO_IMPLEMENTATION.md` - RODO compliance
@@ -314,7 +314,7 @@ curl -X POST https://glass-core-467907-e9.ey.r.appspot.com/api/backup/cleanup \
 - `ROTATE_CREDENTIALS.md` - Rotacja credentials
 - `DEPLOY_SECRETS.md` - Deploy secrets guide
 
-## Testing & Audit
+## Testowanie i Audyt
 
 - `FINAL_AUDIT_COMPLETE.md` - Kompletny audyt
 - `RODO_TEST_RESULTS.md` - Testy RODO
@@ -322,9 +322,9 @@ curl -X POST https://glass-core-467907-e9.ey.r.appspot.com/api/backup/cleanup \
 
 ---
 
-# 🔧 Configuration
+# 🔧 Konfiguracja
 
-## Environment Variables (Production)
+## Zmienne Środowiskowe (Produkcja)
 
 ```yaml
 FLASK_ENV: production
@@ -337,7 +337,7 @@ REDIS_URL: redis://localhost:6379
 ALLOWED_ORIGINS: https://novahouse.pl,https://www.novahouse.pl
 ```
 
-## App Engine Config
+## Konfiguracja App Engine
 
 ```yaml
 runtime: python311
@@ -357,9 +357,9 @@ handlers:
 
 ---
 
-# 🧪 Testing
+# 🧪 Testowanie
 
-## Quick Tests
+## Szybkie Testy
 
 ```bash
 # Health check
@@ -376,7 +376,7 @@ curl https://glass-core-467907-e9.ey.r.appspot.com/api/backup/list \
   -H "X-API-Key: V=iqRX16Zlp2TE+Hpz9pnT42it-L75SB"
 ```
 
-## Local Development
+## Rozwój Lokalny
 
 ```bash
 # Install dependencies
@@ -393,9 +393,9 @@ pytest tests/
 
 ---
 
-# 📈 Monitoring
+# 📈 Monitorowanie
 
-## Cloud Console Commands
+## Komendy Cloud Console
 
 ```bash
 # View logs
@@ -408,7 +408,7 @@ gcloud app versions list --service=default --project=glass-core-467907-e9
 gcloud app describe --project=glass-core-467907-e9
 ```
 
-## Metrics
+## Metryki
 
 | Metryka | Wartość |
 |---------|---------|
@@ -420,9 +420,9 @@ gcloud app describe --project=glass-core-467907-e9
 
 ---
 
-# 🔄 Recent Changes
+# 🔄 Ostatnie Zmiany
 
-## Last 10 Commits
+## Ostatnie 10 Commitów
 
 1. `11fe34d` 🔧 Fix backup directory for App Engine /tmp
 2. `e7898d6` 📝 Add API endpoints documentation + Fix backup dir
@@ -435,104 +435,104 @@ gcloud app describe --project=glass-core-467907-e9
 9. `042aafe` 🚀 FINAL PRODUCTION READY: WebSocket AI + API_KEY + CORS
 10. `919a1a3` ✅ AUDYT KOMPLETNY - 0 błędów
 
-> **Last Push:** 2025-11-14 (synchronized with origin/main)
+> **Ostatni Push:** 2025-11-14 (zsynchronizowane z origin/main)
 
 ---
 
-# ✅ Quality Checklist
+# ✅ Lista Kontrolna Jakości
 
-## Code Quality
+## Jakość Kodu
 
-- ✅ **Syntax:** 0 compilation errors
-- ✅ **Imports:** All modules load correctly
-- ✅ **Tests:** Core imports verified
-- ✅ **Linting:** No critical issues
+- ✅ **Składnia:** 0 błędów kompilacji
+- ✅ **Importy:** Wszystkie moduły ładują się poprawnie
+- ✅ **Testy:** Podstawowe importy zweryfikowane
+- ✅ **Linting:** Brak krytycznych problemów
 
-## Security
+## Bezpieczeństwo
 
-- ✅ **Secrets:** None committed to Git
-- ✅ **API Keys:** Protected with @require_api_key
-- ✅ **CORS:** Production-aware configuration
-- ✅ **Rate Limiting:** Redis-based protection
+- ✅ **Sekrety:** Żadne nie commitowane do Git
+- ✅ **Klucze API:** Chronione przez @require_api_key
+- ✅ **CORS:** Konfiguracja uwzględniająca produkcję
+- ✅ **Limitowanie Żądań:** Ochrona oparta na Redis
 
-## Deployment
+## Wdrożenie
 
-- ✅ **Version:** 20251114t152707 SERVING
-- ✅ **Health:** HTTP 200, database connected
-- ✅ **Traffic:** 100% on latest version
-- ✅ **Instance:** F2 (512 MB) stable
+- ✅ **Wersja:** 20251114t152707 AKTYWNA
+- ✅ **Zdrowie:** HTTP 200, baza danych połączona
+- ✅ **Ruch:** 100% na najnowszej wersji
+- ✅ **Instancja:** F2 (512 MB) stabilna
 
-## Documentation
+## Dokumentacja
 
-- ✅ **README:** Up to date
-- ✅ **API Docs:** Complete with examples
-- ✅ **Backup Docs:** Comprehensive guide
-- ✅ **Deployment:** Step-by-step instructions
-
----
-
-# 🎯 Next Steps
-
-## Potential Improvements
-
-- [ ] Migrate backups to Google Cloud Storage (currently /tmp ephemeral)
-- [ ] Add backup download UI in dashboard
-- [ ] Implement backup restore functionality
-- [ ] Add metrics dashboard for backup monitoring
-- [ ] Set up Cloud Monitoring alerts
-- [ ] Configure Cloud Logging exports
-
-## Maintenance
-
-- ✅ Automated backups running (daily 3 AM)
-- ✅ Automated cleanup (30 days retention)
-- ✅ Health monitoring active
-- ✅ Error tracking via logs
+- ✅ **README:** Aktualne
+- ✅ **Dokumentacja API:** Kompletna z przykładami
+- ✅ **Dokumentacja Backupów:** Kompleksowy przewodnik
+- ✅ **Wdrożenie:** Instrukcje krok po kroku
 
 ---
 
-# 📞 Support
+# 🎯 Kolejne Kroki
 
-## Documentation Links
+## Potencjalne Ulepszenia
 
-- **Main README:** `README.md`
-- **API Reference:** `API_ENDPOINTS.md`
-- **Backup Guide:** `BACKUP_SYSTEM.md`
-- **Deployment Guide:** `DEPLOYMENT_SUCCESS_20251114.md`
+- [ ] Migracja backupów do Google Cloud Storage (obecnie /tmp efemeryczny)
+- [ ] Dodanie UI do pobierania backupów w dashboardzie
+- [ ] Implementacja funkcji przywracania backupów
+- [ ] Dodanie dashboardu metryk dla monitorowania backupów
+- [ ] Konfiguracja alertów Cloud Monitoring
+- [ ] Konfiguracja eksportów Cloud Logging
 
-## Quick Links
+## Utrzymanie
 
-- **Production:** https://glass-core-467907-e9.ey.r.appspot.com
-- **Swagger Docs:** https://glass-core-467907-e9.ey.r.appspot.com/api/docs
-- **Health Check:** https://glass-core-467907-e9.ey.r.appspot.com/api/health
+- ✅ Automatyczne backupy działają (codziennie o 3:00)
+- ✅ Automatyczne czyszczenie (retencja 30 dni)
+- ✅ Monitoring zdrowia aktywny
+- ✅ Śledzenie błędów przez logi
+
+---
+
+# 📞 Wsparcie
+
+## Linki do Dokumentacji
+
+- **Główny README:** `README.md`
+- **Referencja API:** `API_ENDPOINTS.md`
+- **Przewodnik Backupów:** `BACKUP_SYSTEM.md`
+- **Przewodnik Wdrożenia:** `DEPLOYMENT_SUCCESS_20251114.md`
+
+## Szybkie Linki
+
+- **Produkcja:** https://glass-core-467907-e9.ey.r.appspot.com
+- **Dokumentacja Swagger:** https://glass-core-467907-e9.ey.r.appspot.com/api/docs
+- **Sprawdzenie Zdrowia:** https://glass-core-467907-e9.ey.r.appspot.com/api/health
 - **GitHub:** https://github.com/MrCanon19/novahouse-chatbot-api
 
 ---
 
-# 🎉 Summary
+# 🎉 Podsumowanie
 
 > **NovaHouse Chatbot API v2.3.1** jest w pełni **produkcyjny i stabilny**
 
-## Key Metrics
+## Kluczowe Metryki
 
 - ✅ **48 plików Python**, 9,590 linii kodu
 - ✅ **Zero błędów kompilacji** i importów
-- ✅ **100% traffic** na najnowszej wersji
-- ✅ **Automated backups** z auto-cleanup
+- ✅ **100% ruchu** na najnowszej wersji
+- ✅ **Automatyczne backupy** z auto-czyszczeniem
 - ✅ **Kompletna dokumentacja** API
-- ✅ **Bezpieczne** credentials (nigdy nie commitowane)
-- ✅ **RODO compliant** (export, delete, consent)
-- ✅ **Real-time** WebSocket support
-- ✅ **Advanced search** (33 documents)
-- ✅ **Dashboard widgets** (8 real-time)
+- ✅ **Bezpieczne** dane uwierzytelniające (nigdy nie commitowane)
+- ✅ **Zgodność z RODO** (eksport, usuwanie, zgoda)
+- ✅ **Czas rzeczywisty** wsparcie WebSocket
+- ✅ **Zaawansowane wyszukiwanie** (33 dokumenty)
+- ✅ **Widgety dashboardu** (8 w czasie rzeczywistym)
 
 ## Status
 
-**🟢 PRODUCTION READY & LIVE**
+**🟢 GOTOWE DO PRODUKCJI I LIVE**
 
 ---
 
-**Last Updated:** 2025-11-14 15:30:00  
-**Version:** 2.3.1  
-**Deployment:** 20251114t152707  
-**Next Backup:** Tomorrow 03:00 AM
+**Ostatnia Aktualizacja:** 2025-11-14 15:30:00  
+**Wersja:** 2.3.1  
+**Wdrożenie:** 20251114t152707  
+**Następny Backup:** Jutro o 03:00
