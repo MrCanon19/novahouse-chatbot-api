@@ -14,6 +14,93 @@ from src.knowledge.novahouse_info import (
 chatbot_bp = Blueprint('chatbot', __name__)
 
 
+def process_chat_message(user_message: str, session_id: str) -> dict:
+    """
+    Process chat message and return bot response
+    Used by both REST API and WebSocket
+    
+    Args:
+        user_message: User's message text
+        session_id: Session identifier
+        
+    Returns:
+        dict with 'response', 'session_id', 'conversation_id'
+    """
+    try:
+        # Znajdź lub utwórz konwersację
+        conversation = ChatConversation.query.filter_by(session_id=session_id).first()
+        if not conversation:
+            conversation = ChatConversation(
+                session_id=session_id,
+                started_at=datetime.now(timezone.utc)
+            )
+            db.session.add(conversation)
+            db.session.commit()
+        
+        # Zapisz wiadomość użytkownika
+        user_msg = ChatMessage(
+            conversation_id=conversation.id,
+            message=user_message,
+            sender='user',
+            timestamp=datetime.now(timezone.utc)
+        )
+        db.session.add(user_msg)
+        
+        # Sprawdź czy wiadomość dotyczy FAQ
+        bot_response = check_faq(user_message)
+        
+        # Jeśli nie znaleziono w FAQ, użyj Gemini
+        if not bot_response and model:
+            try:
+                # Pobierz historię konwersacji
+                history = ChatMessage.query.filter_by(
+                    conversation_id=conversation.id
+                ).order_by(ChatMessage.timestamp.desc()).limit(10).all()
+                
+                context = "\n".join([
+                    f"{'User' if msg.sender == 'user' else 'Bot'}: {msg.message}"
+                    for msg in reversed(history[:-1])  # Exclude current message
+                ])
+                
+                prompt = f"{SYSTEM_PROMPT}\n\nContext:\n{context}\n\nUser: {user_message}\nBot:"
+                response = model.generate_content(prompt)
+                bot_response = response.text
+                
+            except Exception as e:
+                print(f"Gemini error: {e}")
+                bot_response = "Przepraszam, wystąpił problem z przetwarzaniem Twojej wiadomości. Czy możesz spytać inaczej?"
+        
+        # Fallback jeśli nadal brak odpowiedzi
+        if not bot_response:
+            bot_response = "Dziękuję za wiadomość! Jak mogę Ci pomóc? Możesz zapytać o nasze pakiety, ceny, realizacje czy proces wykończenia."
+        
+        # Zapisz odpowiedź bota
+        bot_msg = ChatMessage(
+            conversation_id=conversation.id,
+            message=bot_response,
+            sender='bot',
+            timestamp=datetime.now(timezone.utc)
+        )
+        db.session.add(bot_msg)
+        db.session.commit()
+        
+        return {
+            'response': bot_response,
+            'session_id': session_id,
+            'conversation_id': conversation.id
+        }
+        
+    except Exception as e:
+        print(f"Chat processing error: {e}")
+        db.session.rollback()
+        return {
+            'response': "Przepraszam, wystąpił błąd. Spróbuj ponownie.",
+            'session_id': session_id,
+            'conversation_id': None,
+            'error': str(e)
+        }
+
+
 def _check_admin_key():
     """Return None if ok, or (response, status) tuple if unauthorized."""
     from flask import request
@@ -88,7 +175,7 @@ Zawsze zaczynaj od ciepłego powitania i pytania co klienta interesuje oraz ską
 
 @chatbot_bp.route('/chat', methods=['POST'])
 def chat():
-    """Handle chat messages"""
+    """Handle chat messages via REST API"""
     try:
         data = request.get_json()
         
@@ -98,72 +185,16 @@ def chat():
         user_message = data['message']
         session_id = data.get('session_id', 'default')
         
-        # Znajdź lub utwórz konwersację
-        conversation = ChatConversation.query.filter_by(session_id=session_id).first()
-        if not conversation:
-            conversation = ChatConversation(
-                session_id=session_id,
-                started_at=datetime.now(timezone.utc)
-            )
-            db.session.add(conversation)
-            db.session.commit()
+        # Use shared processing function
+        result = process_chat_message(user_message, session_id)
         
-        # Zapisz wiadomość użytkownika
-        user_msg = ChatMessage(
-            conversation_id=conversation.id,
-            message=user_message,
-            sender='user',
-            timestamp=datetime.now(timezone.utc)
-        )
-        db.session.add(user_msg)
+        if 'error' in result:
+            return jsonify({'error': result.get('response')}), 500
         
-        # Sprawdź czy wiadomość dotyczy FAQ
-        bot_response = check_faq(user_message)
-        
-        # Jeśli nie znaleziono w FAQ, użyj Gemini
-        if not bot_response and model:
-            try:
-                # Pobierz historię konwersacji
-                history = ChatMessage.query.filter_by(
-                    conversation_id=conversation.id
-                ).order_by(ChatMessage.timestamp.desc()).limit(10).all()
-                
-                context = SYSTEM_PROMPT + "\n\nHistoria rozmowy:\n"
-                for msg in reversed(history):
-                    context += f"{msg.sender}: {msg.message}\n"
-                
-                context += f"\nuser: {user_message}\n\nOdpowiedz jako asystent NovaHouse:"
-                
-                response = model.generate_content(context)
-                bot_response = response.text
-                
-            except Exception as e:
-                print(f"Gemini API error: {e}")
-                bot_response = "Przepraszam, mam problem z odpowiedzią. Czy mogę pomóc w czymś konkretnym dotyczącym naszych pakietów wykończeniowych?"
-        
-        # Fallback jeśli nie ma Gemini i nie ma FAQ
-        if not bot_response:
-            bot_response = get_default_response(user_message)
-        
-        # Zapisz odpowiedź bota
-        bot_msg = ChatMessage(
-            conversation_id=conversation.id,
-            message=bot_response,
-            sender='bot',
-            timestamp=datetime.now(timezone.utc)
-        )
-        db.session.add(bot_msg)
-        db.session.commit()
-        
-        return jsonify({
-            'response': bot_response,
-            'session_id': session_id,
-            'conversation_id': conversation.id
-        }), 200
+        return jsonify(result), 200
         
     except Exception as e:
         print(f"Chat error: {e}")
-        db.session.rollback()
         return jsonify({'error': 'Internal server error'}), 500
 
 def check_faq(message):
