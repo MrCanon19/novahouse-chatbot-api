@@ -85,7 +85,10 @@ app.register_blueprint(file_upload_routes)
 
 # KROK 6: Tworzymy tabele w kontekście w pełni skonfigurowanej aplikacji.
 with app.app_context():
-    db.create_all()
+    try:
+        db.create_all()
+    except Exception as e:
+        print(f"⚠️ Database initialization skipped: {e}")
     
     # Initialize v2.3 services
     try:
