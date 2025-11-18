@@ -1,6 +1,6 @@
 # 🏠 NovaHouse Chatbot - Linki do Aplikacji
 
-**Data aktualizacji:** 18 listopada 2024  
+**Data aktualizacji:** 18 listopada 2025  
 **Wersja:** 2.3.0 "Production Ready"  
 **Status:** ✅ Wszystkie linki działają poprawnie
 
@@ -167,7 +167,7 @@
 
 ## 📊 BAZA WIEDZY CHATBOTA
 
-### Aktualna zawartość (18.11.2024):
+### Aktualna zawartość (18.11.2025):
 
 - ✅ **45+ pytań FAQ** (rozszerzone z 17)
 - ✅ **5 pakietów wykończeniowych:**
@@ -214,7 +214,7 @@
 
 ---
 
-## 🚀 WYDAJNOŚĆ (po optymalizacji 18.11.2024)
+## 🚀 WYDAJNOŚĆ (po optymalizacji 18.11.2025)
 
 ### Przed naprawą:
 
@@ -320,7 +320,7 @@
 https://github.com/MrCanon19/novahouse-chatbot-api
 
 **Ostatni commit:**  
-CRITICAL FIX: KeyError duration (18.11.2024)
+CRITICAL FIX: KeyError duration (18.11.2025)
 
 **Automatyczna synchronizacja:**  
 iCloud → GitHub (co godzinę)
@@ -345,5 +345,5 @@ iCloud → GitHub (co godzinę)
 
 ---
 
-**Wygenerowano:** 18 listopada 2024, 19:30  
+**Wygenerowano:** 18 listopada 2025, 19:30  
 **Status:** 🟢 Wszystko działa poprawnie
