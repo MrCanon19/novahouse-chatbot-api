@@ -6,6 +6,7 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
+      time: "09:00"
     open-pull-requests-limit: 10
     assignees:
       - "MrCanon19"
@@ -13,7 +14,10 @@ updates:
       - "dependencies"
       - "python"
     commit-message:
-      prefix: "Deps:"
+      prefix: "Deps"
+      include: "scope"
+    reviewers:
+      - "MrCanon19"
 
   # GitHub Actions
   - package-ecosystem: "github-actions"
@@ -21,6 +25,7 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
+      time: "09:00"
     open-pull-requests-limit: 5
     assignees:
       - "MrCanon19"
@@ -28,4 +33,23 @@ updates:
       - "dependencies"
       - "github-actions"
     commit-message:
-      prefix: "CI:"
+      prefix: "CI"
+      include: "scope"
+    reviewers:
+      - "MrCanon19"
+
+  # Docker dependencies
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    assignees:
+      - "MrCanon19"
+    labels:
+      - "dependencies"
+      - "docker"
+    commit-message:
+      prefix: "Docker"
+      include: "scope"

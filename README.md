@@ -195,6 +195,36 @@ pytest tests/ --cov=src --cov-report=html
 open htmlcov/index.html
 ```
 
+## 🔧 Development Tools
+
+### Quick Commands (Makefile)
+
+```bash
+make help           # Show all available commands
+make install        # Install dependencies
+make dev            # Setup development environment
+make test           # Run tests with coverage
+make lint           # Run linters
+make format         # Format code
+make docker         # Build and run with Docker
+make smoke          # Run smoke tests (production)
+make benchmark      # Run performance benchmark
+```
+
+### Scripts
+
+- **setup.py** - Automated development setup
+- **smoke_tests.py** - Post-deployment validation
+- **benchmark.py** - Performance benchmarking
+- **health_check.sh** - Quick health verification
+
+### VSCode Integration
+
+- Pre-configured debugger (Flask, Pytest, Docker)
+- Recommended extensions
+- Code formatting on save
+- Integrated testing
+
 ## 🤝 Contributing
 
 Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
