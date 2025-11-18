@@ -1,7 +1,7 @@
 # 🐳 Docker Support for NovaHouse Chatbot
 
 # Development Dockerfile
-FROM python:3.11-slim
+FROM python:3.14-slim
 
 LABEL maintainer="Michał Marini <contact@novahouse.pl>"
 LABEL version="2.3.0"
