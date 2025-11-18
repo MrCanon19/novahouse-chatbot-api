@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.1] - 2025-11-18 "Performance & Load Testing"
+
+### ✨ Added
+
+- **Locust Load Testing** - Complete load testing framework with 3 user scenarios
+- **locustfile.py** - ChatbotUser, AdminUser, ApiStressTest scenarios
+- **LOAD_TESTING.md** - Comprehensive guide with 5 test plans (smoke, load, stress, spike, endurance)
+- **profile_api.py** - cProfile-based performance profiling tool
+- **.coveragerc** - Coverage.py configuration for test coverage reports
+- **Enhanced Makefile** - Added 5 new commands:
+  - `make profile` - Profile API performance
+  - `make profile-chatbot` - Profile chatbot endpoint
+  - `make load-test` - Run Locust load tests
+  - `make load-test-prod` - Test production (with warning)
+  - `make load-test-smoke` - Quick smoke test (10 users, 60s)
+  - `make coverage-report` - Generate and open coverage HTML report
+- **locust & snakeviz** - Added to requirements.txt for load testing and profiling
+
+### 🔧 Changed
+
+- **QUICK_REFERENCE.md** - Updated with new performance testing commands
+- **Makefile** - Now contains 30+ commands (was 25)
+
 ## [2.3.0] - 2025-11-18 "Production Ready"
 
 ### ✨ Added
