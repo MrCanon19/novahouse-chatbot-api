@@ -8,6 +8,7 @@
 ## 1️⃣ Sentry DSN (Error Monitoring) - 2 minuty
 
 ### Krok 1: Utwórz projekt w Sentry
+
 1. Otwórz: https://sentry.io
 2. Zaloguj się lub załóż konto (GitHub login = 1 klik)
 3. Kliknij **"Create Project"**
@@ -16,7 +17,9 @@
 6. Team: wybierz swój lub utwórz nowy
 
 ### Krok 2: Skopiuj DSN
+
 Po utworzeniu projektu zobaczysz:
+
 ```python
 sentry_sdk.init(
     dsn="https://xxxxxxxxxxxxx@o123456.ingest.us.sentry.io/7891011",
@@ -27,12 +30,14 @@ sentry_sdk.init(
 **Skopiuj tylko część DSN** (cały URL zaczynający się od `https://`)
 
 ### Krok 3: Dodaj do app.yaml
+
 ```bash
 cd /Users/michalmarini/Projects/manus/novahouse-chatbot-api
 nano app.yaml
 ```
 
 Odkomentuj i uzupełnij linię 52:
+
 ```yaml
 # PRZED:
 # SENTRY_DSN: "https://xxxxx@xxxxx.ingest.sentry.io/xxxxx"
@@ -44,6 +49,7 @@ SENTRY_DSN: "https://TWÓJ_DSN_TUTAJ"
 **Zapisz:** `Ctrl+O` → `Enter` → `Ctrl+X`
 
 ### Krok 4: Deploy
+
 ```bash
 gcloud app deploy app.yaml --quiet
 ```
@@ -55,6 +61,7 @@ gcloud app deploy app.yaml --quiet
 ## 2️⃣ Upstash Redis (Caching) - 3 minuty
 
 ### Krok 1: Utwórz bazę Redis
+
 1. Otwórz: https://upstash.com
 2. Zaloguj się (GitHub login = 1 klik)
 3. Kliknij **"Create Database"**
@@ -66,7 +73,9 @@ gcloud app deploy app.yaml --quiet
 5. Kliknij **"Create"**
 
 ### Krok 2: Skopiuj URL
+
 Na stronie bazy danych znajdziesz:
+
 ```
 UPSTASH_REDIS_REST_URL: https://eu2-lovely-owl-12345.upstash.io
 ```
@@ -74,11 +83,13 @@ UPSTASH_REDIS_REST_URL: https://eu2-lovely-owl-12345.upstash.io
 **Skopiuj URL** (bez `:XXXXX/0` na końcu jeśli jest)
 
 ### Krok 3: Dodaj do app.yaml
+
 ```bash
 nano app.yaml
 ```
 
 Odkomentuj i uzupełnij linię 38:
+
 ```yaml
 # PRZED:
 # REDIS_URL: "redis://your-redis-host:6379/0"
@@ -91,6 +102,7 @@ REDIS_URL: "rediss://default:TWÓJ_PASSWORD@eu2-lovely-owl-12345.upstash.io:6379
 Password znajdziesz w Upstash Dashboard → **REST API** → **Password**
 
 ### Krok 4: Deploy
+
 ```bash
 gcloud app deploy app.yaml --quiet
 ```
@@ -102,17 +114,20 @@ gcloud app deploy app.yaml --quiet
 ## 3️⃣ GitHub Actions Auto-Deploy (2 minuty)
 
 ### Krok 1: Utwórz Service Account Key
+
 ```bash
 gcloud iam service-accounts keys create key.json \
   --iam-account=github-actions@glass-core-467907-e9.iam.gserviceaccount.com
 ```
 
 ### Krok 2: Skopiuj zawartość klucza
+
 ```bash
 cat key.json | pbcopy  # Kopiuje do schowka macOS
 ```
 
 ### Krok 3: Dodaj do GitHub Secrets
+
 1. Otwórz: https://github.com/MrCanon19/novahouse-chatbot-api/settings/secrets/actions
 2. Kliknij **"New repository secret"**
 3. **Name:** `GCP_SA_KEY`
@@ -120,12 +135,14 @@ cat key.json | pbcopy  # Kopiuje do schowka macOS
 5. Kliknij **"Add secret"**
 
 ### Krok 4: Dodaj project ID
+
 1. Kliknij **"New repository secret"** ponownie
 2. **Name:** `GCP_PROJECT_ID`
 3. **Value:** `glass-core-467907-e9`
 4. Kliknij **"Add secret"**
 
 ### Krok 5: Usuń lokalny klucz (bezpieczeństwo!)
+
 ```bash
 rm key.json
 ```
@@ -137,6 +154,7 @@ rm key.json
 ## 📊 Weryfikacja
 
 ### Test Sentry
+
 ```bash
 curl https://glass-core-467907-e9.ey.r.appspot.com/api/health
 ```
@@ -144,6 +162,7 @@ curl https://glass-core-467907-e9.ey.r.appspot.com/api/health
 Sprawdź w Sentry Dashboard → **Issues** (powinno być czysto)
 
 ### Test Redis
+
 ```bash
 curl https://glass-core-467907-e9.ey.r.appspot.com/api/packages
 # Pierwsze wywołanie: ~0.5s
@@ -151,6 +170,7 @@ curl https://glass-core-467907-e9.ey.r.appspot.com/api/packages
 ```
 
 ### Test GitHub Actions
+
 ```bash
 git commit --allow-empty -m "Test: GitHub Actions auto-deploy"
 git push origin main
@@ -162,11 +182,11 @@ Sprawdź: https://github.com/MrCanon19/novahouse-chatbot-api/actions
 
 ## 💰 Koszty
 
-| Usługa | Plan | Koszt |
-|--------|------|-------|
-| **Sentry** | Developer (5K errors/month) | **$0** |
-| **Upstash Redis** | Free (10K requests/day) | **$0** |
-| **GitHub Actions** | 2000 minut/miesiąc | **$0** |
+| Usługa             | Plan                        | Koszt  |
+| ------------------ | --------------------------- | ------ |
+| **Sentry**         | Developer (5K errors/month) | **$0** |
+| **Upstash Redis**  | Free (10K requests/day)     | **$0** |
+| **GitHub Actions** | 2000 minut/miesiąc          | **$0** |
 
 **Total:** $0/miesiąc (w ramach free tier) 🎉
 
@@ -175,6 +195,7 @@ Sprawdź: https://github.com/MrCanon19/novahouse-chatbot-api/actions
 ## 🆘 Troubleshooting
 
 ### Sentry nie łapie błędów?
+
 ```bash
 # Sprawdź logi
 gcloud app logs tail -s default
@@ -184,6 +205,7 @@ gcloud app describe | grep SENTRY_DSN
 ```
 
 ### Redis nie działa?
+
 ```bash
 # Test połączenia
 redis-cli -u "rediss://default:PASSWORD@HOST:6379" PING
@@ -191,6 +213,7 @@ redis-cli -u "rediss://default:PASSWORD@HOST:6379" PING
 ```
 
 ### GitHub Actions fail?
+
 1. Sprawdź sekrety: Settings → Secrets → Actions
 2. Zweryfikuj format `GCP_SA_KEY` (musi być JSON)
 3. Sprawdź logi: Actions → Workflow run → View logs
