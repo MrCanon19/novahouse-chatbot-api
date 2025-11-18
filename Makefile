@@ -108,6 +108,22 @@ pre-commit: ## Install pre-commit hooks
 check: lint test ## Run all checks (lint + test)
 	@echo "$(GREEN)✅ All checks passed$(NC)"
 
+monitor: ## Monitor API performance in real-time
+	@echo "$(BLUE)Starting performance monitor...$(NC)"
+	./monitor.sh http://localhost:8080 5
+
+monitor-prod: ## Monitor production API
+	@echo "$(BLUE)Monitoring production...$(NC)"
+	./monitor.sh https://glass-core-467907-e9.ey.r.appspot.com 10
+
+check-deps: ## Check for outdated and vulnerable dependencies
+	@echo "$(BLUE)Checking dependencies...$(NC)"
+	python check-deps.py
+
+vscode-extensions: ## Install recommended VSCode extensions
+	@echo "$(BLUE)Installing VSCode extensions...$(NC)"
+	./install-vscode-extensions.sh
+
 setup-monitoring: ## Open monitoring setup guide
 	@echo "$(BLUE)Opening monitoring setup guide...$(NC)"
 	@cat SETUP_MONITORING.md
