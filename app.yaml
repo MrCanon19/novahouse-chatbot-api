@@ -44,6 +44,10 @@ env_variables:
   # USE_CLOUD_STORAGE: "true"
   # GCS_BUCKET_NAME: "novahouse-uploads"
 
+  # Sentry (error monitoring)
+  # Get your DSN from: https://sentry.io -> Settings -> Client Keys (DSN)
+  # SENTRY_DSN: "https://xxxxx@xxxxx.ingest.sentry.io/xxxxx"
+
 automatic_scaling:
   min_instances: 2 # Zmieniono z 1 - zawsze 2 instancje = zero cold starts
   max_instances: 15 # Zwiększono z 10

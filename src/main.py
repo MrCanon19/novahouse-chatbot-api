@@ -5,8 +5,24 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from flask import Flask, send_from_directory
 from flask_cors import CORS
+import sentry_sdk
+from sentry_sdk.integrations.flask import FlaskIntegration
 # KROK 1: Importujemy TYLKO obiekt 'db' z pliku, gdzie jest zdefiniowany.
 from src.models.chatbot import db
+
+# Initialize Sentry for error monitoring
+sentry_dsn = os.getenv('SENTRY_DSN')
+if sentry_dsn:
+    sentry_sdk.init(
+        dsn=sentry_dsn,
+        integrations=[FlaskIntegration()],
+        traces_sample_rate=0.1,  # 10% of transactions for performance monitoring
+        profiles_sample_rate=0.1,
+        environment=os.getenv('FLASK_ENV', 'production'),
+    )
+    print("✅ Sentry monitoring enabled")
+else:
+    print("⚠️  Sentry DSN not configured - error monitoring disabled")
 
 # KROK 2: Tworzymy główną instancję aplikacji Flask.
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), 'static'))
