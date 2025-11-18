@@ -19,11 +19,11 @@ AI Chatbot dla NovaHouse - pomoc klientom w wyborze pakietów wykończeniowych.
 
 ```bash
 # Option 1: Docker (najszybszy)
-docker-compose up -d
+docker-compose -f config/docker-compose.yml up -d
 curl http://localhost:8080/api/health
 
 # Option 2: Local development
-python setup.py          # Automatyczny setup
+python scripts/setup.py  # Automatyczny setup
 source venv/bin/activate
 python main.py
 
@@ -31,7 +31,7 @@ python main.py
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-cp .env.example .env
+cp config/environments/.env.example .env
 python main.py
 ```
 

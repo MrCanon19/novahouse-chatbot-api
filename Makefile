@@ -27,7 +27,7 @@ install: ## Install dependencies
 
 dev: ## Setup development environment
 	@echo "$(BLUE)Setting up development environment...$(NC)"
-	python setup.py
+	python scripts/setup.py
 	@echo "$(GREEN)✅ Development environment ready$(NC)"
 
 test: ## Run tests with coverage
@@ -64,17 +64,17 @@ clean: ## Clean cache and build files
 
 docker: ## Build and run with Docker Compose
 	@echo "$(BLUE)Starting Docker Compose...$(NC)"
-	docker-compose up -d --build
+	docker-compose -f config/docker-compose.yml up -d --build
 	@echo "$(GREEN)✅ Docker containers running$(NC)"
 	@echo "API: http://localhost:8080"
 
 docker-down: ## Stop Docker containers
 	@echo "$(BLUE)Stopping Docker containers...$(NC)"
-	docker-compose down
+	docker-compose -f config/docker-compose.yml down
 	@echo "$(GREEN)✅ Docker containers stopped$(NC)"
 
 docker-logs: ## Show Docker logs
-	docker-compose logs -f
+	docker-compose -f config/docker-compose.yml logs -f
 
 run: ## Run development server locally
 	@echo "$(BLUE)Starting development server...$(NC)"
@@ -82,17 +82,17 @@ run: ## Run development server locally
 
 smoke: ## Run smoke tests against production
 	@echo "$(BLUE)Running smoke tests...$(NC)"
-	python smoke_tests.py https://glass-core-467907-e9.ey.r.appspot.com
+	python tests/smoke_tests.py https://glass-core-467907-e9.ey.r.appspot.com
 	@echo "$(GREEN)✅ Smoke tests completed$(NC)"
 
 smoke-local: ## Run smoke tests against localhost
 	@echo "$(BLUE)Running smoke tests (local)...$(NC)"
-	python smoke_tests.py http://localhost:8080
+	python tests/smoke_tests.py http://localhost:8080
 	@echo "$(GREEN)✅ Smoke tests completed$(NC)"
 
 deploy: ## Deploy to Google App Engine
 	@echo "$(BLUE)Deploying to GCP...$(NC)"
-	gcloud app deploy app.yaml --quiet
+	gcloud app deploy config/app.yaml --quiet
 	@echo "$(GREEN)✅ Deployed to production$(NC)"
 
 db-backup: ## Backup database
@@ -110,15 +110,15 @@ check: lint test ## Run all checks (lint + test)
 
 monitor: ## Monitor API performance in real-time
 	@echo "$(BLUE)Starting performance monitor...$(NC)"
-	./monitor.sh http://localhost:8080 5
+	./scripts/monitor.sh http://localhost:8080 5
 
 monitor-prod: ## Monitor production API
 	@echo "$(BLUE)Monitoring production...$(NC)"
-	./monitor.sh https://glass-core-467907-e9.ey.r.appspot.com 10
+	./scripts/monitor.sh https://glass-core-467907-e9.ey.r.appspot.com 10
 
 check-deps: ## Check for outdated packages and available updates
 	@echo "$(BLUE)Checking for updates...$(NC)"
-	python check-deps.py
+	python scripts/check-deps.py
 
 check-updates: check-deps ## Alias for check-deps (checks app + Python + packages)
 
@@ -129,15 +129,15 @@ update-deps: ## Update all Python packages to latest versions
 
 vscode-extensions: ## Install recommended VSCode extensions
 	@echo "$(BLUE)Installing VSCode extensions...$(NC)"
-	./install-vscode-extensions.sh
+	./scripts/install-vscode-extensions.sh
 
 setup-monitoring: ## Open monitoring setup guide
 	@echo "$(BLUE)Opening monitoring setup guide...$(NC)"
-	@cat SETUP_MONITORING.md
+	@cat docs/guides/SETUP_MONITORING.md
 
 profile: ## Profile API performance (identify bottlenecks)
 	@echo "$(BLUE)Profiling API performance...$(NC)"
-	python profile_api.py --endpoint all --top 20
+	python tests/profile_api.py --endpoint all --top 20
 
 profile-chatbot: ## Profile chatbot endpoint only
 	@echo "$(BLUE)Profiling chatbot endpoint...$(NC)"
