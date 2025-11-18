@@ -18,7 +18,7 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-change-in-product
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max request size
 app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER', '/tmp/uploads')
 
-# CORS Configuration
+# CORS Configuration with caching
 # Production: Restrict to your domain
 # Development: Allow all for testing
 if os.getenv('FLASK_ENV') == 'production':
@@ -26,14 +26,18 @@ if os.getenv('FLASK_ENV') == 'production':
         'https://novahouse.pl',
         'https://www.novahouse.pl',
         'https://glass-core-467907-e9.ey.r.appspot.com'
-    ])
+    ], max_age=3600)  # Cache preflight requests for 1h
 else:
     # Development mode - allow all
-    CORS(app)
+    CORS(app, max_age=3600)
 
-# Initialize WebSocket support (v2.3)
+# Initialize WebSocket support (v2.3) with optimizations
 from src.services.websocket_service import socketio
-socketio.init_app(app)
+socketio.init_app(app, 
+    cors_allowed_origins='*',
+    async_mode='threading',  # Better performance on App Engine
+    ping_timeout=10,
+    ping_interval=25)
 
 # KROK 3: Konfigurujemy i łączymy bazę danych z aplikacją.
 # Od tego momentu 'db' wie o istnieniu 'app'.
@@ -209,7 +213,12 @@ def serve(path):
         return "Static folder not configured", 404
 
     if path != "" and os.path.exists(os.path.join(static_folder_path, path)):
-        return send_from_directory(static_folder_path, path)
+        response = send_from_directory(static_folder_path, path)
+        # Add caching headers for static files
+        if path.endswith(('.js', '.css', '.png', '.jpg', '.jpeg', '.gif', '.ico', '.svg', '.woff', '.woff2', '.ttf')):
+            response.cache_control.max_age = 86400  # 24h
+            response.cache_control.public = True
+        return response
     else:
         index_path = os.path.join(static_folder_path, 'index.html')
         if os.path.exists(index_path):
