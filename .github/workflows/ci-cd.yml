@@ -96,27 +96,36 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check if secrets are configured
+        id: check_secrets
+        run: |
+          if [ -n "${{ secrets.GCP_SA_KEY }}" ]; then
+            echo "secrets_available=true" >> $GITHUB_OUTPUT
+          else
+            echo "secrets_available=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Setup Cloud SDK
-        if: ${{ secrets.GCP_SA_KEY != '' }}
+        if: steps.check_secrets.outputs.secrets_available == 'true'
         uses: google-github-actions/setup-gcloud@v1
         with:
           service_account_key: ${{ secrets.GCP_SA_KEY }}
           project_id: ${{ secrets.GCP_PROJECT_ID }}
 
       - name: Deploy to App Engine
-        if: ${{ secrets.GCP_SA_KEY != '' }}
+        if: steps.check_secrets.outputs.secrets_available == 'true'
         run: |
           gcloud app deploy app.yaml --quiet --no-promote
 
       - name: Create deployment notification
-        if: ${{ secrets.GCP_SA_KEY != '' }}
+        if: steps.check_secrets.outputs.secrets_available == 'true'
         run: |
           echo "✅ Deployed to: https://glass-core-467907-e9.ey.r.appspot.com"
           echo "Version: $(git rev-parse --short HEAD)"
           echo "Branch: $(git rev-parse --abbrev-ref HEAD)"
 
       - name: Deployment skipped
-        if: ${{ secrets.GCP_SA_KEY == '' }}
+        if: steps.check_secrets.outputs.secrets_available != 'true'
         run: |
           echo "⚠️  Deployment skipped - GCP_SA_KEY secret not configured"
           echo "See SETUP_MONITORING.md for setup instructions"
