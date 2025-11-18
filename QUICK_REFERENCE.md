@@ -15,6 +15,9 @@ python setup.py && source venv/bin/activate && python main.py
 
 # Option 3: Makefile
 make dev && make run
+
+# Option 4: VSCode extensions (one-click install)
+./install-vscode-extensions.sh
 ```
 
 ---
