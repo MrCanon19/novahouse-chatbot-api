@@ -5,28 +5,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.3.1] - 2025-11-18 "Performance & Load Testing"
+## [2.3.1] - 2025-11-18 "Performance & API Documentation"
 
-### ✨ Added
+### ✨ Added - Performance & Load Testing
 
 - **Locust Load Testing** - Complete load testing framework with 3 user scenarios
 - **locustfile.py** - ChatbotUser, AdminUser, ApiStressTest scenarios
 - **LOAD_TESTING.md** - Comprehensive guide with 5 test plans (smoke, load, stress, spike, endurance)
 - **profile_api.py** - cProfile-based performance profiling tool
 - **.coveragerc** - Coverage.py configuration for test coverage reports
-- **Enhanced Makefile** - Added 5 new commands:
-  - `make profile` - Profile API performance
-  - `make profile-chatbot` - Profile chatbot endpoint
-  - `make load-test` - Run Locust load tests
-  - `make load-test-prod` - Test production (with warning)
-  - `make load-test-smoke` - Quick smoke test (10 users, 60s)
-  - `make coverage-report` - Generate and open coverage HTML report
 - **locust & snakeviz** - Added to requirements.txt for load testing and profiling
+
+### ✨ Added - API Documentation
+
+- **OpenAPI 3.0.3 Specification** - Complete API documentation in `src/docs/openapi.yaml`
+- **Swagger UI** - Interactive API documentation at `/api-docs`
+- **swagger_ui.py** - Flask blueprint for Swagger UI integration
+- **SWAGGER_SETUP.md** - Complete guide for API documentation
+- **8+ Documented Endpoints** - Health, Chatbot, Search, Leads, Analytics, Backup
+
+### ✨ Added - Coverage & CI/CD
+
+- **Coverage Badge** - Automated test coverage badge generation
+- **coverage-badge.yml** - GitHub Actions workflow for coverage badges
+- **Dependabot Active** - Full configuration for pip, GitHub Actions, Docker
+- **coverage-badge** - Added to requirements.txt
 
 ### 🔧 Changed
 
+- **README.md** - Added badges (Coverage, CI/CD, Python, License), updated to v2.3.1
+- **Makefile** - Added 5 new commands (profile, load-test, coverage-report)
 - **QUICK_REFERENCE.md** - Updated with new performance testing commands
+- **src/main.py** - Registered Swagger UI blueprint
 - **Makefile** - Now contains 30+ commands (was 25)
+
+### 📚 Documentation
+
+- **SWAGGER_SETUP.md** - 300+ lines comprehensive guide
+- **LOAD_TESTING.md** - 400+ lines load testing manual
+- **OpenAPI spec** - 350+ lines complete API specification
 
 ## [2.3.0] - 2025-11-18 "Production Ready"
 

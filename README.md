@@ -1,14 +1,19 @@
 # 🏠 NovaHouse Chatbot API
 
-**Version:** 2.3.0 "Production Ready" 🚀  
+![Coverage](./coverage.svg)
+[![CI/CD](https://github.com/MrCanon19/novahouse-chatbot-api/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/MrCanon19/novahouse-chatbot-api/actions)
+[![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+**Version:** 2.3.1 "Performance & Testing" 🚀  
 AI Chatbot dla NovaHouse - pomoc klientom w wyborze pakietów wykończeniowych.
 
 ## 🚀 Live Demo
 
 - **Chatbot:** https://glass-core-467907-e9.ey.r.appspot.com/static/chatbot.html
 - **Dashboard:** https://glass-core-467907-e9.ey.r.appspot.com/static/dashboard.html
-- **API Docs:** https://glass-core-467907-e9.ey.r.appspot.com/docs
-- **Health Check:** https://glass-core-467907-e9.ey.r.appspot.com/api/chatbot/health
+- **API Docs (Swagger):** https://glass-core-467907-e9.ey.r.appspot.com/api-docs ⭐ NEW
+- **Health Check:** https://glass-core-467907-e9.ey.r.appspot.com/api/health
 
 ## 🐳 Quick Start
 
