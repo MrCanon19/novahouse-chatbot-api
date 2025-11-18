@@ -35,7 +35,7 @@ cp .env.example .env
 python main.py
 ```
 
-📚 Więcej: [DOCKER.md](./DOCKER.md) | [CONTRIBUTING.md](./CONTRIBUTING.md)
+📚 Więcej: [DOCKER.md](docs/features/DOCKER.md) | [CONTRIBUTING.md](docs/misc/CONTRIBUTING.md) | **[📚 Pełna dokumentacja](docs/README.md)**
 
 ## 🛠️ Tech Stack
 
