@@ -454,7 +454,8 @@ def get_all_packages_summary():
     """Zwraca podsumowanie wszystkich pakietów"""
     summary = "Oferujemy 5 opcji wykończeniowych:\n\n"
     for key, package in PACKAGES.items():
-        summary += f"**{package['name']}** ({package['price_per_sqm']}, {package['duration']})\n"
+        execution = package.get('execution_time', 'na zapytanie')
+        summary += f"**{package['name']}** ({package['price_per_sqm']}, {execution})\n"
         summary += f"{package['description']}\n"
         summary += f"Standard: {package['standard']} | Produkty: {package['product_choices']}\n\n"
     return summary
