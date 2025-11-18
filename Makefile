@@ -155,3 +155,31 @@ coverage-report: ## Generate and open coverage report
 	pytest tests/ --cov=src --cov-report=html --cov-report=term
 	@echo "$(GREEN)✅ Opening coverage report...$(NC)"
 	open htmlcov/index.html || xdg-open htmlcov/index.html 2>/dev/null
+
+db-migrate: ## Create a new database migration
+	@echo "$(BLUE)Creating new migration...$(NC)"
+	alembic revision --autogenerate -m "$(filter-out $@,$(MAKECMDGOALS))"
+
+db-upgrade: ## Apply database migrations
+	@echo "$(BLUE)Applying migrations...$(NC)"
+	alembic upgrade head
+
+db-downgrade: ## Rollback last migration
+	@echo "$(YELLOW)Rolling back last migration...$(NC)"
+	alembic downgrade -1
+
+db-history: ## Show migration history
+	@echo "$(BLUE)Migration history:$(NC)"
+	alembic history
+
+db-current: ## Show current migration version
+	@echo "$(BLUE)Current version:$(NC)"
+	alembic current
+
+generate-clients: ## Generate API client SDKs (Python, TypeScript)
+	@echo "$(BLUE)Generating API clients...$(NC)"
+	./scripts/generate_clients.sh
+
+generate-changelog: ## Generate CHANGELOG.md from git commits
+	@echo "$(BLUE)Generating changelog...$(NC)"
+	python scripts/generate_changelog.py
