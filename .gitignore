@@ -38,7 +38,7 @@ backups/
 *.bak
 
 # IDE
-.vscode/
+## .vscode/ usunięte z ignorowania, folder będzie śledzony przez Git
 .idea/
 *.swp
 *.swo
