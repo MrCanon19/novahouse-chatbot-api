@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NovaHouse Chatbot - Asystent Wykończeń</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .chat-container {
+            width: 90%;
+            max-width: 800px;
+            height: 90vh;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #ff6b6b, #ffa500);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .chat-header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .chat-header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+
+        .message.bot .message-content {
+            background: white;
+            color: #333;
+            border: 1px solid #e0e0e0;
+            white-space: pre-line;
+        }
+
+        .message.user .message-content {
+            background: #007bff;
+            color: white;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .bot-avatar {
+            background: linear-gradient(135deg, #ff6b6b, #ffa500);
+            color: white;
+        }
+
+        .user-avatar {
+            background: #007bff;
+            color: white;
+        }
+
+        .chat-input {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .chat-input input:focus {
+            border-color: #007bff;
+        }
+
+        .chat-input button {
+            padding: 12px 24px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .chat-input button:hover {
+            background: #0056b3;
+        }
+
+        .chat-input button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .welcome-message {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            margin: 20px 0;
+        }
+
+        .typing-indicator {
+            display: none;
+            padding: 10px 16px;
+            background: white;
+            border-radius: 18px;
+            border: 1px solid #e0e0e0;
+            max-width: 70px;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .typing-dots span {
+            width: 8px;
+            height: 8px;
+            background: #999;
+            border-radius: 50%;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+
+        .typing-dots span:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes typing {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        @media (max-width: 768px) {
+            .chat-container {
+                width: 100%;
+                height: 100vh;
+                border-radius: 0;
+            }
+            
+            .message-content {
+                max-width: 85%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h1>🏠 NovaHouse Chatbot</h1>
+            <p>Twój asystent w wykańczaniu wnętrz</p>
+        </div>
+        
+        <div class="chat-messages" id="chatMessages">
+            <div class="welcome-message">
+                Witaj! Jestem Twoim asystentem NovaHouse. Jak mogę Ci pomóc?
+            </div>
+            
+            <div class="message bot">
+                <div class="avatar bot-avatar">🏠</div>
+                <div class="message-content">Cześć! 👋 Witaj w NovaHouse!
+
+Jestem Twoim asystentem i pomogę Ci w:
+🏠 Wyborze pakietu wykończeniowego
+💰 Uzyskaniu informacji o cenach
+📅 Umówieniu spotkania z konsultantem
+📋 Odpowiedzi na pytania o nasze usługi
+
+Jak mogę Ci pomóc?</div>
+            </div>
+        </div>
+        
+        <div class="chat-input">
+            <input type="text" id="messageInput" placeholder="Napisz wiadomość..." maxlength="500">
+            <button id="sendButton">Wyślij</button>
+        </div>
+    </div>
+
+    <script>
+        class ChatBot {
+            constructor() {
+                this.sessionId = this.generateSessionId();
+                this.messageInput = document.getElementById('messageInput');
+                this.sendButton = document.getElementById('sendButton');
+                this.chatMessages = document.getElementById('chatMessages');
+                
+                this.initEventListeners();
+            }
+            
+            generateSessionId() {
+                return 'session_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+            }
+            
+            initEventListeners() {
+                this.sendButton.addEventListener('click', () => this.sendMessage());
+                this.messageInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        this.sendMessage();
+                    }
+                });
+            }
+            
+            async sendMessage() {
+                const message = this.messageInput.value.trim();
+                if (!message) return;
+                
+                // Dodaj wiadomość użytkownika
+                this.addMessage(message, 'user');
+                this.messageInput.value = '';
+                this.sendButton.disabled = true;
+                
+                // Pokaż wskaźnik pisania
+                this.showTypingIndicator();
+                
+                try {
+                    const response = await fetch('/api/chatbot/chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            message: message,
+                            session_id: this.sessionId
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        // Ukryj wskaźnik pisania i dodaj odpowiedź bota
+                        this.hideTypingIndicator();
+                        this.addMessage(data.response, 'bot');
+                    } else {
+                        this.hideTypingIndicator();
+                        this.addMessage('Przepraszam, nie mogę się połączyć z serwerem. Spróbuj ponownie.', 'bot');
+                    }
+                } catch (error) {
+                    this.hideTypingIndicator();
+                    this.addMessage('Przepraszam, wystąpił błąd. Spróbuj ponownie.', 'bot');
+                    console.error('Error:', error);
+                } finally {
+                    this.sendButton.disabled = false;
+                }
+            }
+            
+            addMessage(content, sender) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${sender}`;
+                
+                const avatar = document.createElement('div');
+                avatar.className = `avatar ${sender}-avatar`;
+                avatar.textContent = sender === 'bot' ? '🏠' : 'U';
+                
+                const messageContent = document.createElement('div');
+                messageContent.className = 'message-content';
+                
+                // Parse markdown dla odpowiedzi bota
+                if (sender === 'bot') {
+                    messageContent.innerHTML = marked.parse(content);
+                } else {
+                    messageContent.textContent = content;
+                }
+                
+                messageDiv.appendChild(avatar);
+                messageDiv.appendChild(messageContent);
+                
+                this.chatMessages.appendChild(messageDiv);
+                this.scrollToBottom();
+            }
+            
+            showTypingIndicator() {
+                const typingDiv = document.createElement('div');
+                typingDiv.className = 'message bot';
+                typingDiv.id = 'typingIndicator';
+                
+                const avatar = document.createElement('div');
+                avatar.className = 'avatar bot-avatar';
+                avatar.textContent = '🏠';
+                
+                const typingContent = document.createElement('div');
+                typingContent.className = 'typing-indicator';
+                typingContent.style.display = 'block';
+                
+                const typingDots = document.createElement('div');
+                typingDots.className = 'typing-dots';
+                typingDots.innerHTML = '<span></span><span></span><span></span>';
+                
+                typingContent.appendChild(typingDots);
+                typingDiv.appendChild(avatar);
+                typingDiv.appendChild(typingContent);
+                
+                this.chatMessages.appendChild(typingDiv);
+                this.scrollToBottom();
+            }
+            
+            hideTypingIndicator() {
+                const typingIndicator = document.getElementById('typingIndicator');
+                if (typingIndicator) {
+                    typingIndicator.remove();
+                }
+            }
+            
+            scrollToBottom() {
+                this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+            }
+        }
+        
+        // Inicjalizacja chatbota po załadowaniu strony
+        document.addEventListener('DOMContentLoaded', () => {
+            new ChatBot();
+        });
+    </script>
+</body>
+</html>
+
