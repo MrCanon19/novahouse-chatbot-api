@@ -12,11 +12,24 @@ BUSINESS_HOURS = {
 
 # Informacje kontaktowe
 CONTACT_INFO = {
-    "phone": "+48 585 004 663",
-    "email": "kontakt@novahouse.pl",
+    "company_name": "NovaHouse Sp. z o.o.",
+    "phone_main": "+48 585 004 663",
+    "phone_logistics": "+48 509 929 437",
+    "phone_finance": "+48 607 518 544",
+    "email_main": "kontakt@novahouse.pl",
+    "email_partners": "partnerzy@novahouse.pl",
     "website": "https://novahouse.pl",
-    "address": "Trójmiasto, Warszawa, Wrocław",
-    "nip": "Dostępna na wniosek",
+    "offices": {
+        "gdansk": "ul. Pałubickiego 2, budynek C2-parter, Gdańsk",
+        "warszawa": "ul. Prosta 70, 5 piętro, Warszawa",
+        "wroclaw": "ul. Sucha 3, Wrocław"
+    },
+    "registration": {
+        "krs": "0000612864",
+        "nip": "5833201699",
+        "regon": "364323586",
+        "share_capital": "100.000,00 PLN"
+    },
     "social_media": {
         "instagram": "https://www.instagram.com/novahouse.pl/",
         "facebook": "https://www.facebook.com/novahousepl/",
@@ -30,94 +43,345 @@ COVERAGE_AREAS = {
     "description": "Działamy na terenie trzech największych aglomeracji w Polsce"
 }
 
+# Katalogi produktów
+PRODUCT_CATALOGS = {
+    "catalog_1": {
+        "name": "Katalog 1 - Basic",
+        "standard": "Basic",
+        "products_count": "150 produktów",
+        "packages": ["Express"],
+        "availability": "od ręki",
+        "description": "Podstawowy katalog z sprawdzonymi produktami dostępnymi od ręki"
+    },
+    "catalog_2": {
+        "name": "Katalog 2 - Standard", 
+        "standard": "Standard",
+        "products_count": "300 produktów",
+        "packages": ["Express Plus"],
+        "availability": "od ręki",
+        "description": "Rozszerzony katalog z większym wyborem kolorów, materiałów i personalizacji"
+    },
+    "catalog_3": {
+        "name": "Katalog 3 - Premium",
+        "standard": "Premium",
+        "products_count": "450 produktów",
+        "packages": ["Comfort", "Premium"],
+        "availability": "na zamówienie",
+        "description": "Najwyższej jakości produkty, nowoczesne kolekcje, światowe marki"
+    }
+}
+
 # Liczby pokazujące skalę działalności
 COMPANY_STATS = {
-    "completed_projects": "30+",
-    "satisfied_clients": "95%",
+    "years_in_business": "od 2011 roku",
+    "completed_projects": "350+",
+    "satisfied_clients": "96%",
     "projects_before_deadline": "94%",
     "warranty_years": 3,  # 36 miesięcy
-    "min_project_duration": "1.5 miesiąca"
+    "warranty_months": 36,
+    "min_project_duration": "1.5 miesiąca",
+    "supplier_partners": "120+",
+    "material_discount": "15%"
 }
 
 PACKAGES = {
-    "standard": {
-        "name": "Pakiet Standard",
-        "price_range": "Dostępny cenowo",
-        "description": "Podstawowe wykończenie mieszkania z materiałami dobrej jakości",
+    "express": {
+        "name": "Pakiet Express",
+        "price_per_sqm": "od 999 zł/m²",
+        "catalog_number": "Katalog 1 (Basic)",
+        "design_time": "do 10 dni",
+        "execution_time": "6-8 tygodni",
+        "product_availability": "od ręki",
+        "standard": "Basic",
+        "product_choices": "150 produktów",
+        "product_changes_limit": "2 produkty",
+        "outside_catalog_products": "nie",
+        "meetings_with_designer": "1",
+        "description": "Dla tych, którzy chcą szybko zamieszkać lub wynająć i cenią wygodę bez zbędnych formalności. Idealny dla inwestorów i osób szukających sprawdzonych, prostych rozwiązań.",
         "features": [
-            "Podstawowe płytki ceramiczne",
-            "Standardowe drzwi wewnętrzne",
-            "Panele podłogowe klasy AC4",
-            "Malowanie ścian farbą lateksową",
-            "Podstawowa armatura łazienkowa",
-            "Instalacje elektryczne i hydrauliczne"
+            "Projekt wykonawczy + moodboard",
+            "Zaufana i sprawdzona ekipa wykończeniowa",
+            "Rabat 15% na wszystkie materiały",
+            "Materiały budowlane (farby, kleje, fugi itp)",
+            "Aranżacja wnętrza z projektantem",
+            "Lista zakupowa + zestawienie produktów - moodboard",
+            "Koordynacja prac i zamówień",
+            "Odbiór lokalu przez inspektora budowlanego + Raport z oględzin",
+            "Usługa wykończenia (malowanie, montaż drzwi, położenie podłogi, łazienka kompleksowo)",
+            "Gwarancja na usługi: 3 lata"
         ],
-        "ideal_for": "Osoby szukające solidnego wykończenia w przystępnej cenie"
+        "bathroom": "płytki do wysokości 210 cm, WC podwieszane, umywalka z szafką podwieszaną, wanna lub kabina z brodzikiem, lustro wklejane do 1m², oświetlenie 1 punkt, płytki 30x60cm i 60x60cm, baterie nadtynkowe",
+        "floors": "panele laminowane, listwy",
+        "doors": "skrzydła drzwiowe przylgowe, ościeżnice, klamki",
+        "walls": "malowanie ścian na wybrany kolor",
+        "lighting": "Dobór oświetlenia",
+        "ideal_for": "Inwestorzy i osoby szukające szybkich, sprawdzonych rozwiązań",
+        "personalization_before_contract": "nie",
+        "visualization": "nie"
+    },
+    "express_plus": {
+        "name": "Pakiet Express Plus",
+        "price_per_sqm": "od 1199 zł/m²",
+        "catalog_number": "Katalog 2 (Standard)",
+        "design_time": "do 20 dni",
+        "execution_time": "6-8 tygodni",
+        "product_availability": "od ręki",
+        "standard": "Standard",
+        "product_choices": "300 produktów",
+        "product_changes_limit": "3 produkty",
+        "outside_catalog_products": "1 produkt od ręki",
+        "meetings_with_designer": "2",
+        "description": "Dla osób, które chcą więcej – więcej kolorów, materiałów i personalizacji. Świetny wybór dla rodzin oraz tych, którzy lubią mieć wpływ na wygląd swojego wnętrza.",
+        "features": [
+            "Projekt wykonawczy + moodboard",
+            "Zaufana i sprawdzona ekipa wykończeniowa",
+            "Rabat 15% na wszystkie materiały",
+            "Materiały budowlane (farby, kleje, fugi itp)",
+            "Aranżacja wnętrza z projektantem",
+            "Lista zakupowa + zestawienie produktów - moodboard",
+            "Koordynacja prac i zamówień",
+            "Odbiór lokalu przez inspektora budowlanego + Raport z oględzin",
+            "Usługa wykończenia (malowanie, montaż drzwi, położenie podłogi, łazienka kompleksowo)",
+            "Gwarancja na usługi: 3 lata"
+        ],
+        "bathroom": "płytki do wysokości 270 cm + płytki dekoracyjne, WC podwieszane, umywalka, lustro wklejane do 1,5 m², wanna lub kabina z brodzikiem lub typu walk-in, oświetlenie 2 punkty, płytki 60x60cm, 60x120cm, baterie nadtynkowe",
+        "floors": "panele laminowane lub winylowe, listwy",
+        "doors": "skrzydła drzwiowe przylgowe lub bezprzylgowe, ościeżnice, klamki",
+        "walls": "malowanie ścian na wybrany kolor",
+        "lighting": "Dobór oświetlenia",
+        "ideal_for": "Rodziny i osoby, które chcą mieć wpływ na wygląd swojego wnętrza",
+        "personalization_before_contract": "nie",
+        "visualization": "nie"
+    },
+    "comfort": {
+        "name": "Pakiet Comfort / Szafran",
+        "price_per_sqm": "od 1499 zł/m²",
+        "catalog_number": "Katalog 3 (Premium)",
+        "design_time": "do 4 tygodni",
+        "execution_time": "8-12 tygodni",
+        "product_availability": "na zamówienie",
+        "standard": "Premium",
+        "product_choices": "450 produktów",
+        "product_changes_limit": "5 produktów",
+        "outside_catalog_products": "3 produkty",
+        "meetings_with_designer": "3",
+        "description": "Dla wymagających, którzy oczekują wysokiej jakości, nowoczesnych kolekcji i większej swobody w wyborze. Doskonały dla osób szukających wyjątkowego designu i indywidualnego podejścia.",
+        "features": [
+            "Projekt wykonawczy + moodboard",
+            "Personalizacja przed podpisaniem umowy",
+            "Wizualizacja wnętrza: łazienka, kuchnia",
+            "Zaufana i sprawdzona ekipa wykończeniowa",
+            "Rabat 15% na wszystkie materiały",
+            "Materiały budowlane (farby, kleje, fugi itp)",
+            "Aranżacja wnętrza z projektantem",
+            "Lista zakupowa + zestawienie produktów - moodboard",
+            "Koordynacja prac i zamówień",
+            "Odbiór lokalu przez inspektora budowlanego + Raport z oględzin",
+            "Usługa wykończenia (malowanie, montaż drzwi, położenie podłogi, łazienka kompleksowo)",
+            "Gwarancja na usługi: 3 lata"
+        ],
+        "bathroom": "płytki do wysokości 270 cm + dekor + mozaika, lustro wklejane do 2 m² , umywalka, WC podwieszane, wanna lub kabina z brodzikiem konglomeratowym lub typu walk-in, oświetlenie 3 punkty, płytki 60x60cm, 80x80cm, 60x120cm, baterie podtynkowe",
+        "floors": "panele laminowane, winylowe, deska barlinecka, listwy",
+        "doors": "skrzydła drzwiowe bezprzylgowe lub ukryte, ościeżnice, klamki",
+        "walls": "malowanie ścian na wybrany kolor",
+        "lighting": "Dobór oświetlenia",
+        "ideal_for": "Osoby wymagające, szukające wyjątkowego designu i indywidualnego podejścia",
+        "personalization_before_contract": "tak",
+        "visualization": "łazienka, kuchnia"
     },
     "premium": {
-        "name": "Pakiet Premium",
-        "price_range": "Średnia półka cenowa",
-        "description": "Wyższa jakość materiałów i wykończenia",
+        "name": "Pakiet Premium / Pomarańczowy / Cynamonowy",
+        "price_per_sqm": "od 1999 zł/m²",
+        "catalog_number": "Katalog Premium (Exclusive)",
+        "design_time": "do 6 tygodni",
+        "execution_time": "10-16 tygodni",
+        "product_availability": "na zamówienie",
+        "standard": "Exclusive",
+        "product_choices": "600 produktów",
+        "product_changes_limit": "7 produktów",
+        "outside_catalog_products": "5 produktów",
+        "meetings_with_designer": "4",
+        "description": "Najwyższy standard dla najbardziej wymagających. Luksusowe materiały, światowe marki i rozbudowana personalizacja. Idealny dla tych, którzy chcą stworzyć niepowtarzalne, prestiżowe wnętrze.",
         "features": [
-            "Płytki ceramiczne znanych marek",
-            "Drzwi wewnętrzne premium z ukrytą ościeżnicą",
-            "Panele drewniane lub kamienne",
-            "Gładzie gipsowe i malowanie premium",
-            "Armatura łazienkowa renomowanych producentów",
-            "Smart home - podstawowa automatyka",
-            "Oświetlenie LED"
+            "Projekt wykonawczy + moodboard",
+            "Personalizacja przed podpisaniem umowy",
+            "Wizualizacja wnętrza: łazienka, salon, kuchnia, hol",
+            "Zaufana i sprawdzona ekipa wykończeniowa",
+            "Rabat 15% na wszystkie materiały",
+            "Materiały budowlane (farby, kleje, fugi itp)",
+            "Aranżacja wnętrza z projektantem",
+            "Lista zakupowa + zestawienie produktów - moodboard",
+            "Koordynacja prac i zamówień",
+            "Odbiór lokalu przez inspektora budowlanego + Raport z oględzin",
+            "Usługa wykończenia (malowanie, montaż drzwi, położenie podłogi, łazienka kompleksowo)",
+            "Gwarancja na usługi: 3 lata"
         ],
-        "ideal_for": "Klienci oczekujący wyższego standardu i nowoczesnych rozwiązań"
+        "bathroom": "płytki do wysokości 270 cm + dekor + mozaika, lustro wklejane do 2 m² lub wieszane premium, umywalka, WC podwieszane, wanna wolnostojąca lub kabina z brodzikiem konglomeratowym lub typu walk-in, oświetlenie 4 punkty, 80x80cm, 60x120cm, 120x120cm, baterie podtynkowe",
+        "floors": "podłoga drewniana, listwy",
+        "doors": "skrzydła drzwiowe bezprzylgowe lub ukryte lub przesuwane lub drewniane",
+        "walls": "malowanie ścian na wybrany kolor",
+        "lighting": "Dobór oświetlenia",
+        "ideal_for": "Najbardziej wymagający klienci szukający prestiżowego, niepowtarzalnego wnętrza",
+        "personalization_before_contract": "tak",
+        "visualization": "łazienka, salon, kuchnia, hol",
+        "catalog_status": "W TRAKCIE BUDOWY"
     },
-    "luxury": {
-        "name": "Pakiet Luxury (Indywidualny)",
-        "price_range": "Premium",
-        "description": "Ekskluzywne wykończenie szyte na miarę",
+    "individual": {
+        "name": "Projekt Indywidualny",
+        "price_per_sqm": "1700-5000 zł/m²",
+        "catalog_number": "Bez ograniczeń katalogowych",
+        "design_time": "6-10 tygodni",
+        "execution_time": "indywidualnie dostosowany",
+        "product_availability": "z całego rynku",
+        "standard": "Premium + Indywidualny",
+        "product_choices": "Bez ograniczeń - cały rynek",
+        "product_changes_limit": "nieograniczone",
+        "outside_catalog_products": "nieograniczone",
+        "meetings_with_designer": "więcej niż 5",
+        "description": "Pełna personalizacja 1:1, najwyższa jakość bez kompromisów",
         "features": [
-            "Materiały ekskluzywne (marmur, granit)",
-            "Meble i zabudowy na wymiar",
-            "Zaawansowana automatyka budynkowa",
-            "Designerskie oświetlenie",
-            "Armatura premium (Grohe, Hansgrohe)",
-            "Indywidualny projekt wnętrz",
-            "Konsultacje z architektem wnętrz"
+            "Kompletny układ funkcjonalny dopasowany do Twojego życia",
+            "Pełna dokumentacja wykonawcza (elektryka, hydraulika, ściany, podłogi, drzwi, łazienki)",
+            "Pełne wizualizacje 3D: łazienka, salon z kuchnią, hol, sypialnie",
+            "Indywidualny dobór materiałów - bez ograniczeń katalogowych, z całego rynku",
+            "Materiały w dowolnym przedziale cenowym - do premium",
+            "Listy zakupowe i gotowe zestawienia produktów",
+            "Stały kontakt i konsultacje z architektem (więcej godzin)",
+            "Możliwość wyboru materiałów premium z Polski i Europy",
+            "Architekt pracuje tylko dla Ciebie 1:1",
+            "Brak ograniczeń katalogowych"
         ],
-        "ideal_for": "Klienci z wysokimi wymaganiami, szukający wyjątkowego designu"
+        "ideal_for": "Klienci szukający całkowicie unikalnego wnętrza stworzonego specjalnie dla nich",
+        "visualization": "Pełne wizualizacje 3D całego mieszkania",
+        "bathroom": "Dowolne materiały i rozwiązania",
+        "doors": "Dowolne według projektu"
     }
 }
 
 FAQ = {
-    "jak_dlugo_trwa": "Realizacja już od 1,5 miesiąca! Wykończenie mieszkania 50-60m² trwa zwykle od 6 tygodni, w zależności od pakietu i zakresu prac. 94% naszych projektów kończymy przed terminem!",
-    "czy_wlaczone_materialy": "Tak, nasze pakiety zawierają zarówno robociznę jak i wszystkie materiały potrzebne do realizacji prac. Otrzymasz też personalizowaną listę zakupów dopasowaną do Twoich preferencji.",
-    "mozna_dostosowac": "Zdecydowanie! Wszystkie pakiety są w pełni elastyczne. Każdy z naszych pakietów oraz elementy kosztorysu możesz modyfikować zgodnie z Twoimi potrzebami. Możesz wymienić materiały, dodać dodatkowe usługi lub zmienić zakres prac.",
+    # Czas realizacji
+    "jak_dlugo_trwa_calosc": "W przypadku pakietów Express i Express Plus: zazwyczaj od 7 do 10 tygodni – w zależności od pakietu, zakresu i metrażu. W przypadku pakietów Comfort i Premium: zazwyczaj od 12 do 18 tygodni – w zależności od pakietu, zakresu i metrażu. W przypadku projektu indywidualnego: zazwyczaj od 14 do 20 tygodni – w zależności od zakresu i metrażu. Projekt + realizacja to całość, którą prowadzimy od A do Z.",
+    
+    "kiedy_rozpoczecie_projektowanie": "Najczęściej w ciągu 1–2 tygodni od podpisania umowy – w tym czasie finalizujemy umowę i dobieramy odpowiedniego projektanta do Twoich potrzeb.",
+    
+    "jak_dlugo_trwa_projektowanie": "Standardowo: pakiet Express 1–2 tygodnie. Wyższe pakiety Comfort i Premium to 4-6 tygodni. Przy projektach indywidualnych może być dłużej 6-10 tygodni w zależności od metrażu, bo wszystko dopasowujemy pod Ciebie.",
+    
+    "ile_trwa_wykończenie": "W pakietach bazowych Express i Express Plus wykończenie trwa 6–8 tygodni. Przy większych metrażach lub nietypowych rozwiązaniach czas może się wydłużyć.",
+    
+    "kiedy_rozpoczecie_realizacje": "Najczęściej w ciągu 1–2 tygodni od zakończenia projektu – w tym czasie finalizujemy projekt, kosztorys i zamawiamy materiały.",
+    
+    # Proces
+    "czy_musze_byc_obecny": "Nie 🙂. Nasz zespół prowadzi całość, a Ty dostajesz regularne raporty i zdjęcia. Możesz być w stałym kontakcie z Koordynatorem projektu.",
+    
+    "pomoc_z_odbiorem_dewelopera": "Tak, pomagamy w odbiorze technicznym i doradzamy przy zgłoszeniach – Nasz inżynier sprawdza mieszkanie i przedstawia raport z ewentualnymi usterkami.",
+    
+    "proces_krok_po_kroku": "1. Rozmowa telefoniczna o preferencjach → 2. Spotkanie ze specjalistą ds wykończeń wnętrz → 3. Opcjonalne 2 spotkanie z projektantem → 4. Podpisanie umowy → 5. Projektowanie → 6. Zakupy i logistyka → 7. Realizacja wykończenia i nadzór → 8. Montaż zabudów stolarskich → 9. Odbiór i gwarancja.",
+    
+    "wspolpraca_zdalna": "Tak. Realizujemy projekty w – Gdańsk, Warszawa, Wrocław oraz okolice do 60 km od Centrum. Dojeżdżamy i prowadzimy zdalne konsultacje.",
+    
+    # Pakiety - zakres i różnice
+    "co_zawiera_pakiet": "Wspólny zakres dla wszystkich pakietów: Odbiór lokalu od dewelopera przez inspektora budowlanego, kompleksowe prace wykonawcze (malowanie, montaż podłóg, drzwi, pełne wykończenie łazienki: płytki, armatura, prysznic/wanna, WC, lustro, oświetlenie), materiały budowlane (kleje, farby, fugi, hydroizolacja), materiały wykończeniowe (podłogi, listwy, płytki, drzwi, klamki, armatura, ceramika), koordynacja zamówień materiałów i prac, sprzątanie pobudowlane, projekt pakietowy (układ funkcjonalny, rzuty wykonawcze, moodboardy, lista zakupowa, konsultacje z projektantem). Wyższe pakiety Comfort i Premium posiadają dodatkowo wizualizacje wybranych pomieszczeń.",
+    
+    "roznice_miedzy_pakietami": "Kluczowe różnice: 1) Standard produktów (Basic, Standard, Comfort, Premium, Indywidualny), 2) Liczba produktów do wyboru (od 150 do pełnego asortymentu 7 sklepów partnerskich), 3) Zakres wizualizacji (od podstawowych do pełnych wizualizacji całego mieszkania), 4) Liczba konsultacji z projektantem (od 1 do 5 spotkań), 5) Zakres wykończenia łazienki (wysokość płytek, wielkość płytek, ilość oświetlenia, typy baterii itp.), 6) Rodzaj podłóg (od laminatów, przez winylowe do drewnianych), 7) Rodzaj drzwi (od przylgowych przez bezprzylgowe do ukrytych), 8) Czas realizacji (od 6 do 16 tygodni).",
+    
+    "projekt_indywidualny_vs_pakiet": "Projekt indywidualny to pełna personalizacja 1:1, dobór produktów z całego rynku, materiały w dowolnym przedziale cenowym po premium, wizualizacje całego mieszkania, wydłużony czas prac projektanta na konsultacje, brak ograniczeń katalogowych. Cena: 1700–5000 zł/m² + zabudowy stolarskie. W skrócie: Pakiety = szybciej i taniej. Projekt Indywidualny = najwyższa personalizacja i architekt tylko dla Ciebie.",
+    
+    "zmiana_elementow_pakietu": "Tak. W pliku masz jasno określone limity zmian: Express: 2 zmiany produktów, Express Plus: 3 zmiany, Comfort/Szafran: 5 zmian, Premium/Pomarańczowy/Cynamonowy: 7 zmian. Wszystkie zmiany rozliczane są różnicą cenową danego produktu.",
+    
+    "laczenie_pakietow": "Tak. Każdy pakiet ma określony limit zmian między katalogami (2–7 zmian). Plus: dopłata za różnice cenowe oraz możliwość wyboru produktów z poza katalogu z 7 sklepów partnerskich.",
+    
+    # Ceny i rozliczenia
+    "jak_liczycie_metry": "Metraż rozliczamy zawsze uczciwie i transparentnie — po powierzchni podłogi, bo tylko ona realnie wpływa na zakres prac i koszt materiałów. Klient od początku zna dokładny koszt, bez ukrytych dopłat.",
+    
+    "cena_pakietu_meble_oswietlenie": "Oświetlenie – nie (tylko dobór oświetlenia na bazie 12 popularnych producentów), Meble – NIE (podstawowe szafki łazienkowe w pakietach Express i Express Plus), Gładzenie ścian – nie ma tego w zakresie prac, jest tylko gruntowanie + malowanie (w pakietach nie ma gładzi). Jeśli klient potrzebuje gładzi lub mebli, czy oświetlenia – możemy to zrealizować jako prace dodatkowe.",
+    
+    "kuchnie_szafy": "Tak – oferujemy kuchnie na wymiar i szafy wnękowe realizowane przez naszych sprawdzonych stolarzy. Projektujemy, koordynujemy i montujemy zabudowy tak, aby pasowały do całego wnętrza.",
+    
+    "koszt_dla_metrazu": "Ceny naszych pakietów startują już od 999 zł/m² w wersji Express. Pakiet Express Plus to od 1199 zł/m², Comfort zaczyna się od 1499 zł/m², a Premium – od 1999 zł/m². Aby przygotować precyzyjną wycenę dla Twojego mieszkania, potrzebujemy krótkiego spotkania lub przesłania rzutu lokalu — wtedy przeliczamy ofertę co do metra.",
+    
+    "koszt_projekt_indywidualny": "Projekt Indywidualny to w pełni spersonalizowana usługa, w której architekt pracuje z Tobą 1:1 i tworzy wnętrze dokładnie pod Twój styl, potrzeby i budżet. Cena: 1700–5000 zł/m² (w zależności od standardu i złożoności). W ramach projektu otrzymujesz: kompletny układ funkcjonalny, pełną dokumentację wykonawczą, pełne wizualizacje 3D (łazienka, salon z kuchnią, hol, sypialnie), indywidualny dobór materiałów z całego rynku, listy zakupowe, stały kontakt z architektem, możliwość wyboru materiałów premium z Polski i Europy.",
+    
+    "dodatkowe_oplaty": "Tak: dopłaty za zmiany produktów (różnica cenowa), prace dodatkowe poza zakresem katalogu (gładzie, przeróbki hydrauliczne, elektryczne, zabudowy GK, meble na wymiar). Wszystko pokazujemy z góry i podpisujemy przed pracami, żeby klient nie miał żadnych niespodzianek na podstawie cennika.",
+    
+    "vat": "Wykończenia mieszkań do 150 m² = 8% VAT. Wykończenia domów do 300 m² = 8% VAT. Wszystkie nasze pakiety mają już wliczony korzystny VAT 8% – klient od razu wie, ile płaci.",
+    
+    "kosztorys": "Tak – przygotowujemy dokładną specyfikację prac oraz materiałów dla konkretnego mieszkania. Nic nie jest ukryte.",
+    
+    "platnosc_transze": "Tak – umożliwiamy wygodny system rozliczeń w kilku transzach.",
+    
+    "dodatkowe_prace_rozliczenie": "Każde dodatkowe prace wyceniamy na podstawie naszego cennika pisemnie przed wykonaniem. Zero niespodzianek i pełna kontrola kosztów.",
+    
+    # Katalogi i rabaty
+    "ile_katalogow": "Mamy 3 katalogi produktów: Katalog 1 (Basic) - 150 produktów dla pakietu Express, Katalog 2 (Standard) - 300 produktów dla pakietu Express Plus, Katalog 3 (Premium) - 450 produktów dla pakietów Comfort i Premium. Produkty w katalogach Basic i Standard są dostępne od ręki, produkty Premium na zamówienie.",
+    
+    "rabat_na_materialy": "Tak! Wszyscy klienci otrzymują rabat 15% na wszystkie materiały. To jeden z benefitów współpracy z NovaHouse - dzięki naszym negocjacjom z dostawcami możesz zaoszczędzić na materiałach wysokiej jakości.",
+    
+    "wymiana_produktow_miedzy_katalogami": "Tak, możesz wymieniać produkty między katalogami w ramach limitów: Express - 2 produkty, Express Plus - 3 produkty, Comfort - 5 produktów, Premium - 7 produktów. Przy wymianie obowiązuje rozliczenie różnicy cenowej. Dodatkowo możesz wybierać produkty z poza katalogu ze sklepów partnerskich (Express Plus: 1 produkt, Comfort: 3 produkty, Premium: 5 produktów) z dopłatą wynikającą z różnicy ceny.",
+    
+    # Pozostałe
     "gwarancja": "Udzielamy 36-miesięcznej (3-letniej) gwarancji od momentu odbioru na wykonane prace. To jeden z najdłuższych okresów gwarancji na rynku! Na materiały obowiązuje gwarancja producenta.",
-    "platnosc": "Płatności realizujemy etapowo: zaliczka przy podpisaniu umowy, kolejne transze po ukończeniu poszczególnych etapów, końcowa płatność po odbiorze prac. Oferujemy przejrzyste wyceny dostosowane do Twojego budżetu.",
-    "ile_kosztuje": "Ceny zaczynają się od 949 zł/m² (pakiet Standard) do 1990 zł/m² (pakiet Luxury). Wycena indywidualna jest bezpłatna. Oferujemy cennik dodatkowych prac - wszystko jasno, uczciwie, bez zaskoczeń.",
+    
     "produkty": "Współpracujemy z najlepszymi producentami: Laufen, Geberit, Kaldewei, Hansgrohe, Grohe, Roca, Tubadzin, Paradyż, Mapei, Quick-Step, Deante, Ferro, Cersanit i wiele innych. W zależności od pakietu oferujemy różne opcje — od standardowych do luksusowych marek.",
-    "etapy": "Współpraca przebiega w 4 etapach: 1) Wybór pakietu lub projektu indywidualnego + wycena, 2) Projektowanie z projektantem (zdalne lub w biurze) + 2-3 propozycje układów funkcjonalnych, 3) Wykończenie pod klucz + nadzór (zajmujemy się wszystkim!), 4) Finalizacja i odbiór lokalu (mieszkanie czyste i gotowe do zamieszkania).",
-    "czy_potrzebny_projekt": "Dla pełnego zakresu prac rekomendujemy projekt indywidualny. Spotkanie aranżacyjne może być zdalne lub w naszym biurze. Przygotujemy 2-3 propozycje układów funkcjonalnych, precyzyjną listę zakupów i projekt wykonawczy.",
-    "smart_home": "Smart home jest dostępna w pakiecie Premium i Luxury. Możesz wybrać automatykę oświetlenia, temperatury lub bezpieczeństwa.",
+    
     "terminowosc": "Terminowość to nasz standard i obietnica! Każdy etap prac realizujemy zgodnie z ustalonym harmonogramem. 94% naszych zleceń oddajemy przed terminem. Dzięki sprawdzonemu systemowi zarządzania projektami masz pewność realizacji na czas.",
+    
     "ekipy": "Współpracujemy wyłącznie ze sprawdzonymi ekipami wykończeniowymi, które znamy od lat i z którymi zrealizowaliśmy dziesiątki udanych projektów. To fachowcy, którym ufamy - rzetelni, terminowi i dbający o detale.",
-    "zakres_uslug": "Oferujemy kompleksową usługę pod klucz: projekt i koncepcja, zakupy i logistyka, koordynacja i nadzór, prace wykończeniowe, zabudowy stolarskie (kuchnie, szafy, meble na wymiar), ostateczne dopracowanie i sprzątanie.",
-    "co_obejmuje_usluga": "Zajmujemy się WSZYSTKIM: od projektu przez zakupy materiałów, koordynację prac, prace wykończeniowe, zabudowy stolarskie, aż po finalne sprzątanie. Ty cieszysz się gotowym wnętrzem!",
-    "zabudowy_stolarskie": "Tworzymy zabudowy stolarskie na wymiar: kompleksowo - od projektu przez produkcję do montażu. Korzystamy z najwyższej jakości materiałów dla trwałości i funkcjonalności. Oferujemy przejrzyste wyceny dostosowane do Twojego budżetu.",
-    "gdzie_dzialamy": "Działamy na terenie Trójmiasta (Gdańsk, Sopot, Gdynia), Warszawy oraz Wrocławia.",
-    "cennik_dodatkowy": "Mamy oficjalny cennik dodatkowych prac - wszystko jasno, uczciwie, bez zaskoczeń. Każda dodatkowa usługa ma swój jasno określony koszt zapisany czarno na białym. Zero niedomówień.",
+    
+    "gdzie_dzialamy": "Działamy na terenie Trójmiasta (Gdańsk, Sopot, Gdynia), Warszawy oraz Wrocławia oraz okolice do 60 km od Centrum. Nasze biura znajdują się: Gdańsk - ul. Pałubickiego 2 (C2-parter), Warszawa - ul. Prosta 70 (5 piętro), Wrocław - ul. Sucha 3.",
+    
     "po_odbiorze": "Po zakończeniu prac Twoje mieszkanie będzie idealnie czyste i gotowe do natychmiastowego zamieszkania. Dodatkowo zapewniamy 36-miesięczną gwarancję od momentu odbioru.",
+    
+    # Domy pasywne
+    "domy_pasywne": "Oferujemy budowę domów pasywnych w trzech podstawowych metrażach: 70m² (idealny dla pary), 85m² (dla małej rodziny) i 140m² (dla większej rodziny). Nasze domy wykorzystują nowoczesne technologie: Posytec (system izolacji), IsoBeton (energooszczędny materiał konstrukcyjny) i CLT/HBE (połączenie drewna i betonu). Domy pasywne charakteryzują się minimalnym zużyciem energii, niskimi kosztami eksploatacji i doskonałą wentylacją z odzyskiem ciepła.",
+    
+    "technologie_domy_pasywne": "W naszych domach pasywnych wykorzystujemy trzy główne technologie: 1) Posytec - zaawansowany system izolacji zapewniający doskonałą izolację termiczną, 2) IsoBeton - energooszczędny materiał konstrukcyjny o wysokich parametrach izolacyjnych, 3) CLT/HBE (Cross Laminated Timber / Holz Beton Element) - połączenie drewna i betonu zapewniające doskonałe właściwości izolacyjne i konstrukcyjne.",
+    
+    # Zabudowy stolarskie
+    "zabudowy_stolarskie_szczegoly": "Oferujemy kompleksowe zabudowy stolarskie na wymiar: szafy, garderoby, dressing roomy, biblioteczki, regały, zabudowy kuchenne i łazienkowe. Proces obejmuje kompleksowe podejście od projektu, przez produkcję, aż po montaż. Korzystamy z najwyższej jakości materiałów dla trwałości i funkcjonalności. Wycena jest przygotowywana indywidualnie po zrobieniu projektu.",
+    
+    "kuchnie_na_wymiar": "Tak, wykonujemy kuchnie na wymiar. Wycena jest przygotowywana indywidualnie po zrobieniu projektu, uwzględniającego wszystkie Twoje potrzeby i preferencje. Oferujemy kompleksowe zabudowy kuchenne dopasowane do przestrzeni.",
+    
+    # Usługi dodatkowe
+    "klimatyzacja": "Tak, oferujemy montaż klimatyzacji. W pakiecie Waniliowy/Express cena za jedną jednostkę zaczyna się od 7800 zł. W pozostałych pakietach wycena jest przygotowywana indywidualnie po zrobieniu projektu.",
+    
+    "schody_na_zamowienie": "Tak, wykonujemy schody na zamówienie. Wycena jest przygotowywana indywidualnie po zrobieniu projektu, uwzględniającego wszystkie potrzeby i preferencje.",
+    
+    "wizualizacje": "Oferujemy wizualizacje 3D projektowanych wnętrz, które pozwalają zobaczyć, jak będzie wyglądać gotowa przestrzeń przed rozpoczęciem prac. Wizualizacje są dostępne w pakietach Comfort (łazienka, kuchnia), Premium (łazienka, salon, kuchnia, hol) oraz w projektach indywidualnych (całe mieszkanie).",
+    
+    "nadzor_prace": "Tak, zapewniamy pełen nadzór nad pracami. Nasi Projektanci nadzorują każdy etap realizacji – dbają o zgodność z projektem, normy techniczne oraz terminowe dostawy materiałów. Dzięki temu nie musisz martwić się przepisami budowlanymi ani technicznymi szczegółami.",
+    
+    "raporty_postep": "Tak, regularnie przesyłamy raporty dotyczące postępu prac, w tym zdjęcia. Dzięki temu możesz na bieżąco śledzić postępy bez konieczności wychodzenia z domu.",
+    
+    # Informacje firmowe
+    "dane_firmowe": "NovaHouse Sp. z o.o. jest zarejestrowana pod numerem KRS 0000612864, posiada NIP 5833201699 oraz REGON 364323586. Kapitał zakładowy firmy wynosi 100.000,00 PLN. Działamy od 2011 roku.",
+    
+    "kontakt_specjalistyczny": "W sprawach logistyki i zamówień można dzwonić pod numer +48 509 929 437, w kwestiach finansowych i księgowych pod numer +48 607 518 544. W sprawie współpracy z partnerami i wykonawcami: partnerzy@novahouse.pl. Główny kontakt: +48 585 004 663, kontakt@novahouse.pl.",
+    
+    "doswiadczenie_firmy": "NovaHouse działa na rynku od 2011 roku. Mamy za sobą ponad 350 zrealizowanych projektów i 96% zadowolonych klientów. Współpracujemy z ponad 120 sprawdzonymi dostawcami i wykonawcami. 94% naszych projektów oddajemy przed terminem.",
 }
 
 COMPANY_INFO = """
 NovaHouse to profesjonalna firma specjalizująca się w kompleksowym wykończeniu wnętrz pod klucz.
 
 📊 O NAS:
-Tworzymy wnętrza, które są gotowe do zamieszkania. Od projektu po efekt końcowy – zajmujemy się wszystkim, abyś nie musiał się o nic martwić. Działamy na terenie Trójmiasta (Gdańsk, Sopot, Gdynia), Warszawy oraz Wrocławia.
+NovaHouse działa na rynku od 2011 roku. Początkowo koncentrowaliśmy się na technikach home staging, a obecnie oferujemy pełen zakres usług projektowania i realizacji przestrzeni mieszkalnych i komercyjnych. Tworzymy wnętrza, które są gotowe do zamieszkania. Od projektu po efekt końcowy – zajmujemy się wszystkim, abyś nie musiał się o nic martwić. Działamy na terenie Trójmiasta (Gdańsk, Sopot, Gdynia), Warszawy oraz Wrocławia.
 
-� NASZE WYNIKI:
-• 30+ zrealizowanych projektów
-• 95% zadowolonych klientów
+🎯 MISJA:
+Naszą misją jest tworzenie pięknych wnętrz, realizowanych terminowo i w ustalonym budżecie, wyręczając klientów w całym procesie remontowym. Chcemy zmieniać postrzeganie firm remontowych na terminowe i solidne oraz upraszczać klientom przejście przez skomplikowany proces remontowy.
+
+🎯 GŁÓWNE CELE:
+1. Zmiana postrzegania firm remontowych na terminowe i solidne
+2. Uproszczenie klientom przejścia przez skomplikowany proces remontowy poprzez załatwianie za nich każdej sprawy
+3. Projektowanie pięknych wnętrz w ustalonym budżecie i realizacja prac w terminie
+
+🏆 NASZE WYNIKI:
+• Działamy od 2011 roku
+• 350+ zrealizowanych projektów
+• 96% zadowolonych klientów
 • 94% zleceń oddanych przed terminem
+• 120+ sprawdzonych dostawców i partnerów
 • 36 miesięcy gwarancji
+• 15% rabatu na wszystkie materiały
 • Realizacja od 1,5 miesiąca
 
 ✨ DLACZEGO MY?
@@ -155,9 +419,18 @@ Poniedziałek - Piątek: 09:00 - 17:00
 Sobota: 10:00 - 14:00
 Niedziela: zamknięte
 
-💰 CENY ORIENTACYJNIE:
-Wykończenie od 949 zł/m² do 1990 zł/m² (w zależności od pakietu i zakresu prac).
-Realizacja już od 1,5 miesiąca – bez zbędnej zwłoki, z jasnym harmonogramem prac.
+💰 CENY PAKIETÓW:
+• Express: od 999 zł/m²* | Projektowanie: do 10 dni | Realizacja: 6-8 tygodni** | 150 produktów
+• Express Plus: od 1199 zł/m²* | Projektowanie: do 20 dni | Realizacja: 6-8 tygodni** | 300 produktów  
+• Comfort/Szafran: od 1499 zł/m²* | Projektowanie: do 4 tygodni | Realizacja: 8-12 tygodni** | 450 produktów
+• Premium/Pomarańczowy/Cynamonowy: od 1999 zł/m²* | Projektowanie: do 6 tygodni | Realizacja: 10-16 tygodni** | 600 produktów
+• Projekt Indywidualny: 1700-5000 zł/m² | Projektowanie: 6-10 tygodni | Realizacja: indywidualna
+
+* Podana cena dotyczy mieszkania o powierzchni 65 m² w stanie deweloperskim. Dla innych metraży ceny przeliczane są indywidualnie.
+** Podany czas realizacji obowiązuje dla mieszkań o powierzchni od 20 do 90 m².
+
+🎁 RABAT: 15% na wszystkie materiały dla każdego pakietu!
+💳 Wszystkie ceny zawierają VAT 8%. Realizacja projekt + wykończenie to całość od A do Z.
 
 Chętnie odpowiemy na wszystkie Twoje pytania. Zapraszamy do kontaktu!
 """
@@ -179,9 +452,11 @@ def get_package_description(package_name):
 
 def get_all_packages_summary():
     """Zwraca podsumowanie wszystkich pakietów"""
-    summary = "Oferujemy 3 pakiety wykończeniowe:\n\n"
+    summary = "Oferujemy 5 opcji wykończeniowych:\n\n"
     for key, package in PACKAGES.items():
-        summary += f"**{package['name']}** - {package['description']}\n"
+        summary += f"**{package['name']}** ({package['price_per_sqm']}, {package['duration']})\n"
+        summary += f"{package['description']}\n"
+        summary += f"Standard: {package['standard']} | Produkty: {package['product_choices']}\n\n"
     return summary
 
 QUALIFICATION_QUESTIONS = [
@@ -432,6 +707,19 @@ WHY_CHOOSE_US = {
     "sprzatanie": "Mieszkanie gotowe do zamieszkania - idealna czystość po zakończeniu prac."
 }
 
+# Korzyści pakietów wykończeniowych
+PACKAGE_BENEFITS = {
+    "title": "Nasze pakiety wykończeniowe – szybciej, prościej, przewidywalnie",
+    "benefits": [
+        "Szybszy – autorski proces projektowania oraz dedykowany system prac umożliwiają szybszą realizację inwestycji",
+        "Przewidywalny – od początku wiesz, ile zapłacisz i kiedy skończymy",
+        "Prosty – jedna osoba kontaktowa, jasne zasady współpracy i minimalne formalności",
+        "Elastyczny – możliwość personalizacji produktów i modyfikacji zakresu usług",
+        "Z kontrolą kosztów – stała cena pakietu oraz pełna transparentność kosztów dodatkowych dzięki szczegółowemu cennikowi usług",
+        "Rabat 15% na wszystkie materiały – oszczędzasz na wysokiej jakości produktach"
+    ]
+}
+
 # Materiały i katalogi
 MATERIALS_INFO = """
 Przygotowaliśmy dla Ciebie starannie wyselekcjonowane katalogi produktów. To nie jest przypadkowy zbiór – to efekt wieloletniej współpracy z naszymi klientami.
@@ -440,6 +728,119 @@ W katalogach znajdziesz tylko te materiały i rozwiązania, które najczęściej
 
 Dzięki temu oszczędzasz swój czas – eliminujemy chaos i skupiamy się na tym, co naprawdę się sprawdza. Twój wybór staje się prostszy, a efekt końcowy – przewidywalnie dobry.
 """
+
+# Domy pasywne
+PASSIVE_HOUSES = {
+    "description": "Domy pasywne to energooszczędne budynki, które minimalizują zużycie energii dzięki doskonałej izolacji i wykorzystaniu odnawialnych źródeł energii.",
+    "available_sizes": {
+        "70m2": {
+            "size": "70m²",
+            "ideal_for": "Para lub małe gospodarstwo domowe",
+            "description": "Kompaktowy dom pasywny idealny dla pary"
+        },
+        "85m2": {
+            "size": "85m²",
+            "ideal_for": "Mała rodzina (2-3 osoby)",
+            "description": "Optymalny dom pasywny dla małej rodziny"
+        },
+        "140m2": {
+            "size": "140m²",
+            "ideal_for": "Większa rodzina (4-5 osób)",
+            "description": "Przestronny dom pasywny dla większej rodziny"
+        }
+    },
+    "technologies": {
+        "posytec": {
+            "name": "Posytec",
+            "description": "Zaawansowany system izolacji zapewniający doskonałą izolację termiczną"
+        },
+        "isobeton": {
+            "name": "IsoBeton",
+            "description": "Energooszczędny materiał konstrukcyjny o wysokich parametrach izolacyjnych"
+        },
+        "clt_hbe": {
+            "name": "CLT/HBE",
+            "description": "Cross Laminated Timber / Holz Beton Element - połączenie drewna i betonu zapewniające doskonałe właściwości izolacyjne i konstrukcyjne"
+        }
+    },
+    "benefits": [
+        "Minimalne zużycie energii do ogrzewania i chłodzenia",
+        "Niższe koszty eksploatacji",
+        "Doskonała wentylacja z odzyskiem ciepła",
+        "Wysoki komfort użytkowania",
+        "Ekologiczne i energooszczędne",
+        "Doskonała izolacja termiczna i akustyczna"
+    ]
+}
+
+# Zabudowy stolarskie
+CARPENTRY_SERVICES = {
+    "description": "Tworzymy zabudowy stolarskie na wymiar - kompleksowo od projektu przez produkcję do montażu. Korzystamy z najwyższej jakości materiałów dla trwałości i funkcjonalności.",
+    "types": {
+        "szafy": "Szafy na wymiar dopasowane do przestrzeni",
+        "garderoby": "Garderoby i dressing roomy",
+        "biblioteczki": "Biblioteczki i regały",
+        "zabudowy_kuchenne": "Zabudowy kuchenne na wymiar",
+        "zabudowy_lazienkowe": "Zabudowy łazienkowe",
+        "inne": "Inne zabudowy na indywidualne zamówienie"
+    },
+    "process": [
+        "Kompleksowe podejście od projektu, przez produkcję, aż po montaż",
+        "Wykorzystanie materiałów wysokiej jakości",
+        "Pełna kontrola nad budżetem dzięki przejrzystym wycenom",
+        "Indywidualne dopasowanie do potrzeb klienta"
+    ],
+    "pricing": "Wycena przygotowywana indywidualnie po zrobieniu projektu"
+}
+
+# Usługi dodatkowe
+ADDITIONAL_SERVICES = {
+    "klimatyzacja": {
+        "name": "Klimatyzacja",
+        "description": "Montaż systemów klimatyzacji",
+        "pricing": {
+            "waniliowy": "od 7800 zł za jednostkę",
+            "other": "Wycena indywidualna po projekcie"
+        }
+    },
+    "schody": {
+        "name": "Schody",
+        "description": "Wykonanie schodów na zamówienie",
+        "pricing": "Wycena indywidualna po projekcie"
+    },
+    "wizualizacje": {
+        "name": "Wizualizacje 3D",
+        "description": "Wizualizacje projektowanych wnętrz pozwalające zobaczyć gotową przestrzeń przed rozpoczęciem prac",
+        "included_in": ["Comfort", "Premium", "Individual"]
+    },
+    "nadzor": {
+        "name": "Pełen nadzór nad pracami",
+        "description": "Projektanci nadzorują każdy etap realizacji – dbają o zgodność z projektem, normy techniczne oraz terminowe dostawy materiałów"
+    },
+    "raporty": {
+        "name": "Raporty z postępu prac",
+        "description": "Regularne przesyłanie raportów i zdjęć z postępu prac"
+    }
+}
+
+# Blog i edukacja
+BLOG_TOPICS = {
+    "title": "Wiedza i Blog NovaHouse",
+    "description": "Edukacja w zakresie projektowania i wykańczania wnętrz, praktyczne porady, inspiracje",
+    "categories": [
+        "Projektowanie wnętrz",
+        "Wykańczanie mieszkań",
+        "Wybór materiałów",
+        "Porady ekspertów",
+        "Realizacje krok po kroku"
+    ],
+    "value": [
+        "Edukacja w zakresie projektowania i wykańczania wnętrz",
+        "Praktyczne porady dotyczące wyboru materiałów i rozwiązań",
+        "Inspiracje do własnych projektów",
+        "Budowanie zaufania poprzez dzielenie się wiedzą ekspercką"
+    ]
+}
 
 def get_process_overview():
     """Zwraca przegląd procesu realizacji"""
