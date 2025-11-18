@@ -116,9 +116,16 @@ monitor-prod: ## Monitor production API
 	@echo "$(BLUE)Monitoring production...$(NC)"
 	./monitor.sh https://glass-core-467907-e9.ey.r.appspot.com 10
 
-check-deps: ## Check for outdated and vulnerable dependencies
-	@echo "$(BLUE)Checking dependencies...$(NC)"
+check-deps: ## Check for outdated packages and available updates
+	@echo "$(BLUE)Checking for updates...$(NC)"
 	python check-deps.py
+
+check-updates: check-deps ## Alias for check-deps (checks app + Python + packages)
+
+update-deps: ## Update all Python packages to latest versions
+	@echo "$(YELLOW)⚠️  Updating all packages...$(NC)"
+	pip install --upgrade -r requirements.txt
+	@echo "$(GREEN)✅ Packages updated. Run tests to verify!$(NC)"
 
 vscode-extensions: ## Install recommended VSCode extensions
 	@echo "$(BLUE)Installing VSCode extensions...$(NC)"
