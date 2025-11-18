@@ -119,6 +119,35 @@ make coverage-report     # Generate coverage HTML report
 
 ---
 
+## 📚 API Documentation
+
+### Interactive Documentation
+
+- **[Swagger UI](https://glass-core-467907-e9.ey.r.appspot.com/api-docs)** - Live interactive API docs ⭐
+- **[src/docs/openapi.yaml](./src/docs/openapi.yaml)** - OpenAPI 3.0.3 specification
+- **[SWAGGER_SETUP.md](./SWAGGER_SETUP.md)** - Swagger UI setup guide
+- **[API_ENDPOINTS.md](./API_ENDPOINTS.md)** - Detailed endpoint documentation
+
+### API Features
+
+- **8+ Documented Endpoints** - Complete with examples
+- **Try it out** - Test API directly in browser
+- **Security Schemas** - API Key authentication
+- **Request/Response Examples** - For all endpoints
+- **Error Codes** - Documented error responses
+
+### Quick Access
+
+```bash
+# Local
+http://localhost:5000/api-docs
+
+# Production
+https://glass-core-467907-e9.ey.r.appspot.com/api-docs
+```
+
+---
+
 ## 🧪 Testing & Quality
 
 ### Testing

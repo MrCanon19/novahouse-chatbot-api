@@ -82,6 +82,8 @@ from src.routes.dashboard_widgets import dashboard_widgets
 from src.routes.backup import backup_routes
 from src.routes.search import search_routes
 from src.routes.file_upload import file_upload_routes
+# Swagger UI (v2.3.1)
+from src.routes.swagger_ui import swagger_ui_bp
 
 # KROK 5: Rejestrujemy nasze trasy w aplikacji.
 app.register_blueprint(user_bp, url_prefix='/api')
@@ -102,6 +104,8 @@ app.register_blueprint(dashboard_widgets)
 app.register_blueprint(backup_routes)
 app.register_blueprint(search_routes)
 app.register_blueprint(file_upload_routes)
+# Register v2.3.1 routes
+app.register_blueprint(swagger_ui_bp)
 
 # KROK 6: Tworzymy tabele w kontekście w pełni skonfigurowanej aplikacji.
 with app.app_context():
