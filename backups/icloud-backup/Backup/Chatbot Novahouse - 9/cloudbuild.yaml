@@ -1,0 +1,20 @@
+steps:
+# Krok 1: Instalacja zależności
+- name: 'python:3.11'
+  entrypoint: pip
+  args: ['install', '-r', 'requirements.txt', '--user']
+
+# Krok 2: Uruchomienie testów (opcjonalne)
+# - name: 'python:3.11'
+#   entrypoint: python
+#   args: ['-m', 'pytest', 'tests/']
+
+# Krok 3: Wdrożenie na App Engine
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: gcloud
+  args: ['app', 'deploy', '--quiet']
+
+# Opcje budowania
+options:
+  logging: CLOUD_LOGGING_ONLY
+

@@ -1,0 +1,544 @@
+# Intencje dla chatbota NovaHouse
+
+## zapytanie_o_pakiety
+- Jakie pakiety wykończeniowe oferujecie?
+- Chciałbym poznać dostępne pakiety wykończeniowe
+- Czy możesz mi powiedzieć, jakie macie pakiety?
+- Pokaż mi ofertę pakietów wykończeniowych
+- Interesują mnie pakiety wykończeniowe NovaHouse
+- Jakie są opcje wykończenia mieszkania?
+- Czym różnią się wasze pakiety?
+- Potrzebuję informacji o pakietach wykończeniowych
+- Jakie pakiety są dostępne w waszej ofercie?
+- Szukam informacji o pakietach wykończeniowych
+- Opowiedz mi o waszych pakietach
+- Jakie mam opcje wykończenia mieszkania u was?
+- Chcę porównać pakiety wykończeniowe
+- Potrzebuję przeglądu pakietów wykończeniowych
+- Czy macie różne poziomy pakietów wykończeniowych?
+- Jakie są wasze standardowe pakiety?
+- Czy oferujecie pakiety premium?
+- Jaka jest różnica między pakietem Waniliowym a Cynamonowym?
+- Czy pakiet Szafranowy zawiera montaż drzwi?
+- Czy w pakiecie Pomarańczowym jest malowanie ścian?
+- Jakie elementy zawiera każdy z pakietów?
+- Czy mogę zobaczyć szczegółowy opis pakietów?
+- Które pakiety zawierają wykończenie łazienki?
+- Czy w pakietach są uwzględnione podłogi?
+- Czy pakiety różnią się jakością materiałów?
+- Czy mogę dostosować pakiet do moich potrzeb?
+- Czy oferujecie pakiet indywidualny?
+- Czy pakiety obejmują projekt wnętrza?
+- Czy w pakietach jest uwzględniona zabudowa kuchenna?
+
+## pytanie_o_ceny
+- Ile kosztuje wykończenie mieszkania pod klucz?
+- Jaka jest cena pakietu Waniliowego?
+- Ile kosztuje pakiet Cynamonowy?
+- Czy możecie podać cennik usług?
+- Jaki jest koszt wykończenia mieszkania 50m2?
+- Ile będzie kosztować wykończenie kawalerki?
+- Jakie są ceny pakietów wykończeniowych?
+- Czy cena zależy od metrażu?
+- Ile kosztuje wykończenie łazienki?
+- Jaki jest koszt położenia podłogi?
+- Czy macie jakieś promocje cenowe?
+- Ile kosztuje pakiet Szafranowy za metr kwadratowy?
+- Jaka jest cena pakietu Pomarańczowego?
+- Czy ceny zawierają materiały?
+- Ile kosztuje projekt indywidualny?
+- Czy oferujecie rabaty przy większym metrażu?
+- Jaki jest całkowity koszt wykończenia mieszkania 70m2?
+- Czy w cenie jest uwzględniony podatek VAT?
+- Ile kosztuje dom pasywny 85m2?
+- Jaki jest koszt zabudowy kuchennej?
+- Ile kosztuje montaż klimatyzacji?
+- Czy można rozłożyć płatność na raty?
+- Jaki jest koszt dodatkowych punktów elektrycznych?
+- Ile kosztuje wykończenie mieszkania w Warszawie?
+- Czy ceny są takie same w Gdańsku i we Wrocławiu?
+- Jaki jest koszt nadzoru nad pracami?
+- Czy za projekt trzeba płacić dodatkowo?
+- Ile kosztuje wizualizacja wnętrza?
+- Czy jest opłata za wycenę?
+- Jaki jest minimalny budżet na wykończenie mieszkania?
+
+## zapytanie_o_remont
+- Czy zajmujecie się remontami mieszkań?
+- Potrzebuję wyremontować mieszkanie, czy możecie pomóc?
+- Jaki jest zakres usług remontowych?
+- Czy robicie remonty częściowe?
+- Interesuje mnie remont łazienki, czy to możliwe?
+- Czy przeprowadzacie remonty starych mieszkań?
+- Jak długo trwa remont mieszkania 60m2?
+- Czy zajmujecie się wyburzaniem ścian?
+- Potrzebuję odświeżyć mieszkanie, czy to wchodzi w zakres waszych usług?
+- Czy robicie remonty domów jednorodzinnych?
+- Jaki jest koszt generalnego remontu?
+- Czy zajmujecie się wymianą instalacji elektrycznej?
+- Czy przeprowadzacie remonty instalacji hydraulicznej?
+- Czy robicie adaptacje poddaszy?
+- Czy zajmujecie się remontami lokali usługowych?
+- Czy przeprowadzacie remonty biur?
+- Jak wygląda proces remontowy?
+- Czy podczas remontu zapewniacie kontener na gruz?
+- Czy pomagacie w uzyskaniu pozwoleń na remont?
+- Czy zajmujecie się remontami zabytków?
+- Czy robicie remonty w starym budownictwie?
+- Czy przeprowadzacie remonty w kamienicach?
+- Czy zajmujecie się termomodernizacją budynków?
+- Czy robicie remonty elewacji?
+- Czy przeprowadzacie remonty dachów?
+- Czy zajmujecie się naprawą wilgoci w ścianach?
+- Czy robicie izolacje przeciwwilgociowe?
+- Czy przeprowadzacie remonty piwnic?
+- Czy zajmujecie się remontami balkonów?
+- Czy robicie remonty tarasów?
+
+## zapytanie_o_domy_pasywne
+- Czym są domy pasywne?
+- Jakie domy pasywne oferujecie?
+- Ile kosztuje budowa domu pasywnego?
+- Jakie technologie wykorzystujecie w domach pasywnych?
+- Czy budujecie domy pasywne w okolicach Gdańska?
+- Jaki jest czas budowy domu pasywnego?
+- Czy dom pasywny jest energooszczędny?
+- Jakie są zalety domów pasywnych?
+- Czy oferujecie domy pasywne o różnych metrażach?
+- Czy można zobaczyć projekty domów pasywnych?
+- Jakie są koszty utrzymania domu pasywnego?
+- Czy dom pasywny jest droższy od tradycyjnego?
+- Co to jest technologia Posytec?
+- Czy w domach pasywnych jest klimatyzacja?
+- Jak wygląda wentylacja w domu pasywnym?
+- Czy dom pasywny wymaga specjalnych pozwoleń?
+- Jakie materiały wykorzystujecie do budowy domów pasywnych?
+- Czy dom pasywny 70m2 wystarczy dla rodziny 2+1?
+- Czy oferujecie domy pasywne większe niż 140m2?
+- Czy można dostosować projekt domu pasywnego?
+- Jaka jest izolacja termiczna w domach pasywnych?
+- Czy w domach pasywnych są duże okna?
+- Jak wygląda ogrzewanie w domu pasywnym?
+- Czy dom pasywny może być ogrzewany fotowoltaiką?
+- Czy w domach pasywnych są pompy ciepła?
+- Czy dom pasywny może być piętrowy?
+- Jaka jest trwałość domu pasywnego?
+- Czy dom pasywny można rozbudować w przyszłości?
+- Czy technologia IsoBeton jest bezpieczna dla zdrowia?
+- Czy w domach pasywnych można mieć kominek?
+
+## umowienie_konsultacji
+- Chciałbym umówić się na konsultację
+- Jak mogę umówić spotkanie z projektantem?
+- Czy możliwe jest spotkanie online?
+- Kiedy mógłbym przyjść do waszego biura?
+- Chciałbym porozmawiać o moim projekcie, jak to zorganizować?
+- Czy konsultacje są płatne?
+- Jak długo trwa spotkanie konsultacyjne?
+- Czy mogę umówić się na konsultację w Warszawie?
+- Potrzebuję porady projektanta, jak to załatwić?
+- Czy możliwe jest spotkanie w weekend?
+- Jakie dokumenty powinienem przygotować na konsultację?
+- Czy na konsultację mogę przyjść z partnerem/partnerką?
+- Czy konsultacje odbywają się w waszym biurze?
+- Czy możliwe jest spotkanie na miejscu inwestycji?
+- Jak szybko mogę umówić się na konsultację?
+- Czy przed spotkaniem powinienem przesłać jakieś materiały?
+- Czy konsultacja zobowiązuje mnie do współpracy?
+- Czy podczas konsultacji otrzymam wstępną wycenę?
+- Czy mogę umówić się na konsultację telefonicznie?
+- Czy konsultacje są dostępne we Wrocławiu?
+- Czy mogę umówić się na konkretną godzinę?
+- Czy konsultacje odbywają się również po godzinie 17?
+- Czy na konsultację mogę przyjść z rzutami mieszkania?
+- Czy podczas konsultacji mogę zobaczyć próbki materiałów?
+- Czy konsultacja może odbyć się przez Zoom?
+- Czy mogę umówić się na konsultację jeszcze w tym tygodniu?
+- Czy konsultacje są dostępne w języku angielskim?
+- Czy na konsultację mogę przyjść z architektem?
+- Czy podczas konsultacji mogę zobaczyć przykładowe realizacje?
+- Czy po konsultacji otrzymam jakieś materiały?
+
+## pytanie_o_czas_realizacji
+- Jak długo trwa wykończenie mieszkania?
+- Ile czasu zajmuje realizacja projektu?
+- Kiedy moglibyście rozpocząć prace w moim mieszkaniu?
+- Jaki jest czas oczekiwania na rozpoczęcie prac?
+- Ile trwa wykończenie mieszkania 50m2?
+- Czy możliwe jest wykończenie mieszkania w 2 miesiące?
+- Jak długo trwa remont łazienki?
+- Ile czasu zajmuje położenie podłóg?
+- Jaki jest czas oczekiwania na materiały?
+- Czy dotrzymujecie terminów realizacji?
+- Ile trwa projektowanie wnętrza?
+- Jak szybko można wprowadzić się po zakończeniu prac?
+- Czy możliwe jest przyspieszenie realizacji?
+- Ile czasu zajmuje montaż zabudowy kuchennej?
+- Jaki jest czas realizacji pakietu Cynamonowego?
+- Czy czas realizacji zależy od wybranego pakietu?
+- Ile trwa budowa domu pasywnego?
+- Czy w umowie określacie dokładny termin zakończenia prac?
+- Co się dzieje w przypadku opóźnień?
+- Czy pracujecie również w weekendy?
+- Ile czasu zajmuje malowanie mieszkania?
+- Jak długo trwa montaż drzwi wewnętrznych?
+- Czy czas realizacji uwzględnia czas na projektowanie?
+- Ile czasu potrzebujecie na przygotowanie wyceny?
+- Czy możliwe jest etapowanie prac?
+- Jak długo trwa odbiór mieszkania po zakończeniu prac?
+- Czy w czasie realizacji mogę wprowadzać zmiany w projekcie?
+- Ile czasu zajmuje uzyskanie wszystkich materiałów?
+- Czy czas realizacji uwzględnia czas na wysychanie tynków?
+- Czy możliwe jest wykończenie mieszkania przed świętami?
+
+## pytanie_o_materialy
+- Jakie materiały wykorzystujecie?
+- Czy używacie materiałów polskich producentów?
+- Jakiej jakości są materiały w pakiecie Waniliowym?
+- Czy mogę sam dostarczyć niektóre materiały?
+- Jakie płytki są dostępne w pakiecie Szafranowym?
+- Czy oferujecie materiały ekologiczne?
+- Jakie panele podłogowe wykorzystujecie?
+- Czy materiały są w cenie usługi?
+- Jakie farby stosujecie do malowania ścian?
+- Czy mogę zobaczyć próbki materiałów przed podjęciem decyzji?
+- Czy macie katalog dostępnych materiałów?
+- Jakie są różnice w materiałach między pakietami?
+- Czy materiały mają certyfikaty jakości?
+- Jakie baterie łazienkowe są w pakiecie Cynamonowym?
+- Czy mogę wybrać materiały spoza waszej oferty?
+- Jakie drzwi wewnętrzne montujecie?
+- Czy oferujecie materiały premium?
+- Jakie są gwarancje na wykorzystane materiały?
+- Czy materiały są odporne na wilgoć?
+- Czy oferujecie materiały antyalergiczne?
+- Jakie materiały wykorzystujecie do zabudowy kuchennej?
+- Czy mogę zmienić materiały w trakcie realizacji?
+- Jakie są dopłaty za materiały wyższej jakości?
+- Czy macie materiały odporne na zarysowania?
+- Jakie materiały wykorzystujecie w domach pasywnych?
+- Czy oferujecie materiały dźwiękochłonne?
+- Jakie są różnice między panelami laminowanymi a winylowymi?
+- Czy oferujecie płytki wielkoformatowe?
+- Jakie materiały wykorzystujecie do izolacji?
+- Czy oferujecie materiały z recyklingu?
+
+## kontakt_z_doradca
+- Chciałbym porozmawiać z doradcą
+- Jak mogę skontaktować się z przedstawicielem firmy?
+- Czy mogę prosić o kontakt telefoniczny?
+- Potrzebuję pomocy doradcy, jak to załatwić?
+- Czy macie infolinię dla klientów?
+- Kto może mi doradzić w sprawie wyboru pakietu?
+- Chciałbym zadać kilka pytań doradcy
+- Czy mogę porozmawiać z kimś o moim projekcie?
+- Jak szybko mogę otrzymać odpowiedź od doradcy?
+- Czy doradca może przyjechać do mojego mieszkania?
+- Potrzebuję konsultacji, z kim mogę rozmawiać?
+- Czy macie doradców specjalizujących się w domach pasywnych?
+- Jak mogę umówić się na rozmowę z doradcą?
+- Czy doradca pomoże mi wybrać odpowiednie materiały?
+- Potrzebuję porady w sprawie budżetu remontu
+- Czy doradca może pomóc mi w wyborze kolorystyki?
+- Z kim mogę omówić szczegóły projektu?
+- Czy doradca przyjedzie na miejsce inwestycji?
+- Potrzebuję porady w sprawie układu funkcjonalnego mieszkania
+- Czy doradca może przygotować dla mnie wstępną wycenę?
+- Jak długo trwa konsultacja z doradcą?
+- Czy konsultacja z doradcą jest bezpłatna?
+- Potrzebuję porady w sprawie wyboru pakietu wykończeniowego
+- Czy doradca może pokazać mi przykładowe realizacje?
+- Z kim mogę porozmawiać o możliwościach finansowania?
+- Czy doradca pomoże mi w wyborze sprzętu AGD?
+- Potrzebuję porady w sprawie oświetlenia mieszkania
+- Czy doradca może doradzić mi w sprawie zabudowy kuchennej?
+- Z kim mogę omówić harmonogram prac?
+- Czy doradca pomoże mi w wyborze drzwi wewnętrznych?
+
+## darmowa_wycena
+- Czy oferujecie darmową wycenę?
+- Jak mogę otrzymać wycenę remontu?
+- Chciałbym poznać koszt wykończenia mieszkania 70m2
+- Czy wycena jest bezpłatna?
+- Jak długo trzeba czekać na wycenę?
+- Co jest potrzebne do przygotowania wyceny?
+- Czy mogę otrzymać wycenę online?
+- Chciałbym poznać koszt pakietu Waniliowego dla mojego mieszkania
+- Czy do wyceny potrzebny jest projekt?
+- Jak szczegółowa jest wasza wycena?
+- Czy wycena jest wiążąca?
+- Jak długo ważna jest przedstawiona wycena?
+- Czy wycena uwzględnia wszystkie koszty?
+- Chciałbym otrzymać wycenę zabudowy kuchennej
+- Czy do wyceny potrzebne są wymiary mieszkania?
+- Jak mogę zamówić bezpłatną wycenę?
+- Czy wycena zawiera koszt materiałów?
+- Chciałbym poznać koszt wykończenia łazienki
+- Czy wycena jest przygotowywana indywidualnie?
+- Jak dokładna jest wasza wycena?
+- Czy wycena uwzględnia koszt projektu?
+- Chciałbym otrzymać wycenę domu pasywnego
+- Czy wycena zawiera harmonogram prac?
+- Jak mogę otrzymać szczegółową wycenę?
+- Czy wycena jest rozbita na poszczególne elementy?
+- Chciałbym poznać koszt remontu mieszkania w kamienicy
+- Czy wycena uwzględnia nieprzewidziane koszty?
+- Jak mogę otrzymać wycenę klimatyzacji?
+- Czy wycena zawiera koszt sprzątania po remoncie?
+- Chciałbym poznać koszt wymiany instalacji elektrycznej
+
+## pytanie_o_rabat
+- Czy oferujecie jakieś rabaty?
+- Słyszałem o rabacie 15% na materiały, czy to prawda?
+- Jakie zniżki można otrzymać?
+- Czy są jakieś promocje dla nowych klientów?
+- Jak mogę skorzystać z rabatu na materiały?
+- Czy rabat dotyczy wszystkich materiałów?
+- Jakie są warunki otrzymania rabatu?
+- Czy rabat 15% dotyczy również robocizny?
+- Czy oferujecie rabaty przy większym metrażu?
+- Czy są jakieś sezonowe promocje?
+- Jak duży rabat mogę otrzymać?
+- Czy rabat jest naliczany od ceny katalogowej?
+- Czy mogę łączyć różne rabaty?
+- Czy rabat obejmuje również sprzęt AGD?
+- Jakie dokumenty są potrzebne, aby skorzystać z rabatu?
+- Czy rabat jest uwzględniany w końcowej wycenie?
+- Czy oferujecie rabaty dla stałych klientów?
+- Jak długo obowiązuje promocja z rabatem 15%?
+- Czy rabat dotyczy również materiałów premium?
+- Czy są jakieś ukryte warunki związane z rabatem?
+- Czy rabat obejmuje również zabudowy na wymiar?
+- Jak naliczany jest rabat na materiały?
+- Czy rabat jest dostępny we wszystkich pakietach?
+- Czy oferujecie rabaty dla par młodych?
+- Czy są jakieś specjalne promocje w tym miesiącu?
+- Czy rabat obejmuje również drzwi wewnętrzne?
+- Jak mogę udowodnić, że przysługuje mi rabat?
+- Czy oferujecie rabaty dla firm?
+- Czy rabat jest naliczany automatycznie?
+- Czy mogę otrzymać dodatkowy rabat przy płatności gotówką?
+
+## pytanie_o_gwarancje
+- Jaką gwarancję oferujecie na swoje usługi?
+- Czy dajecie gwarancję na wykonane prace?
+- Na jak długo jest gwarancja?
+- Co obejmuje gwarancja?
+- Czy gwarancja jest na piśmie?
+- Jak zgłosić reklamację w ramach gwarancji?
+- Czy gwarancja obejmuje również materiały?
+- Jak szybko reagujecie na zgłoszenia gwarancyjne?
+- Czy gwarancja jest bezpłatna?
+- Co nie jest objęte gwarancją?
+- Czy gwarancja obejmuje normalne zużycie?
+- Jak długo trwa rozpatrzenie reklamacji?
+- Czy gwarancja jest zbywalna przy sprzedaży mieszkania?
+- Czy gwarancja obejmuje uszkodzenia mechaniczne?
+- Jak wygląda proces naprawy gwarancyjnej?
+- Czy gwarancja obejmuje również zabudowy na wymiar?
+- Jak długo jest gwarancja na sprzęt AGD?
+- Czy gwarancja obejmuje również prace hydrauliczne?
+- Jak szczegółowa jest karta gwarancyjna?
+- Czy gwarancja obejmuje również instalację elektryczną?
+- Jak zgłosić usterkę w ramach gwarancji?
+- Czy gwarancja obejmuje również drzwi wewnętrzne?
+- Jak długo jest gwarancja na podłogi?
+- Czy gwarancja obejmuje również malowanie ścian?
+- Jak wygląda dokument gwarancyjny?
+- Czy gwarancja obejmuje również klimatyzację?
+- Jak często przeprowadzacie przeglądy gwarancyjne?
+- Czy gwarancja obejmuje również prace wykończeniowe?
+- Jak długo jest gwarancja na domy pasywne?
+- Czy gwarancja obejmuje również prace stolarskie?
+
+## pytanie_o_referencje
+- Czy macie jakieś referencje od klientów?
+- Gdzie mogę zobaczyć wasze realizacje?
+- Czy mogę porozmawiać z waszymi poprzednimi klientami?
+- Ile projektów już zrealizowaliście?
+- Czy macie portfolio swoich prac?
+- Gdzie mogę znaleźć opinie o waszej firmie?
+- Czy macie zdjęcia zrealizowanych projektów?
+- Jak długo działacie na rynku?
+- Czy macie doświadczenie w wykańczaniu mieszkań podobnych do mojego?
+- Ile osób was poleca?
+- Czy macie jakieś nagrody lub wyróżnienia?
+- Gdzie mogę zobaczyć wasze poprzednie projekty?
+- Czy macie referencje od deweloperów?
+- Ile procent klientów jest zadowolonych z waszych usług?
+- Czy macie przykłady realizacji w moim budynku?
+- Gdzie mogę przeczytać opinie o waszej firmie?
+- Czy macie doświadczenie w pracy z moim deweloperem?
+- Ile mieszkań wykończyliście w ubiegłym roku?
+- Czy macie przykłady realizacji pakietu Cynamonowego?
+- Gdzie mogę zobaczyć zdjęcia wykończonych łazienek?
+- Czy macie referencje od architektów?
+- Ile domów pasywnych już zbudowaliście?
+- Czy macie przykłady realizacji w stylu skandynawskim?
+- Gdzie mogę zobaczyć przykłady waszych zabudów kuchennych?
+- Czy macie doświadczenie w pracy z budynkami zabytkowymi?
+- Ile projektów zrealizowaliście w Warszawie?
+- Czy macie przykłady realizacji dla rodzin z dziećmi?
+- Gdzie mogę zobaczyć przykłady waszych łazienek?
+- Czy macie doświadczenie w projektowaniu małych mieszkań?
+- Ile projektów zrealizowaliście dla inwestorów?
+
+## pytanie_o_proces
+- Jak wygląda proces współpracy z waszą firmą?
+- Od czego zaczynamy współpracę?
+- Jakie są etapy realizacji projektu?
+- Czy muszę być obecny podczas prac?
+- Jak wygląda proces projektowania?
+- Czy mogę wprowadzać zmiany w trakcie realizacji?
+- Jak wygląda odbiór końcowy?
+- Czy będę informowany o postępach prac?
+- Jak wygląda proces wyboru materiałów?
+- Czy muszę sam kupować materiały?
+- Jak wygląda proces płatności?
+- Czy płatność jest jednorazowa czy etapowa?
+- Jak wygląda proces podpisania umowy?
+- Czy przed rozpoczęciem prac jest jakaś zaliczka?
+- Jak wygląda proces projektowania łazienki?
+- Czy muszę dostarczyć jakieś dokumenty?
+- Jak wygląda proces wyboru kolorów ścian?
+- Czy mogę zobaczyć mieszkanie w trakcie prac?
+- Jak wygląda proces wyboru podłóg?
+- Czy muszę sam załatwiać pozwolenia?
+- Jak wygląda proces projektowania kuchni?
+- Czy mogę wprowadzać się od razu po zakończeniu prac?
+- Jak wygląda proces reklamacji?
+- Czy po zakończeniu prac jest sprzątanie?
+- Jak wygląda proces wyboru drzwi?
+- Czy mogę etapować prace?
+- Jak wygląda proces projektowania zabudów?
+- Czy po zakończeniu prac otrzymam jakieś dokumenty?
+- Jak wygląda proces wyboru oświetlenia?
+- Czy mogę sam dostarczyć niektóre elementy wyposażenia?
+
+## pytanie_o_lokalizacje
+- Gdzie działacie?
+- Czy realizujecie projekty w Warszawie?
+- Czy działacie w Gdańsku?
+- Czy wykonujecie prace we Wrocławiu?
+- Czy realizujecie projekty poza dużymi miastami?
+- Gdzie znajduje się wasze biuro?
+- Czy działacie w Trójmieście?
+- Czy realizujecie projekty na Śląsku?
+- Gdzie mogę umówić się na spotkanie?
+- Czy działacie w Krakowie?
+- Czy realizujecie projekty w Poznaniu?
+- Czy działacie w Łodzi?
+- Czy realizujecie projekty za granicą?
+- Gdzie znajduje się wasz showroom?
+- Czy działacie w okolicach Warszawy?
+- Czy realizujecie projekty w mniejszych miejscowościach?
+- Gdzie mogę zobaczyć wasze realizacje na żywo?
+- Czy działacie w województwie pomorskim?
+- Czy realizujecie projekty w województwie mazowieckim?
+- Czy działacie w województwie dolnośląskim?
+- Czy realizujecie projekty w całej Polsce?
+- Gdzie znajduje się wasza siedziba główna?
+- Czy działacie w miejscowościach podwarszawskich?
+- Czy realizujecie projekty w Sopocie?
+- Czy działacie w Gdyni?
+- Czy realizujecie projekty w miejscowościach pod Wrocławiem?
+- Gdzie mogę odebrać próbki materiałów?
+- Czy działacie w województwie małopolskim?
+- Czy realizujecie projekty w województwie wielkopolskim?
+- Czy działacie w województwie łódzkim?
+
+## pytanie_o_zabudowy
+- Czy wykonujecie zabudowy na wymiar?
+- Jakie zabudowy oferujecie?
+- Ile kosztuje zabudowa kuchenna?
+- Czy robicie szafy wnękowe?
+- Jakie materiały wykorzystujecie do zabudów?
+- Czy wykonujecie garderoby na wymiar?
+- Ile kosztuje zabudowa łazienkowa?
+- Czy robicie biblioteczki na wymiar?
+- Jakie fronty oferujecie do zabudów kuchennych?
+- Czy wykonujecie zabudowy pod skosami?
+- Ile kosztuje szafa wnękowa?
+- Czy robicie zabudowy RTV?
+- Jakie systemy szuflad wykorzystujecie?
+- Czy wykonujecie zabudowy z drzwiami przesuwnymi?
+- Ile kosztuje garderoba na wymiar?
+- Czy robicie zabudowy łóżek?
+- Jakie okucia wykorzystujecie w zabudowach?
+- Czy wykonujecie zabudowy biurowe?
+- Ile kosztuje biblioteczka na wymiar?
+- Czy robicie zabudowy balkonów?
+- Jakie blaty oferujecie do zabudów kuchennych?
+- Czy wykonujecie zabudowy pod schodami?
+- Ile kosztuje zabudowa wnęki?
+- Czy robicie zabudowy z lustrami?
+- Jakie systemy drzwi przesuwnych wykorzystujecie?
+- Czy wykonujecie zabudowy do przedpokoju?
+- Ile kosztuje zabudowa ściany?
+- Czy robicie zabudowy z ukrytymi drzwiami?
+- Jakie materiały wykorzystujecie do frontów?
+- Czy wykonujecie zabudowy do małych mieszkań?
+
+## pytanie_o_klimatyzacje
+- Czy montujecie klimatyzację?
+- Ile kosztuje montaż klimatyzacji?
+- Jakie systemy klimatyzacji oferujecie?
+- Czy klimatyzacja jest w cenie pakietu?
+- Jakie marki klimatyzatorów montujecie?
+- Czy montujecie klimatyzację w starych budynkach?
+- Ile kosztuje klimatyzacja do mieszkania 50m2?
+- Czy montujecie klimatyzację multi-split?
+- Jakie są koszty eksploatacji klimatyzacji?
+- Czy montujecie klimatyzację w domach pasywnych?
+- Ile kosztuje serwis klimatyzacji?
+- Czy montujecie klimatyzację z funkcją grzania?
+- Jakie są zalety klimatyzacji?
+- Czy montujecie klimatyzację w blokach?
+- Ile kosztuje klimatyzacja do jednego pokoju?
+- Czy montujecie klimatyzację kanałową?
+- Jakie są gwarancje na klimatyzację?
+- Czy montujecie klimatyzację w mieszkaniach na wynajem?
+- Ile kosztuje klimatyzacja do całego domu?
+- Czy montujecie klimatyzację w budynkach zabytkowych?
+- Jakie są wymagania techniczne do montażu klimatyzacji?
+- Czy montujecie klimatyzację w nowym budownictwie?
+- Ile kosztuje klimatyzacja z montażem?
+- Czy montujecie klimatyzację w biurach?
+- Jakie są terminy montażu klimatyzacji?
+- Czy montujecie klimatyzację w lokalach usługowych?
+- Ile kosztuje przegląd klimatyzacji?
+- Czy montujecie klimatyzację w restauracjach?
+- Jakie są najnowsze trendy w klimatyzacji?
+- Czy montujecie klimatyzację z oczyszczaczem powietrza?
+
+## pytanie_o_wizualizacje
+- Czy oferujecie wizualizacje projektów?
+- Jak wyglądają wasze wizualizacje?
+- Czy wizualizacje są w cenie projektu?
+- Ile kosztuje wizualizacja mieszkania?
+- Czy robicie wizualizacje 3D?
+- Jak długo trzeba czekać na wizualizacje?
+- Czy wizualizacje są realistyczne?
+- Ile wizualizacji otrzymam w ramach projektu?
+- Czy robicie wizualizacje łazienek?
+- Jak szczegółowe są wasze wizualizacje?
+- Czy wizualizacje pokazują rzeczywiste materiały?
+- Ile kosztuje dodatkowa wizualizacja?
+- Czy robicie wizualizacje kuchni?
+- Jak wygląda proces tworzenia wizualizacji?
+- Czy wizualizacje są edytowalne?
+- Ile kosztuje wizualizacja jednego pomieszczenia?
+- Czy robicie wizualizacje w różnych wariantach kolorystycznych?
+- Jak realistyczne są wasze wizualizacje?
+- Czy wizualizacje pokazują oświetlenie?
+- Ile kosztuje wizualizacja domu?
+- Czy robicie wizualizacje elewacji?
+- Jak dokładnie wizualizacje odzwierciedlają rzeczywistość?
+- Czy wizualizacje pokazują meble?
+- Ile kosztuje wizualizacja zabudowy?
+- Czy robicie wizualizacje w stylu skandynawskim?
+- Jak szczegółowo wizualizacje pokazują materiały?
+- Czy wizualizacje pokazują tekstylia?
+- Ile kosztuje wizualizacja salonu?
+- Czy robicie wizualizacje w różnych porach dnia?
+- Jak dokładnie wizualizacje pokazują kolory?
