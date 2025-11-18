@@ -97,6 +97,28 @@
 
 ---
 
+## ⚡ Performance & Load Testing
+
+### Performance Tools
+
+- **[LOAD_TESTING.md](./LOAD_TESTING.md)** - Complete load testing guide (Locust)
+- **[locustfile.py](./locustfile.py)** - Load test scenarios (ChatbotUser, AdminUser, ApiStressTest)
+- **[profile_api.py](./profile_api.py)** - Performance profiling tool (cProfile)
+- **[benchmark.py](./benchmark.py)** - Performance benchmark script
+- **[monitor.sh](./monitor.sh)** - Real-time performance monitoring
+- **[.coveragerc](./.coveragerc)** - Coverage.py configuration
+
+### Quick Commands
+
+```bash
+make profile              # Profile API endpoints
+make load-test           # Run Locust load tests
+make load-test-smoke     # Quick smoke test (10 users, 60s)
+make coverage-report     # Generate coverage HTML report
+```
+
+---
+
 ## 🧪 Testing & Quality
 
 ### Testing

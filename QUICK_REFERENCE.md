@@ -33,6 +33,9 @@ make dev && make run
 | `make docker`               | Start Docker containers      |
 | `make smoke`                | Run smoke tests (production) |
 | `make deploy`               | Deploy to GCP                |
+| `make profile`              | Profile API performance      |
+| `make load-test`            | Run load tests (Locust)      |
+| `make coverage-report`      | Generate coverage report     |
 | `python benchmark.py <url>` | Performance benchmark        |
 | `./health_check.sh`         | Quick health check           |
 

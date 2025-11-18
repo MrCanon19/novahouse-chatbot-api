@@ -127,3 +127,31 @@ vscode-extensions: ## Install recommended VSCode extensions
 setup-monitoring: ## Open monitoring setup guide
 	@echo "$(BLUE)Opening monitoring setup guide...$(NC)"
 	@cat SETUP_MONITORING.md
+
+profile: ## Profile API performance (identify bottlenecks)
+	@echo "$(BLUE)Profiling API performance...$(NC)"
+	python profile_api.py --endpoint all --top 20
+
+profile-chatbot: ## Profile chatbot endpoint only
+	@echo "$(BLUE)Profiling chatbot endpoint...$(NC)"
+	python profile_api.py --endpoint chatbot --top 15
+
+load-test: ## Run load test with Locust (install: pip install locust)
+	@echo "$(BLUE)Starting load test...$(NC)"
+	@echo "$(YELLOW)📊 Open http://localhost:8089 to configure test$(NC)"
+	locust -f locustfile.py --host=http://localhost:5000
+
+load-test-prod: ## Run load test against production (⚠️ USE WITH CAUTION)
+	@echo "$(RED)⚠️  WARNING: Testing production!$(NC)"
+	@echo "$(YELLOW)📊 Open http://localhost:8089$(NC)"
+	locust -f locustfile.py --host=https://glass-core-467907-e9.ey.r.appspot.com
+
+load-test-smoke: ## Quick smoke test (10 users, 60s)
+	@echo "$(BLUE)Running smoke test...$(NC)"
+	locust -f locustfile.py --headless --users 10 --spawn-rate 2 --run-time 60s --host=http://localhost:5000
+
+coverage-report: ## Generate and open coverage report
+	@echo "$(BLUE)Generating coverage report...$(NC)"
+	pytest tests/ --cov=src --cov-report=html --cov-report=term
+	@echo "$(GREEN)✅ Opening coverage report...$(NC)"
+	open htmlcov/index.html || xdg-open htmlcov/index.html 2>/dev/null
