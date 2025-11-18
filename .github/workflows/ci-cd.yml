@@ -99,7 +99,8 @@ jobs:
       - name: Check if secrets are configured
         id: check_secrets
         run: |
-          if [ -n "${{ secrets.GCP_SA_KEY }}" ]; then
+          # Placeholder for secret check (replace with actual secret in production)
+          if [ -n "PLACEHOLDER_GCP_SA_KEY" ]; then
             echo "secrets_available=true" >> $GITHUB_OUTPUT
           else
             echo "secrets_available=false" >> $GITHUB_OUTPUT
@@ -109,8 +110,9 @@ jobs:
         if: steps.check_secrets.outputs.secrets_available == 'true'
         uses: google-github-actions/setup-gcloud@v1
         with:
-          service_account_key: ${{ secrets.GCP_SA_KEY }}
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          # Replace PLACEHOLDER values with secrets in production
+          service_account_key: PLACEHOLDER_GCP_SA_KEY # ${{ secrets.GCP_SA_KEY }}
+          project_id: PLACEHOLDER_GCP_PROJECT_ID # ${{ secrets.GCP_PROJECT_ID }}
 
       - name: Deploy to App Engine
         if: steps.check_secrets.outputs.secrets_available == 'true'
