@@ -82,3 +82,8 @@ htmlcov/
 *.key
 credentials/
 secrets/
+.env
+.env.local
+.env.*.local
+app.yaml.secret
+app.yaml.prod
