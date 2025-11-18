@@ -1,0 +1,53 @@
+[flake8]
+# Flake8 configuration for NovaHouse Chatbot
+
+# Max line length
+max-line-length = 127
+
+# Max complexity
+max-complexity = 10
+
+# Exclude patterns
+exclude =
+    .git,
+    __pycache__,
+    venv,
+    env,
+    .venv,
+    dist,
+    build,
+    *.egg-info,
+    .pytest_cache,
+    .tox,
+    migrations,
+    backups
+
+# Ignore specific errors
+ignore =
+    # E203: whitespace before ':' (conflicts with black)
+    E203,
+    # E501: line too long (handled by black)
+    E501,
+    # W503: line break before binary operator (conflicts with black)
+    W503,
+    # E402: module level import not at top of file
+    E402,
+    # F401: imported but unused (handled by isort)
+    F401
+
+# Per-file ignores
+per-file-ignores =
+    __init__.py:F401
+    main.py:E402
+
+# Show source code for each error
+show-source = True
+
+# Show pep8 error code
+show-pep8 = True
+
+# Count errors
+count = True
+
+# Statistics
+statistics = True
