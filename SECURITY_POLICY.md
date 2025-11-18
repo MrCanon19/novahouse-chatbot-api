@@ -9,6 +9,7 @@ NovaHouse traktuje bezpieczeństwo bardzo poważnie. Jeśli odkryłeś lukę w z
 **NIE** twórz publicznego Issue na GitHubie dla problemów bezpieczeństwa.
 
 Zamiast tego:
+
 1. Wyślij email na: **security@novahouse.pl**
 2. Dołącz szczegółowy opis problemu
 3. Dodaj kroki reprodukcji (jeśli możliwe)
@@ -17,13 +18,14 @@ Zamiast tego:
 ### ⏰ Czas odpowiedzi
 
 - **Potwierdzenie otrzymania:** 24 godziny
-- **Wstępna ocena:** 72 godziny  
+- **Wstępna ocena:** 72 godziny
 - **Plan naprawy:** 7 dni (dla krytycznych luk)
 - **Publikacja patcha:** Zależy od powagi (1-30 dni)
 
 ### 🎁 Program Bug Bounty
 
 Obecnie nie mamy formalnego programu bug bounty, ale doceniamy odpowiedzialne zgłaszanie:
+
 - Publiczne uznanie (jeśli chcesz)
 - Wymienienie w CHANGELOG.md
 - Darmowa konsultacja z zespołem (1h)
@@ -31,7 +33,7 @@ Obecnie nie mamy formalnego programu bug bounty, ale doceniamy odpowiedzialne zg
 ### 🛡️ Wspierane Wersje
 
 | Wersja | Wsparcie Bezpieczeństwa |
-|--------|-------------------------|
+| ------ | ----------------------- |
 | 2.3.x  | ✅ Pełne wsparcie       |
 | 2.2.x  | ⚠️ Krytyczne patche     |
 | 2.1.x  | ❌ EOL                  |
@@ -40,11 +42,13 @@ Obecnie nie mamy formalnego programu bug bounty, ale doceniamy odpowiedzialne zg
 ### 🔍 Znane Problemy
 
 Aktualne znane problemy bezpieczeństwa:
+
 - Brak (ostatnia aktualizacja: 18.11.2025)
 
 ### 🎯 Zakres
 
 **W zakresie:**
+
 - Injection (SQL, NoSQL, Command, Code)
 - Broken Authentication
 - Sensitive Data Exposure
@@ -57,6 +61,7 @@ Aktualne znane problemy bezpieczeństwa:
 - Insufficient Logging & Monitoring
 
 **Poza zakresem:**
+
 - DoS/DDoS attacks
 - Social engineering
 - Physical security
@@ -65,6 +70,7 @@ Aktualne znane problemy bezpieczeństwa:
 ### 📜 Polityka Odpowiedzialnego Ujawniania
 
 Po zgłoszeniu luki:
+
 1. Nie ujawniaj publicznie do czasu patcha
 2. Nie exploituj luki (tylko PoC)
 3. Nie naruszaj prywatności użytkowników
@@ -73,6 +79,7 @@ Po zgłoszeniu luki:
 ### 🏆 Hall of Fame
 
 Podziękowania dla:
+
 - _Miejsce na pierwszego reportera_ 🥇
 
 ### 📚 Zasoby Bezpieczeństwa
