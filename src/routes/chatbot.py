@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from datetime import datetime, timedelta, timezone
 import google.generativeai as genai
 import os
+from sqlalchemy.exc import SQLAlchemyError
 
 from src.models.chatbot import db, ChatConversation, ChatMessage, RodoConsent, Lead, AuditLog
 from src.knowledge.novahouse_info import (
@@ -66,8 +67,11 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                 response = model.generate_content(prompt)
                 bot_response = response.text
                 
-            except Exception as e:
+            except (ValueError, AttributeError, ConnectionError) as e:
                 print(f"Gemini error: {e}")
+                bot_response = "Przepraszam, wystąpił problem z przetwarzaniem Twojej wiadomości. Czy możesz spytać inaczej?"
+            except Exception as e:
+                print(f"Unexpected Gemini error: {e}")
                 bot_response = "Przepraszam, wystąpił problem z przetwarzaniem Twojej wiadomości. Czy możesz spytać inaczej?"
         
         # Fallback jeśli nadal brak odpowiedzi
@@ -90,8 +94,16 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
             'conversation_id': conversation.id
         }
         
+    except SQLAlchemyError as e:
+        print(f"Database error in chat processing: {e}")
+        db.session.rollback()
+        return {
+            'response': "Przepraszam, problem z bazą danych. Spróbuj ponownie.",
+            'session_id': session_id,
+            'conversation_id': None,
+        }
     except Exception as e:
-        print(f"Chat processing error: {e}")
+        print(f"Unexpected chat processing error: {e}")
         db.session.rollback()
         return {
             'response': "Przepraszam, wystąpił błąd. Spróbuj ponownie.",
