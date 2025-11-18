@@ -10,6 +10,28 @@ AI Chatbot dla NovaHouse - pomoc klientom w wyborze pakietów wykończeniowych.
 - **API Docs:** https://glass-core-467907-e9.ey.r.appspot.com/docs
 - **Health Check:** https://glass-core-467907-e9.ey.r.appspot.com/api/chatbot/health
 
+## 🐳 Quick Start
+
+```bash
+# Option 1: Docker (najszybszy)
+docker-compose up -d
+curl http://localhost:8080/api/health
+
+# Option 2: Local development
+python setup.py          # Automatyczny setup
+source venv/bin/activate
+python main.py
+
+# Option 3: Manual setup
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+cp .env.example .env
+python main.py
+```
+
+📚 Więcej: [DOCKER.md](./DOCKER.md) | [CONTRIBUTING.md](./CONTRIBUTING.md)
+
 ## 🛠️ Tech Stack
 
 - **Backend:** Python 3.13, Flask 3.1, SQLAlchemy 2.0
@@ -51,6 +73,11 @@ AI Chatbot dla NovaHouse - pomoc klientom w wyborze pakietów wykończeniowych.
 - ✅ **WebSocket Support** - Real-time chat & live dashboard updates
 - ✅ **File Upload & Optimization** - Multi-size image variants + GCS
 - ✅ **Appointment Reminders** - SMS (Twilio) + Email multi-channel
+- ✅ **Docker Support** - Full Docker Compose setup (app + PostgreSQL + Redis)
+- ✅ **Automated Setup Script** - One-command development environment
+- ✅ **Smoke Tests** - Quick post-deployment validation
+- ✅ **Security Policy** - Responsible disclosure & vulnerability reporting
+- ✅ **SLA Document** - Service level commitments & support tiers
 - ✅ **Advanced Search** - Full-text search with fuzzy matching
 - ✅ **Dashboard Widgets** - Real-time metrics & interactive charts
 - ✅ **Backup & Export** - Automated backups + RODO compliance
