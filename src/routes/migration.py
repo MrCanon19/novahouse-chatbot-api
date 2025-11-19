@@ -305,3 +305,70 @@ def add_leads_columns():
     except Exception as e:
         db.session.rollback()
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+@migration_bp.route("/api/migration/fix-null-values", methods=["POST"])
+def fix_null_values():
+    """
+    Fix NULL values in followup_tests table
+    Requires admin authentication
+    """
+    import os
+
+    admin_key = os.getenv("API_KEY") or os.getenv("ADMIN_API_KEY")
+    if not admin_key:
+        return jsonify({"error": "Admin key not configured"}), 500
+
+    provided_key = request.headers.get("X-ADMIN-API-KEY") or request.headers.get("X-API-KEY")
+    if provided_key != admin_key:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        # Fix NULL values in followup_tests
+        db.session.execute(
+            text(
+                """
+            UPDATE followup_tests
+            SET variant_a_shown = 0 WHERE variant_a_shown IS NULL
+        """
+            )
+        )
+        db.session.execute(
+            text(
+                """
+            UPDATE followup_tests
+            SET variant_b_shown = 0 WHERE variant_b_shown IS NULL
+        """
+            )
+        )
+        db.session.execute(
+            text(
+                """
+            UPDATE followup_tests
+            SET variant_a_responses = 0 WHERE variant_a_responses IS NULL
+        """
+            )
+        )
+        db.session.execute(
+            text(
+                """
+            UPDATE followup_tests
+            SET variant_b_responses = 0 WHERE variant_b_responses IS NULL
+        """
+            )
+        )
+        db.session.commit()
+
+        return (
+            jsonify(
+                {
+                    "success": True,
+                    "message": "NULL values fixed in followup_tests",
+                }
+            ),
+            200,
+        )
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500
