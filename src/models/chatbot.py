@@ -132,6 +132,49 @@ class Lead(db.Model):
         }
 
 
+class Booking(db.Model):
+    """Model dla rezerwacji spotkań (Zencal)"""
+
+    __tablename__ = "bookings"
+
+    id = db.Column(db.Integer, primary_key=True)
+    lead_id = db.Column(db.Integer, db.ForeignKey("leads.id"))
+    session_id = db.Column(db.String(100))
+    zencal_booking_id = db.Column(db.String(100))  # ID z Zencal
+    zencal_link = db.Column(db.String(500))  # Link do rezerwacji
+    client_name = db.Column(db.String(100))
+    client_email = db.Column(db.String(100))
+    client_phone = db.Column(db.String(20))
+    appointment_date = db.Column(db.DateTime)
+    status = db.Column(db.String(50), default="pending")  # pending, confirmed, completed, cancelled
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "lead_id": self.lead_id,
+            "session_id": self.session_id,
+            "zencal_booking_id": self.zencal_booking_id,
+            "zencal_link": self.zencal_link,
+            "client_name": self.client_name,
+            "client_email": self.client_email,
+            "client_phone": self.client_phone,
+            "appointment_date": (
+                self.appointment_date.isoformat() if self.appointment_date else None
+            ),
+            "status": self.status,
+            "notes": self.notes,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
 class ChatConversation(db.Model):
     """Model for chat conversation sessions"""
 
