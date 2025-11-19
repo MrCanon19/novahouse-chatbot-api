@@ -4,15 +4,16 @@ API Documentation Routes
 Swagger/OpenAPI documentation endpoints
 """
 
-from flask import Blueprint, send_from_directory, jsonify
+from flask import Blueprint, jsonify
 import os
 import yaml
 
-docs_bp = Blueprint('docs', __name__)
+docs_bp = Blueprint("docs", __name__)
 
-DOCS_DIR = os.path.join(os.path.dirname(__file__), '..', 'docs')
+DOCS_DIR = os.path.join(os.path.dirname(__file__), "..", "docs")
 
-@docs_bp.route('/api/docs', methods=['GET'])
+
+@docs_bp.route("/api/docs", methods=["GET"])
 def api_docs():
     """Serve Swagger UI"""
     return """
@@ -70,21 +71,20 @@ def api_docs():
     </html>
     """
 
-@docs_bp.route('/api/docs/spec', methods=['GET'])
+
+@docs_bp.route("/api/docs/spec", methods=["GET"])
 def api_spec():
     """Serve OpenAPI specification"""
     try:
-        spec_path = os.path.join(DOCS_DIR, 'swagger.yaml')
-        with open(spec_path, 'r', encoding='utf-8') as f:
+        spec_path = os.path.join(DOCS_DIR, "swagger.yaml")
+        with open(spec_path, "r", encoding="utf-8") as f:
             spec = yaml.safe_load(f)
         return jsonify(spec)
     except Exception as e:
-        return jsonify({
-            'error': 'Failed to load API specification',
-            'details': str(e)
-        }), 500
+        return jsonify({"error": "Failed to load API specification", "details": str(e)}), 500
 
-@docs_bp.route('/api/docs/redoc', methods=['GET'])
+
+@docs_bp.route("/api/docs/redoc", methods=["GET"])
 def redoc():
     """Serve ReDoc alternative documentation"""
     return """

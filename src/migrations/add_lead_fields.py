@@ -17,7 +17,7 @@ def run_migration():
     """Uruchom migrację - dodaj nowe pola do Lead"""
     with app.app_context():
         print("Adding new fields to Lead table...")
-        
+
         # Lista nowych kolumn do dodania
         new_columns = [
             "ALTER TABLE leads ADD COLUMN message TEXT",
@@ -27,14 +27,14 @@ def run_migration():
             "ALTER TABLE leads ADD COLUMN monday_item_id VARCHAR(100)",
             "ALTER TABLE leads ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP"
         ]
-        
+
         for sql in new_columns:
             try:
                 db.session.execute(text(sql))
                 print(f"✅ Executed: {sql[:50]}...")
             except Exception as e:
                 print(f"⚠️  Column might already exist: {str(e)[:80]}")
-        
+
         try:
             db.session.commit()
             print("\n✅ Lead table migration completed successfully!")

@@ -26,8 +26,6 @@ _memory_store = {}
 class RateLimitExceeded(Exception):
     """Exception raised when rate limit is exceeded"""
 
-    pass
-
 
 def get_rate_limit_key(identifier, endpoint):
     """Generate a unique key for rate limiting"""

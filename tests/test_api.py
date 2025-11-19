@@ -1,6 +1,3 @@
-import pytest
-
-
 def test_health_endpoint(client):
     response = client.get("/api/chatbot/health")
     assert response.status_code == 200

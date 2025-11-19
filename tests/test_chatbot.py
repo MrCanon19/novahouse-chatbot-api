@@ -2,9 +2,8 @@
 Tests for chatbot routes
 """
 
-import pytest
 from unittest.mock import patch, MagicMock
-from src.models.chatbot import db, ChatConversation, ChatMessage
+from src.models.chatbot import ChatConversation, ChatMessage
 
 
 class TestChatbotHealth:

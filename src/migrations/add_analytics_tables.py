@@ -11,28 +11,27 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
 from src.main import app, db
-from src.models.analytics import ChatAnalytics, UserEngagement, IntentAnalytics, PerformanceMetrics
 
 def run_migration():
     """Uruchom migrację - utwórz tabele analytics"""
     with app.app_context():
         print("Creating analytics tables...")
-        
+
         # Utwórz tabele
         db.create_all()
-        
+
         print("✅ Analytics tables created successfully!")
         print("\nTables created:")
         print("  - chat_analytics")
         print("  - user_engagement")
         print("  - intent_analytics")
         print("  - performance_metrics")
-        
+
         # Sprawdź czy tabele zostały utworzone
         from sqlalchemy import inspect
         inspector = inspect(db.engine)
         tables = inspector.get_table_names()
-        
+
         print("\nAll tables in database:")
         for table in sorted(tables):
             print(f"  - {table}")
