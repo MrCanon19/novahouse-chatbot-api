@@ -3,10 +3,11 @@ Monday.com API Client
 Handles all interactions with Monday.com boards
 """
 
-import os
-import requests
 import json
+import os
 from typing import Dict, Optional
+
+import requests
 
 
 class MondayClient:

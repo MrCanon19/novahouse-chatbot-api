@@ -2,9 +2,11 @@
 Intent management endpoints
 """
 
-from flask import Blueprint, jsonify
-from src.models.chatbot import Intent
 import json
+
+from flask import Blueprint, jsonify
+
+from src.models.chatbot import Intent
 
 intents_bp = Blueprint("intents", __name__)
 

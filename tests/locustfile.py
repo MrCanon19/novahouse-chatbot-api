@@ -8,8 +8,9 @@ Usage:
     locust -f locustfile.py --headless --users 100 --spawn-rate 10 --run-time 60s
 """
 
-from locust import HttpUser, task, between
 import random
+
+from locust import HttpUser, between, task
 
 
 class ChatbotUser(HttpUser):

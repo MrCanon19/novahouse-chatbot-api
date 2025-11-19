@@ -5,9 +5,9 @@ from datetime import datetime, timezone
 # DON'T CHANGE THIS !!!
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
+import sentry_sdk
 from flask import Flask, send_from_directory
 from flask_cors import CORS
-import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
 from sqlalchemy import text
 
@@ -81,30 +81,31 @@ app.config["SQLALCHEMY_DATABASE_URI"] = db_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db.init_app(app)
 
-# KROK 4: DOPIERO TERAZ, gdy aplikacja i baza są połączone,
-# importujemy trasy (blueprints), które z nich korzystają.
-from src.routes.user import user_bp
-from src.routes.chatbot import chatbot_bp
-from src.routes.health import health_bp
-from src.routes.analytics import analytics_bp
-from src.routes.leads import leads_bp
-from src.routes.intents import intents_bp
-from src.routes.entities import entities_bp
-from src.routes.qualification import qualification_bp
-from src.routes.booking import booking_bp
-from src.routes.knowledge import knowledge_bp
-from src.routes.docs import docs_bp
 from src.routes.ab_testing import ab_testing_bp
-from src.routes.i18n import i18n_bp
+from src.routes.analytics import analytics_bp
+from src.routes.backup import backup_routes
+from src.routes.booking import booking_bp
+from src.routes.chatbot import chatbot_bp
 
 # New v2.3 routes
 from src.routes.dashboard_widgets import dashboard_widgets
-from src.routes.backup import backup_routes
-from src.routes.search import search_routes
+from src.routes.docs import docs_bp
+from src.routes.entities import entities_bp
 from src.routes.file_upload import file_upload_routes
+from src.routes.health import health_bp
+from src.routes.i18n import i18n_bp
+from src.routes.intents import intents_bp
+from src.routes.knowledge import knowledge_bp
+from src.routes.leads import leads_bp
+from src.routes.qualification import qualification_bp
+from src.routes.search import search_routes
 
 # Swagger UI (v2.3.1)
 from src.routes.swagger_ui import swagger_ui_bp
+
+# KROK 4: DOPIERO TERAZ, gdy aplikacja i baza są połączone,
+# importujemy trasy (blueprints), które z nich korzystają.
+from src.routes.user import user_bp
 
 # KROK 5: Rejestrujemy nasze trasy w aplikacji.
 app.register_blueprint(user_bp, url_prefix="/api")

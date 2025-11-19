@@ -4,9 +4,10 @@ A/B Testing Models
 Database models for A/B testing experiments
 """
 
-from datetime import datetime, timezone
-from src.models.chatbot import db
 import json
+from datetime import datetime, timezone
+
+from src.models.chatbot import db
 
 
 class Experiment(db.Model):

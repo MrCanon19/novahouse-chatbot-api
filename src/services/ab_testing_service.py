@@ -4,13 +4,14 @@ A/B Testing Service
 Experiment management, variant assignment, statistical analysis
 """
 
-import random
 import json
 import math
+import random
 from datetime import datetime, timezone
-from typing import Dict, Any, Optional, List
-from src.models.chatbot import db
+from typing import Any, Dict, List, Optional
+
 from src.models.ab_testing import Experiment, ExperimentParticipant, ExperimentResult
+from src.models.chatbot import db
 
 
 class ABTestingService:

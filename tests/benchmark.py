@@ -4,11 +4,12 @@
 Measures API endpoint performance and generates reports
 """
 
-import time
 import statistics
-import requests
-from typing import Dict
+import time
 from datetime import datetime
+from typing import Dict
+
+import requests
 
 # Colors
 GREEN = "\033[92m"

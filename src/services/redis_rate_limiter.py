@@ -7,7 +7,9 @@ Replaces in-memory RateLimiter
 
 import time
 from functools import wraps
-from flask import request, jsonify
+
+from flask import jsonify, request
+
 from src.services.redis_service import redis_cache
 
 

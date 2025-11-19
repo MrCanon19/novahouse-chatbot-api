@@ -4,9 +4,10 @@ Handles all interactions with Booksy booking system for consultations
 """
 
 import os
-import requests
-from typing import Dict, Optional, List
 from datetime import datetime, timedelta
+from typing import Dict, List, Optional
+
+import requests
 
 
 class BooksynClient:

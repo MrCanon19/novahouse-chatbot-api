@@ -4,9 +4,11 @@ Dashboard Widgets API
 Real-time metrics and custom widgets
 """
 
-from flask import Blueprint, jsonify, request
 from datetime import datetime, timedelta, timezone
-from sqlalchemy import func, desc
+
+from flask import Blueprint, jsonify, request
+from sqlalchemy import desc, func
+
 from src.middleware.security import require_api_key
 
 dashboard_widgets = Blueprint("dashboard_widgets", __name__)
@@ -22,9 +24,9 @@ def get_metrics_summary():
         JSON with key metrics (conversations, leads, bookings, conversions)
     """
     try:
-        from src.models.chatbot import ChatSession, Message
-        from src.models.analytics import Lead, Booking
         from src.database import db
+        from src.models.analytics import Booking, Lead
+        from src.models.chatbot import ChatSession, Message
 
         # Time range (default: last 30 days)
         days = int(request.args.get("days", 30))
@@ -77,9 +79,9 @@ def get_metrics_timeline():
         JSON with time-series data
     """
     try:
-        from src.models.chatbot import ChatSession
-        from src.models.analytics import Lead, Booking
         from src.database import db
+        from src.models.analytics import Booking, Lead
+        from src.models.chatbot import ChatSession
 
         # Time range
         days = int(request.args.get("days", 30))
@@ -146,8 +148,8 @@ def get_top_intents():
         JSON with intent distribution
     """
     try:
-        from src.models.chatbot import Message
         from src.database import db
+        from src.models.chatbot import Message
 
         # Time range
         days = int(request.args.get("days", 30))
@@ -184,8 +186,8 @@ def get_top_packages():
         JSON with package distribution
     """
     try:
-        from src.models.analytics import Lead
         from src.database import db
+        from src.models.analytics import Lead
 
         # Time range
         days = int(request.args.get("days", 30))
@@ -223,8 +225,8 @@ def get_active_sessions():
         JSON with active session count
     """
     try:
-        from src.models.chatbot import ChatSession
         from src.database import db
+        from src.models.chatbot import ChatSession
 
         # Last 5 minutes
         threshold = datetime.now(timezone.utc) - timedelta(minutes=5)
@@ -266,8 +268,8 @@ def get_response_times():
         JSON with response time metrics
     """
     try:
-        from src.models.chatbot import Message
         from src.database import db
+        from src.models.chatbot import Message
 
         # Time range
         days = int(request.args.get("days", 7))
@@ -308,8 +310,8 @@ def get_satisfaction_scores():
         JSON with rating counts
     """
     try:
-        from src.models.chatbot import ChatSession
         from src.database import db
+        from src.models.chatbot import ChatSession
 
         # Time range
         days = int(request.args.get("days", 30))

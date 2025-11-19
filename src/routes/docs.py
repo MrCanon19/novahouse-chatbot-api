@@ -4,9 +4,10 @@ API Documentation Routes
 Swagger/OpenAPI documentation endpoints
 """
 
-from flask import Blueprint, jsonify
 import os
+
 import yaml
+from flask import Blueprint, jsonify
 
 docs_bp = Blueprint("docs", __name__)
 

@@ -4,21 +4,22 @@ Endpointy udostępniające bazę wiedzy o firmie
 """
 
 from flask import Blueprint, jsonify
+
 from src.knowledge.novahouse_info import (
-    PACKAGES,
+    BLOG_ARTICLES,
+    CLIENT_REVIEWS,
+    COMPANY_STATS,
+    COVERAGE_AREAS,
     FAQ,
+    PACKAGES,
     PORTFOLIO,
     PROCESS_STEPS,
-    CLIENT_REVIEWS,
     PRODUCT_PARTNERS,
-    WHY_CHOOSE_US,
     TEAM_INFO,
-    COVERAGE_AREAS,
-    COMPANY_STATS,
-    BLOG_ARTICLES,
-    get_process_overview,
-    get_portfolio_list,
+    WHY_CHOOSE_US,
     get_client_reviews_summary,
+    get_portfolio_list,
+    get_process_overview,
 )
 from src.middleware.security import rate_limit
 

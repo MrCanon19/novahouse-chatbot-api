@@ -1,13 +1,15 @@
-from flask import Blueprint, request, jsonify
 from datetime import datetime, timedelta, timezone
+
+from flask import Blueprint, jsonify, request
 from sqlalchemy import func
-from src.models.chatbot import db, Conversation, Lead
+
 from src.models.analytics import (
     ChatAnalytics,
-    UserEngagement,
     IntentAnalytics,
     PerformanceMetrics,
+    UserEngagement,
 )
+from src.models.chatbot import Conversation, Lead, db
 
 analytics_bp = Blueprint("analytics", __name__)
 

@@ -7,7 +7,9 @@ SMS/Email reminders for bookings via Twilio and SMTP
 import os
 from datetime import datetime
 from typing import List
+
 from twilio.rest import Client
+
 from src.services.email_service import EmailService
 
 # Twilio configuration

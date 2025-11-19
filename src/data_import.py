@@ -3,16 +3,17 @@
 Skrypt do importu danych treningowych dla chatbota NovaHouse
 """
 
-import os
-import sys
 import json
+import os
 import re
+import sys
 
 # Dodanie ścieżki do modułów aplikacji
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from flask import Flask
-from src.models.chatbot import db, Intent, Entity
+
+from src.models.chatbot import Entity, Intent, db
 
 
 def create_app():

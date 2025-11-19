@@ -3,11 +3,12 @@ Kubernetes-ready Health Check Endpoints
 Implements /health/live, /health/ready, /health/startup for K8s probes
 """
 
-from flask import Blueprint, jsonify
-from sqlalchemy import text
-import redis
 import os
 from datetime import datetime
+
+import redis
+from flask import Blueprint, jsonify
+from sqlalchemy import text
 
 health_bp = Blueprint("health", __name__)
 

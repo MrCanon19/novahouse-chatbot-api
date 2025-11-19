@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify
-from src.models.chatbot import db, Intent, Entity
+
+from src.models.chatbot import Entity, Intent, db
 
 health_bp = Blueprint("health", __name__)
 
