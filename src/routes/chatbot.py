@@ -100,7 +100,10 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                     # GPT-5 nano obsługuje tylko domyślną temperature=1
                 )
                 bot_response = response.choices[0].message.content
-                print(f"[OpenAI GPT-5 nano] Odpowiedź: {bot_response[:100]}...")
+                print(f"[OpenAI GPT-5 nano] Raw response: {repr(bot_response)}")
+                print(
+                    f"[OpenAI GPT-5 nano] Odpowiedź: {bot_response[:100] if bot_response else 'PUSTA'}..."
+                )
 
             except (ValueError, AttributeError, ConnectionError) as e:
                 print(f"[GPT ERROR] {type(e).__name__}: {e}")
