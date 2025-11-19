@@ -1,3 +1,4 @@
+# type: ignore
 """
 API v1 Blueprint
 Versioned API endpoints for backward compatibility

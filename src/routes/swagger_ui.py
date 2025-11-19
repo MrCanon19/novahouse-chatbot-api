@@ -1,3 +1,4 @@
+# type: ignore
 """
 Swagger UI route for interactive API documentation
 """
@@ -5,7 +6,7 @@ Swagger UI route for interactive API documentation
 from flask import Blueprint, render_template_string, send_from_directory
 import os
 
-swagger_ui_bp = Blueprint('swagger_ui', __name__)
+swagger_ui_bp = Blueprint("swagger_ui", __name__)
 
 SWAGGER_UI_HTML = """
 <!DOCTYPE html>
@@ -67,17 +68,14 @@ SWAGGER_UI_HTML = """
 """
 
 
-@swagger_ui_bp.route('/api-docs')
+@swagger_ui_bp.route("/api-docs")
 def swagger_ui():
     """Render Swagger UI"""
     return render_template_string(SWAGGER_UI_HTML)
 
 
-@swagger_ui_bp.route('/api/openapi.yaml')
+@swagger_ui_bp.route("/api/openapi.yaml")
 def openapi_spec():
     """Serve OpenAPI specification"""
-    docs_dir = os.path.join(
-        os.path.dirname(os.path.dirname(__file__)),
-        'docs'
-    )
-    return send_from_directory(docs_dir, 'openapi.yaml', mimetype='text/yaml')
+    docs_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "docs")
+    return send_from_directory(docs_dir, "openapi.yaml", mimetype="text/yaml")

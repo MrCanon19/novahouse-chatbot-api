@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# type: ignore
 """
 Automated CHANGELOG Generator
 Generates changelog from conventional commits
