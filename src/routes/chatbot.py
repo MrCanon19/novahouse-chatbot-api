@@ -94,10 +94,10 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                     {"role": "user", "content": f"Context:\n{context}\n\nUser: {user_message}"},
                 ]
                 response = openai_client.chat.completions.create(
-                    model="gpt-5-nano",
+                    model="gpt-4o-mini",  # Wracam do 4o-mini - szybszy, stabilniejszy
                     messages=messages,
-                    max_completion_tokens=2000,  # Zwiększone z 500 - GPT-5 używa reasoning tokens
-                    # GPT-5 nano obsługuje tylko domyślną temperature=1
+                    max_tokens=500,
+                    temperature=0.7,
                 )
                 bot_response = response.choices[0].message.content
                 print(f"[OpenAI GPT-5 nano] Raw response: {repr(bot_response)}")
@@ -173,7 +173,7 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 if OPENAI_API_KEY and OPENAI_AVAILABLE:
     openai_client = OpenAI(api_key=OPENAI_API_KEY)
     AI_PROVIDER = "openai"
-    print("✅ OpenAI GPT-5 nano enabled (fastest & cheapest)")
+    print("✅ OpenAI GPT-4o-mini enabled (proven & reliable)")
 else:
     openai_client = None
     AI_PROVIDER = None
