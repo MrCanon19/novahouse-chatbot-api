@@ -1868,9 +1868,9 @@ def get_ab_test_results():
     Get A/B testing results for follow-up questions
     Requires admin key
     """
-    admin_key = os.getenv("ADMIN_API_KEY")
+    admin_key = os.getenv("ADMIN_API_KEY") or os.getenv("API_KEY")
     if admin_key:
-        header = request.headers.get("X-ADMIN-API-KEY")
+        header = request.headers.get("X-ADMIN-API-KEY") or request.headers.get("X-API-KEY")
         if header != admin_key:
             return jsonify({"error": "Unauthorized"}), 401
 
@@ -1912,9 +1912,9 @@ def create_ab_test():
     Create new A/B test for follow-up questions
     Requires admin key
     """
-    admin_key = os.getenv("ADMIN_API_KEY")
+    admin_key = os.getenv("ADMIN_API_KEY") or os.getenv("API_KEY")
     if admin_key:
-        header = request.headers.get("X-ADMIN-API-KEY")
+        header = request.headers.get("X-ADMIN-API-KEY") or request.headers.get("X-API-KEY")
         if header != admin_key:
             return jsonify({"error": "Unauthorized"}), 401
 
@@ -1944,9 +1944,9 @@ def get_competitive_intelligence():
     Get competitive intelligence insights from conversations
     Requires admin key
     """
-    admin_key = os.getenv("ADMIN_API_KEY")
+    admin_key = os.getenv("ADMIN_API_KEY") or os.getenv("API_KEY")
     if admin_key:
-        header = request.headers.get("X-ADMIN-API-KEY")
+        header = request.headers.get("X-ADMIN-API-KEY") or request.headers.get("X-API-KEY")
         if header != admin_key:
             return jsonify({"error": "Unauthorized"}), 401
 
