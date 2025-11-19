@@ -10,15 +10,16 @@ exclude =
     *.egg-info,
     migrations/
 # E402: module level import not at top of file
-# E501: line too long  
+# E501: line too long (CAŁKOWICIE IGNOROWANE - teksty użytkownika, HTML, tłumaczenia)
 # W291: trailing whitespace
+# W292: no newline at end of file
 # W293: blank line contains whitespace
 # F401: imported but unused
 # F841: local variable assigned but never used
 # E302: expected 2 blank lines
 # E305: expected 2 blank lines after class or function definition
 # E741: ambiguous variable name
-ignore = E203,W503,W291,E302,E305
+ignore = E203,E402,E501,W503,W291,W292,W293
 per-file-ignores =
     src/knowledge/novahouse_info.py:E501,W291
     src/main.py:E402,E501

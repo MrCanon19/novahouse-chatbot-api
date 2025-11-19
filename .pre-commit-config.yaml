@@ -17,16 +17,13 @@ repos:
       - id: isort
         args: [--profile=black, --line-length=100]
 
-  # flake8 - linting
-  - repo: https://github.com/PyCQA/flake8
-    rev: 7.1.1
-    hooks:
-      - id: flake8
-        args: [
-          --max-line-length=100,
-          --extend-ignore=E203,E501,W503,W291,W293,
-          --exclude=.git,__pycache__,venv,build,dist,migrations
-        ]
+  # flake8 - linting (WYŁĄCZONE - tylko make lint)
+  # - repo: https://github.com/PyCQA/flake8
+  #   rev: 7.1.1
+  #   hooks:
+  #     - id: flake8
+  #       args: [--max-line-length=100, --extend-ignore=E203,E501,W503,W291,W293]
+  #       exclude: ^(migrations/|.*/__pycache__/)
 
   # autoflake - usuwanie nieużywanych importów
   - repo: https://github.com/PyCQA/autoflake

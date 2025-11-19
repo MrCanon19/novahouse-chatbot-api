@@ -66,7 +66,7 @@ class FileUploadService:
             elif file_bytes[:4] == b"RIFF" and file_bytes[8:12] == b"WEBP":
                 return True  # WEBP
             return False
-        except:
+        except (IndexError, TypeError):
             return False
 
     def generate_filename(self, original_filename: str, prefix: str = "") -> str:
