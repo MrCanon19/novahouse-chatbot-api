@@ -116,7 +116,7 @@ jobs:
 
       - name: Setup Cloud SDK
         if: steps.check_secrets.outputs.secrets_available == 'true'
-        uses: google-github-actions/setup-gcloud@v1
+        uses: google-github-actions/setup-gcloud@v3
         with:
           # Replace PLACEHOLDER values with secrets in production
           service_account_key: PLACEHOLDER_GCP_SA_KEY # ${{ secrets.GCP_SA_KEY }}
