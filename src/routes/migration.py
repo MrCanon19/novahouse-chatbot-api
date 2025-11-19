@@ -176,7 +176,7 @@ def run_ab_competitive_migration():
 @migration_bp.route("/api/migration/add-context-data", methods=["POST"])
 def add_context_data_column():
     """
-    Add missing context_data column to chat_conversations
+    Add missing columns to chat_conversations
     Requires admin authentication
     """
     import os
@@ -190,41 +190,49 @@ def add_context_data_column():
         return jsonify({"error": "Unauthorized"}), 401
 
     try:
-        # Check if column exists
-        result = db.session.execute(
-            text(
-                """
-            SELECT column_name
-            FROM information_schema.columns
-            WHERE table_name='chat_conversations'
-            AND column_name='context_data'
-        """
-            )
-        )
+        results = []
 
-        if result.fetchone() is None:
-            # Add column
-            db.session.execute(text("ALTER TABLE chat_conversations ADD COLUMN context_data TEXT"))
-            db.session.commit()
-            return (
-                jsonify(
-                    {
-                        "success": True,
-                        "message": "context_data column added successfully",
-                    }
-                ),
-                200,
+        # Define columns to add
+        columns_to_add = [
+            ("context_data", "TEXT"),
+            ("user_satisfaction", "INTEGER"),
+            ("feedback_text", "TEXT"),
+            ("awaiting_confirmation", "BOOLEAN DEFAULT FALSE"),
+        ]
+
+        for column_name, column_type in columns_to_add:
+            # Check if column exists
+            result = db.session.execute(
+                text(
+                    f"""
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_name='chat_conversations'
+                AND column_name='{column_name}'
+            """
+                )
             )
-        else:
-            return (
-                jsonify(
-                    {
-                        "success": True,
-                        "message": "context_data column already exists",
-                    }
-                ),
-                200,
-            )
+
+            if result.fetchone() is None:
+                # Add column
+                db.session.execute(
+                    text(f"ALTER TABLE chat_conversations ADD COLUMN {column_name} {column_type}")
+                )
+                db.session.commit()
+                results.append(f"✅ {column_name} added")
+            else:
+                results.append(f"⚠️  {column_name} already exists")
+
+        return (
+            jsonify(
+                {
+                    "success": True,
+                    "message": "Migration completed",
+                    "results": results,
+                }
+            ),
+            200,
+        )
 
     except Exception as e:
         db.session.rollback()
