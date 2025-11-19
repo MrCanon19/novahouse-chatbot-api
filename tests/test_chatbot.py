@@ -88,7 +88,7 @@ class TestPackagesEndpoint:
         response = client.get("/api/knowledge/packages")
         data = response.get_json()
 
-        required_fields = ["name", "price_from", "features"]
+        required_fields = ["name", "price_per_sqm", "standard", "ideal_for"]
         for package in data:
             for field in required_fields:
                 assert field in package
