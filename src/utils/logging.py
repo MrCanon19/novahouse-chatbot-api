@@ -3,13 +3,14 @@ Structured JSON Logging with Request Tracking
 Production-ready logging with request IDs, timestamps, and context
 """
 
-import logging
 import json
+import logging
+import os
+import sys
 import uuid
 from datetime import datetime
-from flask import request, g, has_request_context
-import sys
-import os
+
+from flask import g, has_request_context, request
 
 
 class JSONFormatter(logging.Formatter):

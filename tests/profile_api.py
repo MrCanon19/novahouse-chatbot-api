@@ -10,8 +10,8 @@ Usage:
 """
 
 import cProfile
-import pstats
 import io
+import pstats
 import sys
 from pathlib import Path
 from pstats import SortKey
@@ -22,8 +22,9 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 def profile_chatbot_endpoint():
     """Profile chatbot message processing"""
-    from src.routes.chatbot import chatbot_bp
     from flask import Flask
+
+    from src.routes.chatbot import chatbot_bp
 
     app = Flask(__name__)
     app.register_blueprint(chatbot_bp)
@@ -45,8 +46,9 @@ def profile_chatbot_endpoint():
 
 def profile_search_endpoint():
     """Profile knowledge base search"""
-    from src.routes.search import search_bp
     from flask import Flask
+
+    from src.routes.search import search_bp
 
     app = Flask(__name__)
     app.register_blueprint(search_bp)
@@ -66,8 +68,9 @@ def profile_search_endpoint():
 
 def profile_analytics_endpoint():
     """Profile analytics aggregation"""
-    from src.routes.analytics import analytics_bp
     from flask import Flask
+
+    from src.routes.analytics import analytics_bp
 
     app = Flask(__name__)
     app.register_blueprint(analytics_bp)

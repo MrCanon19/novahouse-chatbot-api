@@ -4,13 +4,14 @@ File Upload Service
 Image upload, optimization, and cloud storage
 """
 
-import os
-import io
 import hashlib
+import io
+import os
 from datetime import datetime, timezone
+
+from google.cloud import storage
 from PIL import Image
 from werkzeug.utils import secure_filename
-from google.cloud import storage
 
 # Allowed extensions
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}

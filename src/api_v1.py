@@ -10,16 +10,16 @@ api_v1 = Blueprint("api_v1", __name__, url_prefix="/api/v1")
 
 # Import all route modules
 from src.routes import (
-    chatbot,
-    analytics,
-    leads,
-    booking,
-    knowledge,
-    health,
-    dashboard_widgets,
-    search,
-    file_upload,
     ab_testing,
+    analytics,
+    booking,
+    chatbot,
+    dashboard_widgets,
+    file_upload,
+    health,
+    knowledge,
+    leads,
+    search,
 )
 
 

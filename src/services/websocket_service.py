@@ -4,10 +4,11 @@ WebSocket Service
 Real-time communication with Flask-SocketIO
 """
 
-from flask_socketio import SocketIO, emit, join_room, leave_room
-from flask import request
 import time
 from datetime import datetime, timezone
+
+from flask import request
+from flask_socketio import SocketIO, emit, join_room, leave_room
 
 # Initialize SocketIO (will be attached to app in main.py)
 socketio = SocketIO(

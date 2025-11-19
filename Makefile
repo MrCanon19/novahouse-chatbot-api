@@ -23,7 +23,15 @@ install: ## Install dependencies
 	@echo "$(BLUE)Installing dependencies...$(NC)"
 	python -m pip install --upgrade pip
 	pip install -r requirements.txt
+	pip install pre-commit black autoflake isort flake8
 	@echo "$(GREEN)✅ Dependencies installed$(NC)"
+
+setup-hooks: ## Install pre-commit hooks (automatyczne sprawdzanie kodu)
+	@echo "$(BLUE)Setting up pre-commit hooks...$(NC)"
+	pip install pre-commit
+	pre-commit install
+	pre-commit install --hook-type pre-push
+	@echo "$(GREEN)✅ Git hooks installed - kod będzie automatycznie sprawdzany$(NC)"
 
 dev: ## Setup development environment
 	@echo "$(BLUE)Setting up development environment...$(NC)"
@@ -47,11 +55,19 @@ lint: ## Run linters (flake8 + black check)
 	black --check src/ tests/
 	@echo "$(GREEN)✅ Linting completed$(NC)"
 
-format: ## Format code with black
+format: ## Format code with black + isort + autoflake
 	@echo "$(BLUE)Formatting code...$(NC)"
-	black src/ tests/
-	isort src/ tests/
+	black src/ tests/ --line-length 100
+	isort src/ tests/ --profile black --line-length 100
+	autoflake --in-place --remove-unused-variables --remove-all-unused-imports -r src/ tests/
+	find src tests -name "*.py" -type f -exec sed -i '' 's/[[:space:]]*$$//' {} +
 	@echo "$(GREEN)✅ Code formatted$(NC)"
+
+fix-all: ## Napraw wszystkie problemy automatycznie
+	@echo "$(BLUE)🔧 Automatyczne naprawy...$(NC)"
+	@$(MAKE) format
+	@$(MAKE) lint || true
+	@echo "$(GREEN)✅ Wszystko naprawione!$(NC)"
 
 clean: ## Clean cache and build files
 	@echo "$(BLUE)Cleaning...$(NC)"

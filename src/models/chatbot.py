@@ -1,6 +1,7 @@
-from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime, timezone
 import json
+from datetime import datetime, timezone
+
+from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
 

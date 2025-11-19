@@ -4,11 +4,11 @@ Backup & Export Service
 Automated backups and RODO-compliant data export
 """
 
-import os
-import json
 import csv
+import json
+import os
 from datetime import datetime, timezone
-from typing import Dict, List, Any
+from typing import Any, Dict, List
 
 
 class BackupService:
@@ -54,8 +54,8 @@ class BackupService:
 
     def _export_json(self, timestamp: str) -> str:
         """Export to JSON format"""
+        from src.models.analytics import Analytics, Booking, Lead
         from src.models.chatbot import ChatSession, Message
-        from src.models.analytics import Lead, Booking, Analytics
         from src.models.user import User
 
         data = {
@@ -160,8 +160,8 @@ class BackupService:
 
     def _export_csv(self, timestamp: str) -> str:
         """Export to CSV format (separate files per table)"""
-        from src.models.chatbot import ChatSession, Message
         from src.models.analytics import Lead
+        from src.models.chatbot import ChatSession, Message
 
         csv_dir = os.path.join(self.backup_dir, f"csv_{timestamp}")
         os.makedirs(csv_dir, exist_ok=True)
@@ -246,8 +246,8 @@ class BackupService:
             Dictionary with all user data
         """
         try:
+            from src.models.analytics import Booking, Lead
             from src.models.chatbot import ChatSession, Message
-            from src.models.analytics import Lead, Booking
 
             user_data = {
                 "export_date": datetime.now(timezone.utc).isoformat(),
@@ -324,8 +324,8 @@ class BackupService:
         """
         try:
             from src.database import db
+            from src.models.analytics import Booking, Lead
             from src.models.chatbot import ChatSession, Message
-            from src.models.analytics import Lead, Booking
 
             deleted = {"leads": 0, "bookings": 0, "sessions": 0, "messages": 0}
 

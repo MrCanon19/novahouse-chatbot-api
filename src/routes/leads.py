@@ -1,8 +1,10 @@
-from flask import Blueprint, request, jsonify
-from src.models.chatbot import db, Lead
-from src.integrations.monday_client import MondayClient
-from src.services.email_service import email_service
 from datetime import datetime, timezone
+
+from flask import Blueprint, jsonify, request
+
+from src.integrations.monday_client import MondayClient
+from src.models.chatbot import Lead, db
+from src.services.email_service import email_service
 
 leads_bp = Blueprint("leads", __name__)
 
@@ -331,6 +333,7 @@ def export_leads():
     try:
         import csv
         from io import StringIO
+
         from flask import make_response
 
         # Get filtered leads (reuse filter logic)
