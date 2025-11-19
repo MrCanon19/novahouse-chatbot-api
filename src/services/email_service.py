@@ -69,12 +69,12 @@ class EmailService:
         <head>
             <style>
                 body {{ font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; }}
-                .container {{ background: white; padding: 30px; border-radius: 10px; max-width: 600px; margin: 0 auto; }}
-                .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; }}
+                .container {{ background: white; padding: 30px; border-radius: 10px; max-width: 600px; margin: 0 auto; }}  # noqa: E501
+                .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; }}  # noqa: E501
                 .field {{ margin: 15px 0; padding: 10px; background: #f9fafb; border-left: 4px solid #667eea; }}
                 .label {{ font-weight: bold; color: #667eea; }}
                 .value {{ margin-top: 5px; color: #333; }}
-                .footer {{ margin-top: 30px; padding-top: 20px; border-top: 2px solid #e0e0e0; color: #666; font-size: 12px; }}
+                .footer {{ margin-top: 30px; padding-top: 20px; border-top: 2px solid #e0e0e0; color: #666; font-size: 12px; }}  # noqa: E501
             </style>
         </head>
         <body>
@@ -127,7 +127,7 @@ class EmailService:
 
                 <div class="footer">
                     <p>Zaloguj się do panelu admina aby odpowiedzieć na zapytanie:</p>
-                    <p><a href="https://glass-core-467907-e9.ey.r.appspot.com/admin" style="color: #667eea;">
+                    <p><a href="https://glass-core-467907-e9.ey.r.appspot.com/admin" style="color: #667eea;">  # noqa: E501
                         👉 Panel Admina
                     </a></p>
                 </div>
@@ -164,16 +164,16 @@ class EmailService:
         <head>
             <style>
                 body {{ font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; }}
-                .container {{ background: white; padding: 30px; border-radius: 10px; max-width: 600px; margin: 0 auto; }}
-                .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 8px; text-align: center; }}
+                .container {{ background: white; padding: 30px; border-radius: 10px; max-width: 600px; margin: 0 auto; }}  # noqa: E501
+                .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 8px; text-align: center; }}  # noqa: E501
                 .content {{ padding: 30px 0; }}
                 .stats {{ display: flex; justify-content: space-around; margin: 20px 0; }}
                 .stat {{ text-align: center; }}
                 .stat-value {{ font-size: 24px; font-weight: bold; color: #667eea; }}
                 .stat-label {{ font-size: 12px; color: #666; }}
-                .cta {{ background: #667eea; color: white; padding: 15px 30px; text-align: center; border-radius: 8px; margin: 20px 0; }}
+                .cta {{ background: #667eea; color: white; padding: 15px 30px; text-align: center; border-radius: 8px; margin: 20px 0; }}  # noqa: E501
                 .cta a {{ color: white; text-decoration: none; font-weight: bold; }}
-                .footer {{ margin-top: 30px; padding-top: 20px; border-top: 2px solid #e0e0e0; color: #666; font-size: 12px; text-align: center; }}
+                .footer {{ margin-top: 30px; padding-top: 20px; border-top: 2px solid #e0e0e0; color: #666; font-size: 12px; text-align: center; }}  # noqa: E501
             </style>
         </head>
         <body>
@@ -228,7 +228,7 @@ class EmailService:
                     <p>Trójmiasto | Warszawa | Wrocław</p>
                     <p>
                         <a href="https://novahouse.pl" style="color: #667eea;">novahouse.pl</a> |
-                        <a href="mailto:kontakt@novahouse.pl" style="color: #667eea;">kontakt@novahouse.pl</a>
+                        <a href="mailto:kontakt@novahouse.pl" style="color: #667eea;">kontakt@novahouse.pl</a>  # noqa: E501
                     </p>
                 </div>
             </div>
@@ -266,14 +266,14 @@ class EmailService:
         <head>
             <style>
                 body {{ font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; }}
-                .container {{ background: white; padding: 30px; border-radius: 10px; max-width: 600px; margin: 0 auto; }}
-                .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 8px; text-align: center; }}
-                .booking-box {{ background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #667eea; }}
+                .container {{ background: white; padding: 30px; border-radius: 10px; max-width: 600px; margin: 0 auto; }}  # noqa: E501
+                .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 8px; text-align: center; }}  # noqa: E501
+                .booking-box {{ background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #667eea; }}  # noqa: E501
                 .field {{ margin: 10px 0; }}
                 .label {{ font-weight: bold; color: #667eea; }}
-                .calendar-add {{ background: #4CAF50; color: white; padding: 12px 24px; text-align: center; border-radius: 8px; margin: 20px 0; }}
+                .calendar-add {{ background: #4CAF50; color: white; padding: 12px 24px; text-align: center; border-radius: 8px; margin: 20px 0; }}  # noqa: E501
                 .calendar-add a {{ color: white; text-decoration: none; font-weight: bold; }}
-                .footer {{ margin-top: 30px; padding-top: 20px; border-top: 2px solid #e0e0e0; color: #666; font-size: 12px; text-align: center; }}
+                .footer {{ margin-top: 30px; padding-top: 20px; border-top: 2px solid #e0e0e0; color: #666; font-size: 12px; text-align: center; }}  # noqa: E501
             </style>
         </head>
         <body>
@@ -333,15 +333,15 @@ class EmailService:
         <head>
             <style>
                 body {{ font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; }}
-                .container {{ background: white; padding: 30px; border-radius: 10px; max-width: 800px; margin: 0 auto; }}
-                .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 8px; text-align: center; }}
+                .container {{ background: white; padding: 30px; border-radius: 10px; max-width: 800px; margin: 0 auto; }}  # noqa: E501
+                .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 8px; text-align: center; }}  # noqa: E501
                 .metrics {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin: 30px 0; }}
                 .metric-card {{ background: #f9fafb; padding: 20px; border-radius: 8px; text-align: center; border-top: 4px solid #667eea; }}
                 .metric-value {{ font-size: 36px; font-weight: bold; color: #667eea; }}
                 .metric-label {{ font-size: 14px; color: #666; margin-top: 5px; }}
                 .section {{ margin: 30px 0; }}
                 .section-title {{ font-size: 18px; font-weight: bold; color: #333; margin-bottom: 15px; }}
-                .footer {{ margin-top: 30px; padding-top: 20px; border-top: 2px solid #e0e0e0; color: #666; font-size: 12px; text-align: center; }}
+                .footer {{ margin-top: 30px; padding-top: 20px; border-top: 2px solid #e0e0e0; color: #666; font-size: 12px; text-align: center; }}  # noqa: E501
             </style>
         </head>
         <body>
@@ -377,13 +377,13 @@ class EmailService:
                 <div class="section">
                     <div class="section-title">❓ Najczęstsze pytania</div>
                     <ol>
-                        {chr(10).join(f'<li>{q}</li>' for q in report_data.get('top_questions', ['Brak danych']))}
+                        {chr(10).join(f'<li>{q}</li>' for q in report_data.get('top_questions', ['Brak danych']))}  # noqa: E501
                     </ol>
                 </div>
 
                 <div class="footer">
                     <p>
-                        <a href="https://glass-core-467907-e9.ey.r.appspot.com/admin" style="color: #667eea;">
+                        <a href="https://glass-core-467907-e9.ey.r.appspot.com/admin" style="color: #667eea;">  # noqa: E501
                             👉 Pełny raport w panelu admina
                         </a>
                     </p>
