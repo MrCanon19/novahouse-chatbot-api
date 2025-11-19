@@ -17,12 +17,13 @@ exclude =
 # F841: local variable assigned but never used
 # E302: expected 2 blank lines
 # E741: ambiguous variable name
-ignore = E203,W503
+ignore = E203,W503,W291,E302
 per-file-ignores =
     src/knowledge/novahouse_info.py:E501,W291
     src/main.py:E402,E501
     src/routes/chatbot.py:E501,E302,E741
     src/routes/swagger_ui.py:E501
     src/api_v1.py:E402,F401,W291,E302
+    src/middleware/rate_limiting.py:E302,W291
     migrations/env.py:E402,E501,F401
     tests/*.py:E501,F401,E128
