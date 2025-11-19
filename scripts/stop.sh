@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Stop the novahouse-chatbot-api background server started by start.sh
 set -euo pipefail
-ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT_DIR"
 if [ -f server.pid ]; then
   PID=$(cat server.pid)
