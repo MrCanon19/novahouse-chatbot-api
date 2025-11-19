@@ -27,7 +27,16 @@ from src.knowledge.novahouse_info import (
     get_portfolio_list,
     get_process_overview,
 )
-from src.models.chatbot import AuditLog, ChatConversation, ChatMessage, Lead, RodoConsent, db
+from src.models.chatbot import (
+    AuditLog,
+    ChatConversation,
+    ChatMessage,
+    CompetitiveIntel,
+    FollowUpTest,
+    Lead,
+    RodoConsent,
+    db,
+)
 
 chatbot_bp = Blueprint("chatbot", __name__)
 
@@ -155,6 +164,10 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
             print("[FALLBACK] Używam domyślnej odpowiedzi")
             bot_response = "Dziękuję za wiadomość! Jak mogę Ci pomóc? Możesz zapytać o nasze pakiety, ceny, realizacje czy proces wykończenia."
 
+        # Track A/B test response (if user responded to follow-up question)
+        if conversation.followup_variant and len(user_message) > 3:
+            track_ab_test_response(conversation)
+
         # Zapisz odpowiedź bota
         bot_msg = ChatMessage(
             conversation_id=conversation.id,
@@ -241,6 +254,14 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                     next_action = suggest_next_best_action(context_memory, lead_score)
                     lead.notes = f"Next Action: {next_action}"
 
+                    # Check for competitive mentions
+                    competitor_intel = (
+                        CompetitiveIntel.query.filter_by(session_id=session_id)
+                        .order_by(CompetitiveIntel.created_at.desc())
+                        .first()
+                    )
+                    competitor_name = competitor_intel.competitor_name if competitor_intel else None
+
                     # Sync with Monday.com
                     monday = MondayClient()
                     monday_item_id = monday.create_lead_item(
@@ -251,6 +272,9 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                             "message": f"Lead Score: {lead_score}/100 | {conv_summary} | Action: {next_action}",
                             "property_type": "Mieszkanie",
                             "budget": context_memory.get("square_meters", ""),
+                            "lead_score": lead_score,
+                            "competitor_mentioned": competitor_name,
+                            "next_action": next_action,
                         }
                     )
 
@@ -354,6 +378,15 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                     db.session.add(lead)
                     db.session.flush()
 
+                    # Check for competitive mentions
+                    competitor_intel = (
+                        CompetitiveIntel.query.filter_by(session_id=session_id)
+                        .order_by(CompetitiveIntel.created_at.desc())
+                        .first()
+                    )
+                    competitor_name = competitor_intel.competitor_name if competitor_intel else None
+                    next_action = suggest_next_best_action(context_memory, lead_score)
+
                     monday = MondayClient()
                     monday_item_id = monday.create_lead_item(
                         {
@@ -363,6 +396,9 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                             "message": f"Lead Score: {lead_score}/100 | {conv_summary}",
                             "property_type": "Mieszkanie",
                             "budget": context_memory.get("square_meters", ""),
+                            "lead_score": lead_score,
+                            "competitor_mentioned": competitor_name,
+                            "next_action": next_action,
                         }
                     )
 
@@ -375,8 +411,13 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
 
         db.session.commit()
 
-        # Generate intelligent follow-up question
-        follow_up = generate_follow_up_question(context_memory, user_message, bot_response)
+        # Check for competitive intelligence
+        detect_competitive_intelligence(user_message, session_id, context_memory)
+
+        # Generate intelligent follow-up question (with A/B testing)
+        follow_up = generate_follow_up_question(
+            context_memory, user_message, bot_response, conversation
+        )
         if follow_up:
             bot_response = f"{bot_response}\n\n{follow_up}"
 
@@ -658,9 +699,176 @@ def format_data_confirmation_message(context_memory):
     return "\n".join(parts)
 
 
-def generate_follow_up_question(context_memory, user_message, bot_response):
+def detect_competitive_intelligence(user_message, session_id, context_memory):
+    """
+    Detect competitive intelligence signals in conversation
+    Returns: intel_type, competitor_name, sentiment, priority
+    """
+    user_lower = user_message.lower()
+
+    # Competitor mentions
+    competitors = [
+        "remonteo",
+        "remonty",
+        "fixly",
+        "renovate",
+        "home staging",
+        "konkurencja",
+        "inna firma",
+        "inne firmy",
+    ]
+
+    competitor_found = None
+    for comp in competitors:
+        if comp in user_lower:
+            competitor_found = comp
+            break
+
+    # Price comparison signals
+    price_signals = ["tańsze", "droższe", "taniej", "droższ", "porówna", "comparison"]
+    is_price_comparison = any(signal in user_lower for signal in price_signals)
+
+    # Feature/quality comparison
+    feature_signals = [
+        "lepsz",
+        "gorsz",
+        "jakość",
+        "quality",
+        "różnica",
+        "difference",
+        "dlaczego wy",
+    ]
+    is_feature_comparison = any(signal in user_lower for signal in feature_signals)
+
+    # Loss signal (user went with competitor)
+    loss_signals = ["wybrałem", "wybraliśmy", "zdecydował", "zamówił", "umówiłem się z"]
+    is_loss = any(signal in user_lower for signal in loss_signals)
+
+    # Sentiment analysis (basic)
+    positive_words = ["lepsze", "lepiej", "bardziej", "ciekaw", "interested"]
+    negative_words = ["gorsze", "gorzej", "droż", "wolniej", "dłuż"]
+
+    sentiment = "neutral"
+    if any(word in user_lower for word in positive_words):
+        sentiment = "positive"
+    elif any(word in user_lower for word in negative_words):
+        sentiment = "negative"
+
+    # Determine intel type and priority
+    intel_type = None
+    priority = "medium"
+
+    if is_loss:
+        intel_type = "loss_to_competitor"
+        priority = "high"
+    elif competitor_found:
+        intel_type = "competitor_mention"
+        priority = "high" if is_price_comparison else "medium"
+    elif is_price_comparison:
+        intel_type = "price_comparison"
+        priority = "medium"
+    elif is_feature_comparison:
+        intel_type = "feature_comparison"
+        priority = "medium"
+
+    # Save competitive intel if detected
+    if intel_type:
+        try:
+            intel = CompetitiveIntel(
+                session_id=session_id,
+                intel_type=intel_type,
+                competitor_name=competitor_found if competitor_found else None,
+                user_message=user_message,
+                context=json.dumps(context_memory),
+                sentiment=sentiment,
+                priority=priority,
+            )
+            db.session.add(intel)
+            db.session.commit()
+
+            print(f"[Competitive Intel] {intel_type} detected: {competitor_found or 'unknown'}")
+            return {
+                "detected": True,
+                "type": intel_type,
+                "competitor": competitor_found,
+                "sentiment": sentiment,
+                "priority": priority,
+            }
+        except Exception as e:
+            print(f"[Competitive Intel] Error saving: {e}")
+            db.session.rollback()
+
+    return {"detected": False}
+
+
+def track_ab_test_response(conversation):
+    """
+    Track that user responded to A/B test follow-up question
+    """
+    try:
+        if not conversation.followup_variant:
+            return
+
+        # Find the test (we don't know which type, so check all active)
+        tests = FollowUpTest.query.filter_by(is_active=True).all()
+
+        for test in tests:
+            # Increment response count for the variant shown
+            if conversation.followup_variant == "A":
+                test.variant_a_responses += 1
+            elif conversation.followup_variant == "B":
+                test.variant_b_responses += 1
+
+        # Clear variant so we don't double-count
+        conversation.followup_variant = None
+        db.session.commit()
+
+        print(f"[A/B Test] Response tracked for variant {conversation.followup_variant}")
+
+    except Exception as e:
+        print(f"[A/B Test] Error tracking response: {e}")
+
+
+def get_ab_test_variant(conversation, question_type):
+    """
+    Get A/B test variant for follow-up question
+    Returns: variant ("A" or "B"), question text
+    """
+    import random
+
+    try:
+        # Find active test for this question type
+        test = FollowUpTest.query.filter_by(question_type=question_type, is_active=True).first()
+
+        if not test:
+            return None, None
+
+        # Random 50/50 split
+        variant = random.choice(["A", "B"])
+
+        # Track impression
+        if variant == "A":
+            test.variant_a_shown += 1
+            question = test.variant_a
+        else:
+            test.variant_b_shown += 1
+            question = test.variant_b
+
+        # Save variant to conversation for tracking response
+        conversation.followup_variant = variant
+        db.session.commit()
+
+        return variant, question
+
+    except Exception as e:
+        print(f"[A/B Test] Error: {e}")
+        return None, None
+
+
+def generate_follow_up_question(context_memory, user_message, bot_response, conversation=None):
     """
     Generate intelligent follow-up questions based on conversation context
+    Includes A/B testing for optimization
     Increases engagement and gathers more qualifying data
     """
     # Don't add follow-up if already asking for confirmation
@@ -677,15 +885,19 @@ def generate_follow_up_question(context_memory, user_message, bot_response):
     has_city = context_memory.get("city")
     has_contact = context_memory.get("email") or context_memory.get("phone")
 
-    # Package interest → ask about square meters
+    # Package interest → ask about square meters (A/B TEST)
     if (
         has_package
         and not has_sqm
         and any(word in user_lower for word in ["pakiet", "express", "comfort", "premium"])
     ):
+        if conversation:
+            variant, ab_question = get_ab_test_variant(conversation, "package_to_sqm")
+            if ab_question:
+                return ab_question
         return "💡 **A jaki jest mniej więcej metraż Twojego mieszkania?** To pomoże mi lepiej dopasować ofertę."
 
-    # Square meters given → ask about location
+    # Square meters given → ask about location (A/B TEST)
     if (
         has_sqm
         and not has_city
@@ -694,12 +906,20 @@ def generate_follow_up_question(context_memory, user_message, bot_response):
             for word in ["m²", "metr", "mkw", "50", "60", "70", "80", "90", "100"]
         )
     ):
+        if conversation:
+            variant, ab_question = get_ab_test_variant(conversation, "sqm_to_location")
+            if ab_question:
+                return ab_question
         return "📍 **W jakim mieście szukasz wykonawcy?** Mamy zespoły w całej Polsce."
 
-    # Price question → ask about budget/financing
+    # Price question → ask about budget/financing (A/B TEST)
     if not has_contact and any(
         word in user_lower for word in ["cena", "koszt", "ile", "budget", "cennik"]
     ):
+        if conversation:
+            variant, ab_question = get_ab_test_variant(conversation, "price_to_budget")
+            if ab_question:
+                return ab_question
         return "💰 **Masz już określony budżet? Mogę pokazać opcje finansowania i rozłożenia płatności.**"
 
     # Talked about materials → ask about style preferences
@@ -1633,6 +1853,156 @@ def monday_test():
                     "test_item_id": item_id,
                     "api_key_set": bool(monday.api_key),
                     "board_id_set": bool(monday.board_id),
+                }
+            ),
+            200,
+        )
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@chatbot_bp.route("/ab-tests/results", methods=["GET"])
+def get_ab_test_results():
+    """
+    Get A/B testing results for follow-up questions
+    Requires admin key
+    """
+    admin_key = os.getenv("ADMIN_API_KEY")
+    if admin_key:
+        header = request.headers.get("X-ADMIN-API-KEY")
+        if header != admin_key:
+            return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        tests = FollowUpTest.query.all()
+        results = []
+
+        for test in tests:
+            test_data = test.to_dict()
+
+            # Statistical significance check (basic)
+            total_shown = test.variant_a_shown + test.variant_b_shown
+            if total_shown >= 100:  # Minimum sample size
+                conv_a = test_data["stats"]["variant_a"]["conversion_rate"]
+                conv_b = test_data["stats"]["variant_b"]["conversion_rate"]
+
+                if abs(conv_a - conv_b) > 10:  # 10% difference threshold
+                    winner = "A" if conv_a > conv_b else "B"
+                    test_data["winner"] = winner
+                    test_data["significance"] = "statistically significant"
+                else:
+                    test_data["winner"] = "inconclusive"
+                    test_data["significance"] = "no significant difference"
+            else:
+                test_data["winner"] = "insufficient data"
+                test_data["significance"] = f"need {100 - total_shown} more impressions"
+
+            results.append(test_data)
+
+        return jsonify({"tests": results}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@chatbot_bp.route("/ab-tests/create", methods=["POST"])
+def create_ab_test():
+    """
+    Create new A/B test for follow-up questions
+    Requires admin key
+    """
+    admin_key = os.getenv("ADMIN_API_KEY")
+    if admin_key:
+        header = request.headers.get("X-ADMIN-API-KEY")
+        if header != admin_key:
+            return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        data = request.get_json()
+
+        test = FollowUpTest(
+            question_type=data.get("question_type"),
+            variant_a=data.get("variant_a"),
+            variant_b=data.get("variant_b"),
+            is_active=data.get("is_active", True),
+        )
+
+        db.session.add(test)
+        db.session.commit()
+
+        return jsonify({"message": "A/B test created", "test_id": test.id}), 201
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@chatbot_bp.route("/competitive-intelligence", methods=["GET"])
+def get_competitive_intelligence():
+    """
+    Get competitive intelligence insights from conversations
+    Requires admin key
+    """
+    admin_key = os.getenv("ADMIN_API_KEY")
+    if admin_key:
+        header = request.headers.get("X-ADMIN-API-KEY")
+        if header != admin_key:
+            return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        from datetime import timedelta
+
+        # Get time range from query params (default: last 30 days)
+        days = request.args.get("days", 30, type=int)
+        since = datetime.now(timezone.utc) - timedelta(days=days)
+
+        # Get all intel
+        intel_records = CompetitiveIntel.query.filter(CompetitiveIntel.created_at >= since).all()
+
+        # Aggregated stats
+        total_mentions = len(intel_records)
+        competitor_counts = {}
+        intel_type_counts = {}
+        sentiment_counts = {"positive": 0, "negative": 0, "neutral": 0}
+        priority_counts = {"high": 0, "medium": 0, "low": 0}
+
+        for intel in intel_records:
+            # Count by competitor
+            if intel.competitor_name:
+                competitor_counts[intel.competitor_name] = (
+                    competitor_counts.get(intel.competitor_name, 0) + 1
+                )
+
+            # Count by type
+            intel_type_counts[intel.intel_type] = intel_type_counts.get(intel.intel_type, 0) + 1
+
+            # Count by sentiment
+            sentiment_counts[intel.sentiment] = sentiment_counts.get(intel.sentiment, 0) + 1
+
+            # Count by priority
+            priority_counts[intel.priority] = priority_counts.get(intel.priority, 0) + 1
+
+        # Recent high-priority intel (last 10)
+        recent_high_priority = (
+            CompetitiveIntel.query.filter(CompetitiveIntel.priority == "high")
+            .order_by(CompetitiveIntel.created_at.desc())
+            .limit(10)
+            .all()
+        )
+
+        return (
+            jsonify(
+                {
+                    "summary": {
+                        "total_mentions": total_mentions,
+                        "date_range_days": days,
+                        "competitor_mentions": competitor_counts,
+                        "intel_types": intel_type_counts,
+                        "sentiment_distribution": sentiment_counts,
+                        "priority_distribution": priority_counts,
+                    },
+                    "recent_high_priority": [intel.to_dict() for intel in recent_high_priority],
                 }
             ),
             200,
