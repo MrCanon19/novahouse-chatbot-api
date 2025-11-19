@@ -209,7 +209,7 @@ def deep_health_check():
 
         redis_cache.set("health_check", "ok", ttl=10)
         status["checks"]["redis"] = "ok" if redis_cache.get("health_check") == "ok" else "fallback"
-    except Exception as e:
+    except Exception:
         status["checks"]["redis"] = "fallback (in-memory)"
 
     # Check Search index
