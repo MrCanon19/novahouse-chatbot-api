@@ -23,6 +23,12 @@ from src.knowledge.novahouse_info import (
 chatbot_bp = Blueprint("chatbot", __name__)
 
 
+@chatbot_bp.route("/health", methods=["GET"])
+def chatbot_health():
+    """Health check endpoint for chatbot service"""
+    return jsonify({"status": "healthy", "service": "chatbot"}), 200
+
+
 def process_chat_message(user_message: str, session_id: str) -> dict:
     """
     Process chat message and return bot response
