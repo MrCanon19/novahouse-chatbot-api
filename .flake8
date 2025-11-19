@@ -1,0 +1,13 @@
+[flake8]
+max-line-length = 79
+exclude =
+    .git,
+    __pycache__,
+    .venv,
+    venv,
+    build,
+    dist,
+    *.egg-info
+# Ignoruj błędy line-too-long w plikach z danymi
+per-file-ignores =
+    src/knowledge/novahouse_info.py:E501,W291
