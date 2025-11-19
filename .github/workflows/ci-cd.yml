@@ -102,43 +102,24 @@ jobs:
     name: Deploy to Google App Engine
     runs-on: ubuntu-latest
     needs: [test, lint]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    # Deployment disabled - configure GCP_SA_KEY and GCP_PROJECT_ID secrets to enable
+    if: false
 
     steps:
       - uses: actions/checkout@v5
 
-      - name: Check if secrets are configured
-        id: check_secrets
-        run: |
-          # Check if GCP secrets are configured (not placeholders)
-          if [ "${{ secrets.GCP_SA_KEY }}" != "" ]; then
-            echo "secrets_available=true" >> $GITHUB_OUTPUT
-          else
-            echo "secrets_available=false" >> $GITHUB_OUTPUT
-          fi
-
       - name: Setup Cloud SDK
-        if: steps.check_secrets.outputs.secrets_available == 'true'
         uses: google-github-actions/setup-gcloud@v2
         with:
-          # Configure GCP_SA_KEY and GCP_PROJECT_ID secrets to enable deployment
           service_account_key: ${{ secrets.GCP_SA_KEY }}
           project_id: ${{ secrets.GCP_PROJECT_ID }}
 
       - name: Deploy to App Engine
-        if: steps.check_secrets.outputs.secrets_available == 'true'
         run: |
           gcloud app deploy app.yaml --quiet --no-promote
 
       - name: Create deployment notification
-        if: steps.check_secrets.outputs.secrets_available == 'true'
         run: |
           echo "✅ Deployed to: https://glass-core-467907-e9.ey.r.appspot.com"
           echo "Version: $(git rev-parse --short HEAD)"
           echo "Branch: $(git rev-parse --abbrev-ref HEAD)"
-
-      - name: Deployment skipped
-        if: steps.check_secrets.outputs.secrets_available != 'true'
-        run: |
-          echo "⚠️  Deployment skipped - GCP_SA_KEY secret not configured"
-          echo "See SETUP_MONITORING.md for setup instructions"
