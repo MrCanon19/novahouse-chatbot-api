@@ -52,7 +52,7 @@ dependencies = [
     "APScheduler==3.10.4",
     "Whoosh==2.7.4",
     "sentry-sdk[flask]==2.18.0",
-    "python-dotenv==1.0.1",
+    "python-dotenv==1.2.1",
     "alembic==1.13.2",
     "flask-migrate==4.0.5",
 ]
