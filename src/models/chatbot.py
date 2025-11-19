@@ -180,6 +180,85 @@ class Booking(db.Model):
         }
 
 
+class FollowUpTest(db.Model):
+    """A/B Testing for follow-up questions"""
+
+    __tablename__ = "followup_tests"
+
+    id = db.Column(db.Integer, primary_key=True)
+    question_type = db.Column(db.String(100), nullable=False)  # e.g., "package_to_sqm"
+    variant_a = db.Column(db.Text, nullable=False)  # Question variant A
+    variant_b = db.Column(db.Text, nullable=False)  # Question variant B
+    variant_a_shown = db.Column(db.Integer, default=0)
+    variant_b_shown = db.Column(db.Integer, default=0)
+    variant_a_responses = db.Column(db.Integer, default=0)  # User responded
+    variant_b_responses = db.Column(db.Integer, default=0)
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    def to_dict(self):
+        conv_rate_a = (
+            (self.variant_a_responses / self.variant_a_shown * 100)
+            if self.variant_a_shown > 0
+            else 0
+        )
+        conv_rate_b = (
+            (self.variant_b_responses / self.variant_b_shown * 100)
+            if self.variant_b_shown > 0
+            else 0
+        )
+        return {
+            "id": self.id,
+            "question_type": self.question_type,
+            "variant_a": self.variant_a,
+            "variant_b": self.variant_b,
+            "stats": {
+                "variant_a": {
+                    "shown": self.variant_a_shown,
+                    "responses": self.variant_a_responses,
+                    "conversion_rate": round(conv_rate_a, 2),
+                },
+                "variant_b": {
+                    "shown": self.variant_b_shown,
+                    "responses": self.variant_b_responses,
+                    "conversion_rate": round(conv_rate_b, 2),
+                },
+            },
+            "is_active": self.is_active,
+        }
+
+
+class CompetitiveIntel(db.Model):
+    """Track competitive intelligence from conversations"""
+
+    __tablename__ = "competitive_intel"
+
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.String(100), nullable=False)
+    intel_type = db.Column(
+        db.String(50), nullable=False
+    )  # competitor_mention, price_comparison, feature_request
+    competitor_name = db.Column(db.String(100))  # If mentioned
+    user_message = db.Column(db.Text, nullable=False)  # Original message
+    context = db.Column(db.Text)  # Additional context
+    sentiment = db.Column(db.String(20))  # positive, negative, neutral
+    priority = db.Column(db.String(20), default="medium")  # low, medium, high
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "session_id": self.session_id,
+            "intel_type": self.intel_type,
+            "competitor_name": self.competitor_name,
+            "user_message": self.user_message,
+            "context": self.context,
+            "sentiment": self.sentiment,
+            "priority": self.priority,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
+
 class ChatConversation(db.Model):
     """Model for chat conversation sessions"""
 
@@ -194,6 +273,8 @@ class ChatConversation(db.Model):
     user_satisfaction = db.Column(db.Integer)  # 1-5 rating
     feedback_text = db.Column(db.Text)  # Optional user feedback
     awaiting_confirmation = db.Column(db.Boolean, default=False)  # Pending data confirmation
+    # A/B Testing
+    followup_variant = db.Column(db.String(10))  # "A" or "B" for A/B test
 
     messages = db.relationship(
         "ChatMessage", backref="conversation", lazy=True, cascade="all, delete-orphan"
