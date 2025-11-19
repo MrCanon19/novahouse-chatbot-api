@@ -171,3 +171,61 @@ def run_ab_competitive_migration():
     except Exception as e:
         db.session.rollback()
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+@migration_bp.route("/api/migration/add-context-data", methods=["POST"])
+def add_context_data_column():
+    """
+    Add missing context_data column to chat_conversations
+    Requires admin authentication
+    """
+    import os
+
+    admin_key = os.getenv("API_KEY") or os.getenv("ADMIN_API_KEY")
+    if not admin_key:
+        return jsonify({"error": "Admin key not configured"}), 500
+
+    provided_key = request.headers.get("X-ADMIN-API-KEY") or request.headers.get("X-API-KEY")
+    if provided_key != admin_key:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        # Check if column exists
+        result = db.session.execute(
+            text(
+                """
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_name='chat_conversations'
+            AND column_name='context_data'
+        """
+            )
+        )
+
+        if result.fetchone() is None:
+            # Add column
+            db.session.execute(text("ALTER TABLE chat_conversations ADD COLUMN context_data TEXT"))
+            db.session.commit()
+            return (
+                jsonify(
+                    {
+                        "success": True,
+                        "message": "context_data column added successfully",
+                    }
+                ),
+                200,
+            )
+        else:
+            return (
+                jsonify(
+                    {
+                        "success": True,
+                        "message": "context_data column already exists",
+                    }
+                ),
+                200,
+            )
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500
