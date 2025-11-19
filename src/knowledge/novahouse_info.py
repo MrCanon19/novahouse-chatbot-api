@@ -440,7 +440,7 @@ Niedziela: zamknięte
 
 💰 CENY PAKIETÓW:
 • Express: od 999 zł/m²* | Projektowanie: do 10 dni | Realizacja: 6-8 tygodni** | 150 produktów
-• Express Plus: od 1199 zł/m²* | Projektowanie: do 20 dni | Realizacja: 6-8 tygodni** | 300 produktów  
+• Express Plus: od 1199 zł/m²* | Projektowanie: do 20 dni | Realizacja: 6-8 tygodni** | 300 produktów
 • Comfort/Szafran: od 1499 zł/m²* | Projektowanie: do 4 tygodni | Realizacja: 8-12 tygodni** | 450 produktów
 • Premium/Pomarańczowy/Cynamonowy: od 1999 zł/m²* | Projektowanie: do 6 tygodni | Realizacja: 10-16 tygodni** | 600 produktów
 • Projekt Indywidualny: 1700-5000 zł/m² | Projektowanie: 6-10 tygodni | Realizacja: indywidualna

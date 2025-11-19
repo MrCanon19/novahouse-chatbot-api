@@ -2,13 +2,8 @@
 Tests for knowledge base
 """
 
-import pytest
 from src.knowledge.novahouse_info import (
     PACKAGES,
-    FAQ,
-    COMPANY_INFO,
-    get_package_description,
-    get_all_packages_summary,
 )
 
 
