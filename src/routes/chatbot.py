@@ -193,57 +193,155 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
             print(f"[FAQ Learning] Failed to log: {e}")
             # Don't fail the main flow
 
-        # Automatyczne tworzenie leada w Monday.com gdy użytkownik podaje dane kontaktowe
-        try:
-            # Sprawdź czy mamy wystarczająco danych kontaktowych
-            has_contact_data = (
-                context_memory.get("name")
-                and context_memory.get("email")
-                or context_memory.get("phone")
-            )
+        # Check if user is confirming data
+        confirmation_intent = check_data_confirmation_intent(user_message)
+        existing_lead = Lead.query.filter_by(session_id=session_id).first()
 
-            # Sprawdź czy już nie istnieje lead dla tego session_id
-            existing_lead = Lead.query.filter_by(session_id=session_id).first()
+        if confirmation_intent == "confirm" and conversation.awaiting_confirmation:
+            # User confirmed - create lead now
+            try:
+                if not existing_lead:
+                    from src.integrations.monday_client import MondayClient
 
-            if has_contact_data and not existing_lead:
-                from src.integrations.monday_client import MondayClient
+                    # Get message count for lead scoring
+                    message_count = ChatMessage.query.filter_by(
+                        conversation_id=conversation.id
+                    ).count()
+                    lead_score = calculate_lead_score(context_memory, message_count)
 
-                # Utwórz lead w bazie danych
-                lead = Lead(
-                    session_id=session_id,
-                    name=context_memory.get("name", "Unknown"),
-                    email=context_memory.get("email"),
-                    phone=context_memory.get("phone"),
-                    location=context_memory.get("city"),
-                    property_size=context_memory.get("square_meters"),
-                    interested_package=context_memory.get("package"),
-                    source="chatbot",
-                    status="new",
+                    # Generate conversation summary
+                    all_messages = (
+                        ChatMessage.query.filter_by(conversation_id=conversation.id)
+                        .order_by(ChatMessage.timestamp.asc())
+                        .all()
+                    )
+                    conv_summary = generate_conversation_summary(all_messages, context_memory)
+
+                    # Create lead
+                    lead = Lead(
+                        session_id=session_id,
+                        name=context_memory.get("name", "Unknown"),
+                        email=context_memory.get("email"),
+                        phone=context_memory.get("phone"),
+                        location=context_memory.get("city"),
+                        property_size=context_memory.get("square_meters"),
+                        interested_package=context_memory.get("package"),
+                        source="chatbot",
+                        status="qualified",  # User confirmed data
+                        lead_score=lead_score,
+                        conversation_summary=conv_summary,
+                        data_confirmed=True,
+                        last_interaction=datetime.now(timezone.utc),
+                    )
+
+                    db.session.add(lead)
+                    db.session.flush()
+
+                    # Sync with Monday.com
+                    monday = MondayClient()
+                    monday_item_id = monday.create_lead_item(
+                        {
+                            "name": lead.name,
+                            "email": lead.email,
+                            "phone": lead.phone,
+                            "message": f"Lead Score: {lead_score}/100 | {conv_summary}",
+                            "property_type": "Mieszkanie",
+                            "budget": context_memory.get("square_meters", ""),
+                        }
+                    )
+
+                    if monday_item_id:
+                        lead.monday_item_id = monday_item_id
+                        print(
+                            f"[Monday] Confirmed lead created: {monday_item_id} (score: {lead_score})"
+                        )
+
+                    # Clear awaiting flag
+                    conversation.awaiting_confirmation = False
+
+                    # Add confirmation message to bot response
+                    bot_response = (
+                        f"✅ Dziękuję za potwierdzenie! Twoje dane zostały zapisane.\n\n"
+                        f"Nasz zespół skontaktuje się z Tobą wkrótce.\n\n"
+                        f"{bot_response}"
+                    )
+
+            except Exception as e:
+                print(f"[Confirmed Lead] Error: {e}")
+
+        elif confirmation_intent == "edit":
+            # User wants to edit - clear awaiting flag
+            conversation.awaiting_confirmation = False
+            bot_response = "Oczywiście! Popraw dane które chcesz zmienić, a ja je zaktualizuję. 📝"
+
+        # Check if we should ask for data confirmation
+        elif should_ask_for_confirmation(context_memory, conversation):
+            conversation.awaiting_confirmation = True
+            confirmation_msg = format_data_confirmation_message(context_memory)
+            # Append confirmation request to bot response
+            bot_response = f"{bot_response}\n\n{confirmation_msg}"
+
+        # Fallback: Auto-create lead if enough data (no confirmation asked)
+        elif not conversation.awaiting_confirmation and not existing_lead:
+            try:
+                has_contact_data = (
+                    context_memory.get("name")
+                    and context_memory.get("email")
+                    or context_memory.get("phone")
                 )
 
-                db.session.add(lead)
-                db.session.flush()  # Get lead.id
+                if has_contact_data:
+                    from src.integrations.monday_client import MondayClient
 
-                # Synchronizuj z Monday.com
-                monday = MondayClient()
-                monday_item_id = monday.create_lead_item(
-                    {
-                        "name": lead.name,
-                        "email": lead.email,
-                        "phone": lead.phone,
-                        "message": f"Lead z chatbota - miasto: {context_memory.get('city', 'N/A')}, metraż: {context_memory.get('square_meters', 'N/A')}m²",
-                        "property_type": "Mieszkanie",  # Default
-                        "budget": context_memory.get("square_meters", ""),
-                    }
-                )
+                    message_count = ChatMessage.query.filter_by(
+                        conversation_id=conversation.id
+                    ).count()
+                    lead_score = calculate_lead_score(context_memory, message_count)
 
-                if monday_item_id:
-                    lead.monday_item_id = monday_item_id
-                    print(f"[Monday] Lead created: {monday_item_id} for session {session_id}")
+                    all_messages = (
+                        ChatMessage.query.filter_by(conversation_id=conversation.id)
+                        .order_by(ChatMessage.timestamp.asc())
+                        .all()
+                    )
+                    conv_summary = generate_conversation_summary(all_messages, context_memory)
 
-        except Exception as e:
-            print(f"[Monday] Failed to create lead: {e}")
-            # Don't fail the main flow
+                    lead = Lead(
+                        session_id=session_id,
+                        name=context_memory.get("name", "Unknown"),
+                        email=context_memory.get("email"),
+                        phone=context_memory.get("phone"),
+                        location=context_memory.get("city"),
+                        property_size=context_memory.get("square_meters"),
+                        interested_package=context_memory.get("package"),
+                        source="chatbot",
+                        status="new",
+                        lead_score=lead_score,
+                        conversation_summary=conv_summary,
+                        data_confirmed=False,
+                        last_interaction=datetime.now(timezone.utc),
+                    )
+
+                    db.session.add(lead)
+                    db.session.flush()
+
+                    monday = MondayClient()
+                    monday_item_id = monday.create_lead_item(
+                        {
+                            "name": lead.name,
+                            "email": lead.email,
+                            "phone": lead.phone,
+                            "message": f"Lead Score: {lead_score}/100 | {conv_summary}",
+                            "property_type": "Mieszkanie",
+                            "budget": context_memory.get("square_meters", ""),
+                        }
+                    )
+
+                    if monday_item_id:
+                        lead.monday_item_id = monday_item_id
+                        print(f"[Monday] Auto-lead created: {monday_item_id} (score: {lead_score})")
+
+            except Exception as e:
+                print(f"[Auto Lead] Error: {e}")
 
         db.session.commit()
 
@@ -401,6 +499,128 @@ def chat():
     except Exception as e:
         print(f"Chat error: {e}")
         return jsonify({"error": "Internal server error"}), 500
+
+
+def calculate_lead_score(context_memory, message_count):
+    """
+    Calculate lead quality score (0-100)
+    Based on: data completeness, engagement, intent signals
+    """
+    score = 0
+
+    # Data completeness (40 points)
+    if context_memory.get("name"):
+        score += 10
+    if context_memory.get("email"):
+        score += 15
+    if context_memory.get("phone"):
+        score += 15
+
+    # Intent signals (30 points)
+    if context_memory.get("package"):
+        score += 15
+    if context_memory.get("square_meters"):
+        score += 10
+    if context_memory.get("city"):
+        score += 5
+
+    # Engagement (30 points)
+    if message_count >= 3:
+        score += 10
+    if message_count >= 5:
+        score += 10
+    if message_count >= 8:
+        score += 10
+
+    return min(score, 100)
+
+
+def generate_conversation_summary(messages, context_memory):
+    """
+    Generate AI summary of conversation for lead notes
+    """
+    try:
+        if not messages or len(messages) < 2:
+            return "Krótka konwersacja bez szczegółów."
+
+        # Build summary from context and message count
+        summary_parts = []
+        if context_memory.get("package"):
+            summary_parts.append(f"Zainteresowany: {context_memory.get('package')}")
+        if context_memory.get("square_meters"):
+            summary_parts.append(f"Metraż: {context_memory.get('square_meters')}m²")
+        if context_memory.get("city"):
+            summary_parts.append(f"Lokalizacja: {context_memory.get('city')}")
+
+        summary = " | ".join(summary_parts) if summary_parts else "Wstępne pytania ogólne"
+        summary += f" | Wiadomości: {len(messages)}"
+
+        return summary
+
+    except Exception as e:
+        print(f"[Summary] Error: {e}")
+        return "Konwersacja z chatbotem"
+
+
+def check_data_confirmation_intent(message):
+    """
+    Check if user is confirming their data
+    Returns: 'confirm', 'edit', or None
+    """
+    message_lower = message.lower().strip()
+
+    confirm_keywords = ["tak", "zgadza", "dobrze", "ok", "poprawnie", "potwierdz"]
+    edit_keywords = ["nie", "zmień", "popraw", "błąd", "inaczej", "edytuj"]
+
+    if any(keyword in message_lower for keyword in confirm_keywords):
+        return "confirm"
+    elif any(keyword in message_lower for keyword in edit_keywords):
+        return "edit"
+
+    return None
+
+
+def should_ask_for_confirmation(context_memory, conversation):
+    """
+    Determine if we should ask user to confirm their data
+    """
+    # Check if we have enough data
+    has_data = context_memory.get("name") and (
+        context_memory.get("email") or context_memory.get("phone")
+    )
+
+    # Check if not already confirmed
+    not_confirmed = not conversation.awaiting_confirmation
+
+    # Check if lead doesn't exist yet
+    no_lead = not Lead.query.filter_by(session_id=conversation.session_id).first()
+
+    return has_data and not_confirmed and no_lead
+
+
+def format_data_confirmation_message(context_memory):
+    """
+    Format a nice confirmation message with user's data
+    """
+    parts = [
+        "📋 **Świetnie! Podsumujmy Twoje dane:**\n",
+        f"👤 Imię: {context_memory.get('name', 'Nie podano')}",
+    ]
+
+    if context_memory.get("email"):
+        parts.append(f"📧 Email: {context_memory.get('email')}")
+    if context_memory.get("phone"):
+        parts.append(f"📱 Telefon: {context_memory.get('phone')}")
+    if context_memory.get("city"):
+        parts.append(f"📍 Miasto: {context_memory.get('city')}")
+    if context_memory.get("square_meters"):
+        parts.append(f"📐 Metraż: {context_memory.get('square_meters')}m²")
+    if context_memory.get("package"):
+        parts.append(f"📦 Pakiet: {context_memory.get('package')}")
+
+    parts.append("\n✅ Czy wszystko się zgadza? (wpisz: TAK lub POPRAW)")
+
+    return "\n".join(parts)
 
 
 def check_booking_intent(message, context):
@@ -709,6 +929,117 @@ def get_default_response(message: str) -> str:
         "• Gwarancję i warunki\n\n"
         "Lub jeśli wolisz — skontaktuj się z nami: +48 585 004 663"
     )
+
+
+@chatbot_bp.route("/feedback", methods=["POST"])
+def submit_feedback():
+    """
+    Submit user satisfaction feedback
+    POST body: {session_id, rating (1-5), feedback_text (optional)}
+    """
+    try:
+        data = request.get_json()
+        session_id = data.get("session_id")
+        rating = data.get("rating")
+        feedback_text = data.get("feedback_text", "")
+
+        if not session_id or not rating:
+            return jsonify({"error": "session_id and rating are required"}), 400
+
+        if rating not in [1, 2, 3, 4, 5]:
+            return jsonify({"error": "rating must be between 1-5"}), 400
+
+        conversation = ChatConversation.query.filter_by(session_id=session_id).first()
+        if not conversation:
+            return jsonify({"error": "Conversation not found"}), 404
+
+        # Save feedback
+        conversation.user_satisfaction = rating
+        conversation.feedback_text = feedback_text
+        conversation.ended_at = datetime.now(timezone.utc)
+
+        # Update lead if exists
+        lead = Lead.query.filter_by(session_id=session_id).first()
+        if lead:
+            # Adjust lead score based on satisfaction
+            if rating >= 4:
+                lead.lead_score = min(lead.lead_score + 10, 100)
+            elif rating <= 2:
+                lead.lead_score = max(lead.lead_score - 10, 0)
+            lead.last_interaction = datetime.now(timezone.utc)
+
+        db.session.commit()
+
+        return (
+            jsonify(
+                {
+                    "message": "Feedback saved",
+                    "rating": rating,
+                    "thank_you": "Dziękujemy za opinię! 🙏",
+                }
+            ),
+            200,
+        )
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@chatbot_bp.route("/stats/leads", methods=["GET"])
+def get_lead_stats():
+    """
+    Get lead statistics and quality metrics
+    Requires admin key
+    """
+    admin_key = os.getenv("ADMIN_API_KEY")
+    if admin_key:
+        header = request.headers.get("X-ADMIN-API-KEY")
+        if header != admin_key:
+            return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        total_leads = Lead.query.count()
+        confirmed_leads = Lead.query.filter_by(data_confirmed=True).count()
+        high_quality_leads = Lead.query.filter(Lead.lead_score >= 70).count()
+        medium_quality_leads = Lead.query.filter(
+            Lead.lead_score >= 40, Lead.lead_score < 70
+        ).count()
+        low_quality_leads = Lead.query.filter(Lead.lead_score < 40).count()
+
+        # Average scores
+        avg_score = db.session.query(db.func.avg(Lead.lead_score)).scalar() or 0
+
+        # Satisfaction stats
+        total_feedback = ChatConversation.query.filter(
+            ChatConversation.user_satisfaction.isnot(None)
+        ).count()
+        avg_satisfaction = (
+            db.session.query(db.func.avg(ChatConversation.user_satisfaction)).scalar() or 0
+        )
+
+        return (
+            jsonify(
+                {
+                    "total_leads": total_leads,
+                    "confirmed_leads": confirmed_leads,
+                    "quality_distribution": {
+                        "high (70-100)": high_quality_leads,
+                        "medium (40-69)": medium_quality_leads,
+                        "low (0-39)": low_quality_leads,
+                    },
+                    "average_lead_score": round(avg_score, 2),
+                    "user_feedback": {
+                        "total_responses": total_feedback,
+                        "average_rating": round(avg_satisfaction, 2),
+                    },
+                }
+            ),
+            200,
+        )
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @chatbot_bp.route("/history/<session_id>", methods=["GET"])
