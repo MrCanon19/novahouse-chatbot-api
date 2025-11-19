@@ -161,13 +161,13 @@ with app.app_context():
     except Exception as e:
         print(f"⚠️  Search indexing skipped: {e}")
 
-    try:
-        from src.services.backup_service import backup_service
-
-        backup_service.schedule_automated_backup()
-        print("✅ Automated backup scheduled")
-    except Exception as e:
-        print(f"⚠️  Backup scheduling skipped: {e}")
+    # WYŁĄCZONE: Automatyczne backupy (na życzenie użytkownika 19.11.2025)
+    # try:
+    #     from src.services.backup_service import backup_service
+    #     backup_service.schedule_automated_backup()
+    #     print("✅ Automated backup scheduled")
+    # except Exception as e:
+    #     print(f"⚠️  Backup scheduling skipped: {e}")
 
 # ═══════════════════════════════════════════════════════════════
 # GLOBAL ERROR HANDLERS
