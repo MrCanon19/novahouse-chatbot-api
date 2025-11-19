@@ -1,8 +1,10 @@
 import os
 import sys
 
+# Add src to path before imports
 sys.path.insert(0, "src")
-from main import app
+
+from main import app  # noqa: E402
 
 
 def test_rodo_consent_and_export(tmp_path):
