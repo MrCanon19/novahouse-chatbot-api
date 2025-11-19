@@ -52,11 +52,11 @@ env_variables:
   # SENTRY_DSN: "https://xxxxx@xxxxx.ingest.sentry.io/xxxxx"
 
 automatic_scaling:
-  min_instances: 2 # Zmieniono z 1 - zawsze 2 instancje = zero cold starts
-  max_instances: 15 # Zwiększono z 10
+  min_instances: 0 # Zmniejszono z 2 - oszczędność connection slots
+  max_instances: 10 # Zmniejszono z 15
   target_cpu_utilization: 0.65
-  min_idle_instances: 1 # Zawsze 1 instancja w gotowości
-  max_idle_instances: 2
+  min_idle_instances: 0 # Zmniejszono z 1 - cold start OK
+  max_idle_instances: 1
 
 resources:
   cpu: 2 # Zwiększono z 1
