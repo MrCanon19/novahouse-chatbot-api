@@ -95,10 +95,13 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                     {"role": "user", "content": f"Context:\n{context}\n\nUser: {user_message}"},
                 ]
                 response = openai_client.chat.completions.create(
-                    model="gpt-4o-mini", messages=messages, temperature=0.7, max_tokens=500
+                    model="gpt-5-nano",
+                    messages=messages,
+                    temperature=0.7,
+                    max_completion_tokens=500,
                 )
                 bot_response = response.choices[0].message.content
-                print(f"[OpenAI GPT] Odpowiedź: {bot_response[:100]}...")
+                print(f"[OpenAI GPT-5 nano] Odpowiedź: {bot_response[:100]}...")
 
             except (ValueError, AttributeError, ConnectionError) as e:
                 print(f"[GPT ERROR] {type(e).__name__}: {e}")
@@ -168,7 +171,7 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 if OPENAI_API_KEY and OPENAI_AVAILABLE:
     openai_client = OpenAI(api_key=OPENAI_API_KEY)
     AI_PROVIDER = "openai"
-    print("✅ OpenAI GPT enabled (gpt-4o-mini)")
+    print("✅ OpenAI GPT-5 nano enabled (fastest & cheapest)")
 else:
     openai_client = None
     AI_PROVIDER = None
