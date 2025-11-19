@@ -237,3 +237,71 @@ def add_context_data_column():
     except Exception as e:
         db.session.rollback()
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+@migration_bp.route("/api/migration/add-leads-columns", methods=["POST"])
+def add_leads_columns():
+    """
+    Add missing columns to leads table
+    Requires admin authentication
+    """
+    import os
+
+    admin_key = os.getenv("API_KEY") or os.getenv("ADMIN_API_KEY")
+    if not admin_key:
+        return jsonify({"error": "Admin key not configured"}), 500
+
+    provided_key = request.headers.get("X-ADMIN-API-KEY") or request.headers.get("X-API-KEY")
+    if provided_key != admin_key:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        results = []
+
+        # Define columns to add to leads table
+        columns_to_add = [
+            ("lead_score", "INTEGER DEFAULT 0"),
+            ("conversation_summary", "TEXT"),
+            ("data_confirmed", "BOOLEAN DEFAULT FALSE"),
+            ("last_interaction", "TIMESTAMP"),
+            ("monday_item_id", "VARCHAR(50)"),
+            ("notes", "TEXT"),
+        ]
+
+        for column_name, column_type in columns_to_add:
+            # Check if column exists
+            result = db.session.execute(
+                text(
+                    f"""
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_name='leads'
+                AND column_name='{column_name}'
+            """
+                )
+            )
+
+            if result.fetchone() is None:
+                # Add column
+                db.session.execute(
+                    text(f"ALTER TABLE leads ADD COLUMN {column_name} {column_type}")
+                )
+                db.session.commit()
+                results.append(f"✅ {column_name} added")
+            else:
+                results.append(f"⚠️  {column_name} already exists")
+
+        return (
+            jsonify(
+                {
+                    "success": True,
+                    "message": "Leads table migration completed",
+                    "results": results,
+                }
+            ),
+            200,
+        )
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500
