@@ -173,6 +173,17 @@ def not_found(error):
     return {"error": "Resource not found"}, 404
 
 
+@app.errorhandler(500)
+def internal_error(error):
+    """Internal server error"""
+    return {"error": "An unexpected error occurred"}, 500
+
+
+# ═══════════════════════════════════════════════════════════════
+# ENHANCED HEALTH CHECK
+# ═══════════════════════════════════════════════════════════════
+
+
 @app.route("/api/health/deep", methods=["GET"])
 def deep_health_check():
     """Deep health check with all dependencies"""
@@ -187,34 +198,6 @@ def deep_health_check():
         from src.database import db
 
         db.session.execute(text("SELECT 1"))
-        status["checks"]["database"] = "ok"
-    except Exception as e:
-        status["checks"]["database"] = f"error: {str(e)}"
-        status["status"] = "degraded"
-    return {"error": "An unexpected error occurred"}, 500
-
-
-# ═══════════════════════════════════════════════════════════════
-# ENHANCED HEALTH CHECK
-# ═══════════════════════════════════════════════════════════════
-
-
-@app.route("/api/health/deep", methods=["GET"])
-def deep_health_check():
-    """Deep health check with all dependencies"""
-    status = {
-        "status": "healthy",
-        "timestamp": __import__("datetime")
-        .datetime.now(__import__("datetime").timezone.utc)
-        .isoformat(),
-        "checks": {},
-    }
-
-    # Check database
-    try:
-        from src.database import db
-
-        db.session.execute(__import__("sqlalchemy").text("SELECT 1"))
         status["checks"]["database"] = "ok"
     except Exception as e:
         status["checks"]["database"] = f"error: {str(e)}"
