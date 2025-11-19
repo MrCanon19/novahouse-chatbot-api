@@ -145,6 +145,11 @@ from src.routes.faq_learning import faq_learning_routes
 
 app.register_blueprint(faq_learning_routes)
 
+# Register migration routes
+from src.routes.migration import migration_bp
+
+app.register_blueprint(migration_bp)
+
 # KROK 6: Tworzymy tabele w kontekście w pełni skonfigurowanej aplikacji.
 with app.app_context():
     try:
