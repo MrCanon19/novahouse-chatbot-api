@@ -237,6 +237,10 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                     db.session.add(lead)
                     db.session.flush()
 
+                    # Generate next action recommendation
+                    next_action = suggest_next_best_action(context_memory, lead_score)
+                    lead.notes = f"Next Action: {next_action}"
+
                     # Sync with Monday.com
                     monday = MondayClient()
                     monday_item_id = monday.create_lead_item(
@@ -244,7 +248,7 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                             "name": lead.name,
                             "email": lead.email,
                             "phone": lead.phone,
-                            "message": f"Lead Score: {lead_score}/100 | {conv_summary}",
+                            "message": f"Lead Score: {lead_score}/100 | {conv_summary} | Action: {next_action}",
                             "property_type": "Mieszkanie",
                             "budget": context_memory.get("square_meters", ""),
                         }
@@ -255,6 +259,32 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                         print(
                             f"[Monday] Confirmed lead created: {monday_item_id} (score: {lead_score})"
                         )
+
+                    # Send alert for high-priority leads
+                    if lead_score >= 70:
+                        try:
+                            from src.services.email_service import email_service
+
+                            email_service.send_email(
+                                to_email=os.getenv("ADMIN_EMAIL", "admin@novahouse.pl"),
+                                subject=f"🔥 HIGH PRIORITY LEAD - Score: {lead_score}/100",
+                                html_content=f"""
+                                <h2>New High-Priority Lead!</h2>
+                                <p><strong>Name:</strong> {lead.name}</p>
+                                <p><strong>Email:</strong> {lead.email or 'N/A'}</p>
+                                <p><strong>Phone:</strong> {lead.phone or 'N/A'}</p>
+                                <p><strong>Lead Score:</strong> {lead_score}/100</p>
+                                <p><strong>Package:</strong> {lead.interested_package or 'Not specified'}</p>
+                                <p><strong>Square Meters:</strong> {lead.property_size or 'Not specified'}</p>
+                                <p><strong>Location:</strong> {lead.location or 'Not specified'}</p>
+                                <p><strong>Summary:</strong> {conv_summary}</p>
+                                <p><strong>Next Action:</strong> {next_action}</p>
+                                <p><strong>Monday.com:</strong> <a href="https://novahouse-squad.monday.com/boards/2145240699">View Lead</a></p>
+                                """,
+                                text_content=f"New High-Priority Lead: {lead.name} - Score: {lead_score}/100",
+                            )
+                        except Exception as e:
+                            print(f"[Email Alert] Error: {e}")
 
                     # Clear awaiting flag
                     conversation.awaiting_confirmation = False
@@ -344,6 +374,11 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                 print(f"[Auto Lead] Error: {e}")
 
         db.session.commit()
+
+        # Generate intelligent follow-up question
+        follow_up = generate_follow_up_question(context_memory, user_message, bot_response)
+        if follow_up:
+            bot_response = f"{bot_response}\n\n{follow_up}"
 
         return {
             "response": bot_response,
@@ -621,6 +656,137 @@ def format_data_confirmation_message(context_memory):
     parts.append("\n✅ Czy wszystko się zgadza? (wpisz: TAK lub POPRAW)")
 
     return "\n".join(parts)
+
+
+def generate_follow_up_question(context_memory, user_message, bot_response):
+    """
+    Generate intelligent follow-up questions based on conversation context
+    Increases engagement and gathers more qualifying data
+    """
+    # Don't add follow-up if already asking for confirmation
+    if "Czy wszystko się zgadza?" in bot_response or "TAK lub POPRAW" in bot_response:
+        return None
+
+    # Don't add follow-up if it's a booking link
+    if "zencal.io" in bot_response or "📅" in bot_response:
+        return None
+
+    user_lower = user_message.lower()
+    has_package = context_memory.get("package")
+    has_sqm = context_memory.get("square_meters")
+    has_city = context_memory.get("city")
+    has_contact = context_memory.get("email") or context_memory.get("phone")
+
+    # Package interest → ask about square meters
+    if (
+        has_package
+        and not has_sqm
+        and any(word in user_lower for word in ["pakiet", "express", "comfort", "premium"])
+    ):
+        return "💡 **A jaki jest mniej więcej metraż Twojego mieszkania?** To pomoże mi lepiej dopasować ofertę."
+
+    # Square meters given → ask about location
+    if (
+        has_sqm
+        and not has_city
+        and any(
+            word in user_lower
+            for word in ["m²", "metr", "mkw", "50", "60", "70", "80", "90", "100"]
+        )
+    ):
+        return "📍 **W jakim mieście szukasz wykonawcy?** Mamy zespoły w całej Polsce."
+
+    # Price question → ask about budget/financing
+    if not has_contact and any(
+        word in user_lower for word in ["cena", "koszt", "ile", "budget", "cennik"]
+    ):
+        return "💰 **Masz już określony budżet? Mogę pokazać opcje finansowania i rozłożenia płatności.**"
+
+    # Talked about materials → ask about style preferences
+    if any(
+        word in user_lower for word in ["materiał", "product", "płytk", "farb", "podłog", "boazeri"]
+    ):
+        return "🎨 **Jaki styl wnętrz Cię interesuje?** (np. minimalistyczny, industrialny, skandynawski)"
+
+    # Talked about timeline → ask about start date
+    if any(word in user_lower for word in ["czas", "długo", "termin", "kiedy", "jak szybko"]):
+        return "📅 **Kiedy planujesz rozpocząć projekt?** (np. zaraz, za miesiąc, za 3 miesiące)"
+
+    # General package info → ask if they want personalized quote
+    if has_package and has_sqm and not has_contact:
+        return "📊 **Chcesz otrzymać szczegółową wycenę dostosowaną do Twojego mieszkania?** Podaj email, wyślę spersonalizowaną ofertę."
+
+    # Nothing specific → gentle engagement
+    if not has_contact and len(user_message) < 50:
+        return (
+            "🤔 **Masz jakieś konkretne pytania? Chętnie opowiem więcej o procesie wykończenia!**"
+        )
+
+    return None
+
+
+def detect_abandonment_risk(conversation, context_memory):
+    """
+    Detect if user is likely to abandon conversation
+    Returns: risk level ('high', 'medium', 'low') and reason
+    """
+    try:
+        message_count = ChatMessage.query.filter_by(conversation_id=conversation.id).count()
+
+        # Very short conversations
+        if message_count <= 2:
+            return ("high", "Very short conversation")
+
+        # Has interest but no contact info
+        has_interest = context_memory.get("package") or context_memory.get("square_meters")
+        has_contact = context_memory.get("email") or context_memory.get("phone")
+
+        if has_interest and not has_contact and message_count >= 5:
+            return ("medium", "Interest shown but no contact info after 5 messages")
+
+        # Long conversation without progress
+        if message_count >= 10 and not has_contact:
+            return ("high", "Long conversation without capturing lead")
+
+        return ("low", "Normal engagement")
+
+    except Exception as e:
+        print(f"[Abandonment Risk] Error: {e}")
+        return ("low", "Unknown")
+
+
+def suggest_next_best_action(context_memory, lead_score):
+    """
+    AI recommendation for sales team: what to do next with this lead
+    """
+    actions = []
+
+    # High-quality lead
+    if lead_score >= 70:
+        actions.append("🔥 HIGH PRIORITY - Call within 1 hour")
+        if context_memory.get("package"):
+            actions.append(f"Prepare quote for {context_memory.get('package')} package")
+        if context_memory.get("square_meters"):
+            actions.append(f"Calculate precise cost for {context_memory.get('square_meters')}m²")
+
+    # Medium quality
+    elif lead_score >= 40:
+        actions.append("📧 Send follow-up email within 24h")
+        if not context_memory.get("package"):
+            actions.append("Share package comparison guide")
+        if not context_memory.get("square_meters"):
+            actions.append("Ask for apartment size for accurate quote")
+
+    # Low quality
+    else:
+        actions.append("📱 Add to nurture campaign - monthly newsletter")
+        actions.append("Send inspiration portfolio")
+
+    # Location-based action
+    if context_memory.get("city"):
+        actions.append(f"Connect with local team in {context_memory.get('city')}")
+
+    return " | ".join(actions) if actions else "Standard follow-up"
 
 
 def check_booking_intent(message, context):
@@ -1018,6 +1184,29 @@ def get_lead_stats():
             db.session.query(db.func.avg(ChatConversation.user_satisfaction)).scalar() or 0
         )
 
+        # Recent high-priority leads (last 24h)
+        from datetime import timedelta
+
+        yesterday = datetime.now(timezone.utc) - timedelta(hours=24)
+        recent_hot_leads = (
+            Lead.query.filter(Lead.lead_score >= 70, Lead.created_at >= yesterday)
+            .order_by(Lead.lead_score.desc())
+            .limit(5)
+            .all()
+        )
+
+        hot_leads_data = [
+            {
+                "name": lead.name,
+                "score": lead.lead_score,
+                "package": lead.interested_package,
+                "email": lead.email,
+                "next_action": lead.notes,
+                "created_at": lead.created_at.isoformat(),
+            }
+            for lead in recent_hot_leads
+        ]
+
         return (
             jsonify(
                 {
@@ -1033,6 +1222,75 @@ def get_lead_stats():
                         "total_responses": total_feedback,
                         "average_rating": round(avg_satisfaction, 2),
                     },
+                    "hot_leads_24h": hot_leads_data,
+                }
+            ),
+            200,
+        )
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@chatbot_bp.route("/abandonment-alerts", methods=["GET"])
+def get_abandonment_alerts():
+    """
+    Get conversations at risk of abandonment
+    Requires admin key
+    """
+    admin_key = os.getenv("ADMIN_API_KEY")
+    if admin_key:
+        header = request.headers.get("X-ADMIN-API-KEY")
+        if header != admin_key:
+            return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        # Get active conversations (started in last 2 hours, not ended)
+        from datetime import timedelta
+
+        two_hours_ago = datetime.now(timezone.utc) - timedelta(hours=2)
+
+        active_conversations = (
+            ChatConversation.query.filter(
+                ChatConversation.started_at >= two_hours_ago,
+                ChatConversation.ended_at.is_(None),
+            )
+            .order_by(ChatConversation.started_at.desc())
+            .all()
+        )
+
+        alerts = []
+        for conv in active_conversations:
+            context = json.loads(conv.context_data or "{}")
+            risk_level, reason = detect_abandonment_risk(conv, context)
+
+            if risk_level in ["high", "medium"]:
+                alerts.append(
+                    {
+                        "session_id": conv.session_id,
+                        "risk_level": risk_level,
+                        "reason": reason,
+                        "started_at": conv.started_at.isoformat(),
+                        "context": {
+                            "name": context.get("name"),
+                            "email": context.get("email"),
+                            "phone": context.get("phone"),
+                            "package": context.get("package"),
+                            "square_meters": context.get("square_meters"),
+                        },
+                        "message_count": ChatMessage.query.filter_by(
+                            conversation_id=conv.id
+                        ).count(),
+                    }
+                )
+
+        return (
+            jsonify(
+                {
+                    "total_at_risk": len(alerts),
+                    "high_risk": len([a for a in alerts if a["risk_level"] == "high"]),
+                    "medium_risk": len([a for a in alerts if a["risk_level"] == "medium"]),
+                    "alerts": alerts,
                 }
             ),
             200,
