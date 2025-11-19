@@ -88,7 +88,7 @@ def rate_limit(max_requests=100, window_seconds=60):
                     jsonify(
                         {
                             "error": "Rate limit exceeded",
-                            "message": f"Too many requests. Try again later.",
+                            "message": "Too many requests. Try again later.",
                             "retry_after": window_seconds,
                         }
                     ),

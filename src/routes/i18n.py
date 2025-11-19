@@ -47,7 +47,7 @@ def get_translations(language):
             return (
                 jsonify(
                     {
-                        "error": f'Unsupported language. Supported: {", ".join(I18nService.SUPPORTED_LANGUAGES)}'
+                        "error": f"Unsupported language. Supported: {'", "'.join(I18nService.SUPPORTED_LANGUAGES)}"
                     }
                 ),
                 400,
@@ -132,7 +132,7 @@ def get_faq_translation(intent, language):
             return (
                 jsonify(
                     {
-                        "error": f'Unsupported language. Supported: {", ".join(I18nService.SUPPORTED_LANGUAGES)}'
+                        "error": f"Unsupported language. Supported: {'", "'.join(I18nService.SUPPORTED_LANGUAGES)}"
                     }
                 ),
                 400,

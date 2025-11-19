@@ -68,7 +68,7 @@ def matches_answer(user_answer, scoring_key, question_type):
             elif "+" in scoring_key:
                 min_val = float(scoring_key.replace("+", ""))
                 return num >= min_val
-        except:
+        except (ValueError, TypeError):
             return False
 
     return False
@@ -108,7 +108,10 @@ def submit_qualification():
                 name=contact_info["name"],
                 email=contact_info["email"],
                 phone=contact_info.get("phone"),
-                message=f"Kwalifikacja: {recommendation['recommended_package']} ({recommendation['confidence']}% pewności)",
+                message=(
+                    f"Kwalifikacja: {recommendation['recommended_package']} "
+                    f"({recommendation['confidence']}% pewności)"
+                ),
                 status="qualified",
                 created_at=datetime.now(timezone.utc),
             )
