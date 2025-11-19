@@ -1,24 +1,25 @@
-from flask import Blueprint, request, jsonify
-from datetime import datetime, timedelta, timezone
-import google.generativeai as genai
 import os
+from datetime import datetime, timedelta, timezone
+
+import google.generativeai as genai
+from flask import Blueprint, jsonify, request
 from sqlalchemy.exc import SQLAlchemyError
 
-from src.models.chatbot import db, ChatConversation, ChatMessage, RodoConsent, Lead, AuditLog
 from src.knowledge.novahouse_info import (
-    FAQ,
     COMPANY_INFO,
     COMPANY_STATS,
     COVERAGE_AREAS,
+    FAQ,
     PRODUCT_PARTNERS,
-    WHY_CHOOSE_US,
     TEAM_INFO,
-    get_package_description,
+    WHY_CHOOSE_US,
     get_all_packages_summary,
-    get_process_overview,
-    get_portfolio_list,
     get_client_reviews_summary,
+    get_package_description,
+    get_portfolio_list,
+    get_process_overview,
 )
+from src.models.chatbot import AuditLog, ChatConversation, ChatMessage, Lead, RodoConsent, db
 
 chatbot_bp = Blueprint("chatbot", __name__)
 

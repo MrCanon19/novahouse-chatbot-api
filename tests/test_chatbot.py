@@ -2,7 +2,8 @@
 Tests for chatbot routes
 """
 
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
 from src.models.chatbot import ChatConversation, ChatMessage
 
 

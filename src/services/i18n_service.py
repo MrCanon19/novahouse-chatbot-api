@@ -5,8 +5,9 @@ Multi-language support: PL (Polish), EN (English), DE (German)
 Language detection and translation
 """
 
-from typing import Dict, Optional, List
-from langdetect import detect, LangDetectException
+from typing import Dict, List, Optional
+
+from langdetect import LangDetectException, detect
 
 # Language translations dictionary
 TRANSLATIONS = {

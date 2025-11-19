@@ -1,7 +1,9 @@
-from flask import Blueprint, request, jsonify
-from src.models.chatbot import db, Lead
-from src.knowledge.novahouse_info import QUALIFICATION_QUESTIONS, PACKAGES
 from datetime import datetime, timezone
+
+from flask import Blueprint, jsonify, request
+
+from src.knowledge.novahouse_info import PACKAGES, QUALIFICATION_QUESTIONS
+from src.models.chatbot import Lead, db
 
 qualification_bp = Blueprint("qualification", __name__)
 

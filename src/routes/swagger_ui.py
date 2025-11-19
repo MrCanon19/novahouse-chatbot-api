@@ -3,8 +3,9 @@
 Swagger UI route for interactive API documentation
 """
 
-from flask import Blueprint, render_template_string, send_from_directory
 import os
+
+from flask import Blueprint, render_template_string, send_from_directory
 
 swagger_ui_bp = Blueprint("swagger_ui", __name__)
 

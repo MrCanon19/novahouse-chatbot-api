@@ -122,7 +122,7 @@ def cached(ttl=300, key_prefix=""):
 def warm_faq_cache():
     """Pre-warm FAQ cache on startup"""
     try:
-        from src.knowledge.novahouse_info import FAQ, PACKAGES, COMPANY_INFO
+        from src.knowledge.novahouse_info import COMPANY_INFO, FAQ, PACKAGES
 
         cache.set("faq:all", FAQ, ttl=3600)  # 1 hour
         cache.set("packages:all", PACKAGES, ttl=3600)

@@ -1,5 +1,6 @@
-from datetime import datetime, timezone
 import json
+from datetime import datetime, timezone
+
 from src.models.chatbot import db
 
 

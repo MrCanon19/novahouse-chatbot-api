@@ -2,9 +2,11 @@
 Entity management endpoints
 """
 
-from flask import Blueprint, jsonify
-from src.models.chatbot import Entity
 import json
+
+from flask import Blueprint, jsonify
+
+from src.models.chatbot import Entity
 
 entities_bp = Blueprint("entities", __name__)
 

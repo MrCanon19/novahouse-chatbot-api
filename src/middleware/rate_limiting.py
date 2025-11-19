@@ -5,10 +5,11 @@ Per-endpoint and per-user rate limiting with Redis backend
 
 import functools
 import hashlib
-from flask import request, jsonify
-from redis import Redis
-from datetime import datetime, timedelta
 import os
+from datetime import datetime, timedelta
+
+from flask import jsonify, request
+from redis import Redis
 
 # Redis connection
 redis_client = None

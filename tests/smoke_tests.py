@@ -11,10 +11,11 @@ Usage:
     python smoke_tests.py http://localhost:8080
 """
 
-import sys
-import requests
 import json
+import sys
 from typing import Dict, Tuple
+
+import requests
 
 # Kolory
 GREEN = "\033[92m"

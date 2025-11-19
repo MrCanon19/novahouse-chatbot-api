@@ -5,11 +5,12 @@ Production-ready caching with Redis
 Replaces in-memory SimpleCache
 """
 
-import redis
 import json
 import os
-from typing import Any, Optional
 from functools import wraps
+from typing import Any, Optional
+
+import redis
 
 
 class RedisCache:
@@ -205,7 +206,7 @@ def cached_redis(ttl: int = 300, key_prefix: str = "cache"):
 def warm_redis_cache():
     """Pre-warm Redis cache with frequently accessed data"""
     try:
-        from src.knowledge.novahouse_info import FAQ, PORTFOLIO, PROCESS_STEPS, CLIENT_REVIEWS
+        from src.knowledge.novahouse_info import CLIENT_REVIEWS, FAQ, PORTFOLIO, PROCESS_STEPS
 
         # Cache FAQ
         redis_cache.set("knowledge:faq", FAQ, ttl=3600)

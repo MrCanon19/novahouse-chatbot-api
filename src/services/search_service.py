@@ -5,12 +5,13 @@ Full-text search with fuzzy matching using Whoosh
 """
 
 import os
-from whoosh.index import create_in, open_dir, exists_in
-from whoosh.fields import Schema, TEXT, ID, KEYWORD, DATETIME
-from whoosh.qparser import MultifieldParser, FuzzyTermPlugin
-from whoosh.analysis import StemmingAnalyzer
 from datetime import datetime, timezone
-from typing import List, Dict, Any
+from typing import Any, Dict, List
+
+from whoosh.analysis import StemmingAnalyzer
+from whoosh.fields import DATETIME, ID, KEYWORD, TEXT, Schema
+from whoosh.index import create_in, exists_in, open_dir
+from whoosh.qparser import FuzzyTermPlugin, MultifieldParser
 
 # Search index directory
 INDEX_DIR = os.path.join(os.path.dirname(__file__), "..", "search_index")
@@ -156,7 +157,7 @@ class AdvancedSearchService:
                 filter_query = Term("type", doc_type)
 
             if language:
-                from whoosh.query import Term, And
+                from whoosh.query import And, Term
 
                 lang_filter = Term("language", language)
                 if filter_query:
@@ -214,10 +215,10 @@ class AdvancedSearchService:
         """Index all knowledge base content"""
         try:
             from src.knowledge.novahouse_info import (
+                BLOG_ARTICLES,
+                CLIENT_REVIEWS,
                 FAQ,
                 PORTFOLIO,
-                CLIENT_REVIEWS,
-                BLOG_ARTICLES,
             )
 
             # Index FAQ (FAQ is a dict with key=question, value=answer)

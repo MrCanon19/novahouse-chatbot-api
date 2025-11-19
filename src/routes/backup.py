@@ -5,6 +5,7 @@ RODO-compliant data export and backup management
 """
 
 from flask import Blueprint, jsonify, request, send_file
+
 from src.middleware.security import require_api_key
 
 backup_routes = Blueprint("backup_routes", __name__)
@@ -112,8 +113,9 @@ def download_backup(filename: str):
         filename: Backup filename
     """
     try:
-        from src.services.backup_service import backup_service
         import os
+
+        from src.services.backup_service import backup_service
 
         filepath = os.path.join(backup_service.backup_dir, filename)
 

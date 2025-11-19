@@ -1,7 +1,9 @@
-from flask import Blueprint, request, jsonify
-from src.models.chatbot import db, Lead
-from src.integrations.booksy_client import BooksynClient
 import os
+
+from flask import Blueprint, jsonify, request
+
+from src.integrations.booksy_client import BooksynClient
+from src.models.chatbot import Lead, db
 
 booking_bp = Blueprint("booking", __name__)
 
