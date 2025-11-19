@@ -1884,8 +1884,8 @@ def get_ab_test_results():
             # Statistical significance check (basic)
             total_shown = test.variant_a_shown + test.variant_b_shown
             if total_shown >= 100:  # Minimum sample size
-                conv_a = test_data["stats"]["variant_a"]["conversion_rate"]
-                conv_b = test_data["stats"]["variant_b"]["conversion_rate"]
+                conv_a = test_data["stats"]["variant_a"]["conversion_rate"] or 0
+                conv_b = test_data["stats"]["variant_b"]["conversion_rate"] or 0
 
                 if abs(conv_a - conv_b) > 10:  # 10% difference threshold
                     winner = "A" if conv_a > conv_b else "B"
