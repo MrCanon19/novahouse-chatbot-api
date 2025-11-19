@@ -178,7 +178,7 @@
             .dashboard-grid {
                 grid-template-columns: 1fr;
             }
-            
+
             .container {
                 padding: 10px;
             }
@@ -193,9 +193,9 @@
 
     <div class="container">
         <button class="refresh-btn" onclick="loadDashboard()">🔄 Odśwież dane</button>
-        
+
         <div id="error-container"></div>
-        
+
         <div class="dashboard-grid">
             <!-- Metryki dzisiejsze -->
             <div class="card">
@@ -238,12 +238,12 @@
         async function loadDashboard() {
             try {
                 showLoading();
-                
+
                 // Try new analytics API first
                 try {
                     const overviewResponse = await fetch(`${API_BASE}/api/analytics/overview?days=7`);
                     const overviewData = await overviewResponse.json();
-                    
+
                     if (overviewData.status === 'success') {
                         updateFromNewAPI(overviewData);
                         hideError();
@@ -252,7 +252,7 @@
                 } catch (apiError) {
                     console.log('New API not available, trying legacy endpoint:', apiError);
                 }
-                
+
                 // Fallback to legacy endpoint
                 const response = await fetch('/api/analytics/dashboard/summary?budget=10');
                 const result = await response.json();
@@ -274,14 +274,14 @@
 
         async function updateFromNewAPI(overviewData) {
             const overview = overviewData.overview;
-            
+
             // Fetch additional data
             const [conversationsData, engagementData, leadsData] = await Promise.all([
                 fetch(`${API_BASE}/api/analytics/conversations?days=7`).then(r => r.json()).catch(() => null),
                 fetch(`${API_BASE}/api/analytics/engagement?days=7`).then(r => r.json()).catch(() => null),
                 fetch(`${API_BASE}/api/analytics/leads?days=7`).then(r => r.json()).catch(() => null)
             ]);
-            
+
             // Update today metrics
             const todayData = {
                 conversations: overview.total_conversations || 0,
@@ -290,7 +290,7 @@
                 avg_response_time_ms: (overview.avg_session_duration_seconds || 0) * 1000
             };
             updateTodayMetrics(todayData);
-            
+
             // Update budget status (mock data for now)
             const budgetData = {
                 budget_usd: 10,
@@ -301,7 +301,7 @@
                 status: 'OK'
             };
             updateBudgetStatus(budgetData);
-            
+
             // Update weekly chart
             if (conversationsData && conversationsData.conversations_by_day) {
                 updateWeeklyChart(conversationsData.conversations_by_day.map(d => ({
@@ -310,7 +310,7 @@
                     cost: 0
                 })));
             }
-            
+
             // Update top questions (use top intents)
             if (overview.top_intents) {
                 updateTopQuestions(overview.top_intents.map(i => ({
@@ -318,7 +318,7 @@
                     count: i.count
                 })));
             }
-            
+
             // Update performance metrics
             updatePerformanceMetrics(todayData);
         }
@@ -347,9 +347,9 @@
 
         function updateBudgetStatus(data) {
             const container = document.getElementById('budget-status');
-            const statusClass = data.status.toLowerCase() === 'ok' ? 'ok' : 
+            const statusClass = data.status.toLowerCase() === 'ok' ? 'ok' :
                                data.status.toLowerCase() === 'warning' ? 'warning' : 'critical';
-            
+
             container.innerHTML = `
                 <div class="metric">
                     <span class="metric-label">Budżet:</span>
@@ -377,7 +377,7 @@
 
         function updateWeeklyChart(data) {
             const ctx = document.getElementById('weeklyChart').getContext('2d');
-            
+
             if (weeklyChart) {
                 weeklyChart.destroy();
             }
@@ -442,7 +442,7 @@
 
         function updateTopQuestions(data) {
             const container = document.getElementById('top-questions');
-            
+
             if (data.length === 0) {
                 container.innerHTML = '<p class="loading">Brak danych o pytaniach</p>';
                 return;
@@ -463,7 +463,7 @@
         function updatePerformanceMetrics(data) {
             const container = document.getElementById('performance-metrics');
             const conversionRate = data.conversations > 0 ? ((data.leads / data.conversations) * 100).toFixed(1) : 0;
-            
+
             container.innerHTML = `
                 <div class="metric">
                     <span class="metric-label">Konwersja:</span>
@@ -497,12 +497,11 @@
             document.getElementById('error-container').innerHTML = '';
         }
 
-        // Automatyczne odświeżanie co 5 minut
-        setInterval(loadDashboard, 5 * 60 * 1000);
+        // WYŁĄCZONE: Auto-odświeżanie co 5 minut (na życzenie 19.11.2025)
+        // setInterval(loadDashboard, 5 * 60 * 1000);
 
         // Ładowanie przy starcie
         document.addEventListener('DOMContentLoaded', loadDashboard);
     </script>
 </body>
 </html>
-
