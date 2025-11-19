@@ -35,7 +35,7 @@ SWAGGER_UI_HTML = """
 </head>
 <body>
     <div id="swagger-ui"></div>
-    
+
     <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.10.0/swagger-ui-bundle.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.10.0/swagger-ui-standalone-preset.js"></script>
     <script>
@@ -59,7 +59,7 @@ SWAGGER_UI_HTML = """
                 showRequestHeaders: true,
                 supportedSubmitMethods: ['get', 'post', 'put', 'delete', 'patch']
             });
-            
+
             window.ui = ui;
         };
     </script>
