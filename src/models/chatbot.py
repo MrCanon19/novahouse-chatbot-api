@@ -133,7 +133,7 @@ class Lead(db.Model):
 
 
 class ChatConversation(db.Model):
-    """Model for chat conversations"""
+    """Model for chat conversation sessions"""
 
     __tablename__ = "chat_conversations"
 
@@ -141,6 +141,7 @@ class ChatConversation(db.Model):
     session_id = db.Column(db.String(100), unique=True, nullable=False)
     started_at = db.Column(db.DateTime, nullable=False)
     ended_at = db.Column(db.DateTime)
+    context_data = db.Column(db.Text)  # JSON: {name, email, city, square_meters, package}
 
     messages = db.relationship(
         "ChatMessage", backref="conversation", lazy=True, cascade="all, delete-orphan"
