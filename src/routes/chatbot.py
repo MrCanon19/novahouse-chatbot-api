@@ -67,6 +67,7 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
         # Jeśli nie znaleziono w FAQ, użyj Gemini
         if not bot_response and model:
             try:
+                print(f"[Gemini] Przetwarzanie wiadomości: {user_message[:50]}...")
                 # Pobierz historię konwersacji
                 history = (
                     ChatMessage.query.filter_by(conversation_id=conversation.id)
@@ -85,16 +86,20 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                 prompt = f"{SYSTEM_PROMPT}\n\nContext:\n{context}\n\nUser: {user_message}\nBot:"
                 response = model.generate_content(prompt)
                 bot_response = response.text
+                print(f"[Gemini] Odpowiedź: {bot_response[:100]}...")
 
             except (ValueError, AttributeError, ConnectionError) as e:
-                print(f"Gemini error: {e}")
+                print(f"[Gemini ERROR] {type(e).__name__}: {e}")
                 bot_response = "Przepraszam, wystąpił problem z przetwarzaniem Twojej wiadomości. Czy możesz spytać inaczej?"
             except Exception as e:
-                print(f"Unexpected Gemini error: {e}")
+                print(f"[Gemini UNEXPECTED ERROR] {type(e).__name__}: {e}")
                 bot_response = "Przepraszam, wystąpił problem z przetwarzaniem Twojej wiadomości. Czy możesz spytać inaczej?"
+        elif not bot_response:
+            print("[WARNING] Gemini model nie jest skonfigurowany - brak GEMINI_API_KEY")
 
         # Fallback jeśli nadal brak odpowiedzi
         if not bot_response:
+            print("[FALLBACK] Używam domyślnej odpowiedzi")
             bot_response = "Dziękuję za wiadomość! Jak mogę Ci pomóc? Możesz zapytać o nasze pakiety, ceny, realizacje czy proces wykończenia."
 
         # Zapisz odpowiedź bota
@@ -150,8 +155,10 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
     model = genai.GenerativeModel("gemini-pro")
+    print("✅ Gemini AI enabled")
 else:
     model = None
+    print("⚠️  Gemini AI disabled - set GEMINI_API_KEY to enable")
 
 SYSTEM_PROMPT = f"""Jesteś pomocnym asystentem NovaHouse — eksperta od wykończenia wnętrz.
 
