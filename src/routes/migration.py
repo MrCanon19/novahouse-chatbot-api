@@ -1,0 +1,173 @@
+"""
+Migration endpoint - run database migrations via HTTP
+Only accessible with ADMIN_API_KEY
+"""
+
+from flask import Blueprint, jsonify, request
+from sqlalchemy import inspect, text
+
+from src.models.chatbot import db
+
+migration_bp = Blueprint("migration", __name__)
+
+
+@migration_bp.route("/api/migration/run-ab-competitive", methods=["POST"])
+def run_ab_competitive_migration():
+    """
+    Run A/B Testing & Competitive Intelligence migration
+    Requires admin authentication
+    """
+    import os
+
+    admin_key = os.getenv("API_KEY") or os.getenv("ADMIN_API_KEY")
+    if not admin_key:
+        return jsonify({"error": "Admin key not configured"}), 500
+
+    provided_key = request.headers.get("X-ADMIN-API-KEY") or request.headers.get("X-API-KEY")
+    if provided_key != admin_key:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        inspector = inspect(db.engine)
+        existing_tables = inspector.get_table_names()
+        results = []
+
+        # 1. Create followup_tests table
+        if "followup_tests" not in existing_tables:
+            db.session.execute(
+                text(
+                    """
+                CREATE TABLE followup_tests (
+                    id SERIAL PRIMARY KEY,
+                    question_type VARCHAR(100) NOT NULL,
+                    variant_a TEXT NOT NULL,
+                    variant_b TEXT NOT NULL,
+                    variant_a_shown INTEGER DEFAULT 0,
+                    variant_b_shown INTEGER DEFAULT 0,
+                    variant_a_responses INTEGER DEFAULT 0,
+                    variant_b_responses INTEGER DEFAULT 0,
+                    is_active BOOLEAN DEFAULT true,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """
+                )
+            )
+            db.session.commit()
+            results.append("✅ followup_tests table created")
+        else:
+            results.append("⚠️  followup_tests already exists")
+
+        # 2. Create competitive_intel table
+        if "competitive_intel" not in existing_tables:
+            db.session.execute(
+                text(
+                    """
+                CREATE TABLE competitive_intel (
+                    id SERIAL PRIMARY KEY,
+                    session_id VARCHAR(100) NOT NULL,
+                    intel_type VARCHAR(50) NOT NULL,
+                    competitor_name VARCHAR(100),
+                    user_message TEXT NOT NULL,
+                    context TEXT,
+                    sentiment VARCHAR(20),
+                    priority VARCHAR(20) DEFAULT 'medium',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """
+                )
+            )
+            db.session.commit()
+            results.append("✅ competitive_intel table created")
+        else:
+            results.append("⚠️  competitive_intel already exists")
+
+        # 3. Add followup_variant column
+        try:
+            result = db.session.execute(
+                text(
+                    """
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_name='chat_conversations'
+                AND column_name='followup_variant'
+            """
+                )
+            )
+
+            if result.fetchone() is None:
+                db.session.execute(
+                    text("ALTER TABLE chat_conversations ADD COLUMN followup_variant VARCHAR(10)")
+                )
+                db.session.commit()
+                results.append("✅ followup_variant column added")
+            else:
+                results.append("⚠️  followup_variant already exists")
+        except Exception as e:
+            results.append(f"⚠️  followup_variant: {str(e)}")
+
+        # 4. Insert default A/B tests
+        default_tests = [
+            {
+                "type": "package_to_sqm",
+                "a": "💡 **A jaki jest mniej więcej metraż Twojego mieszkania?** To pomoże mi lepiej dopasować ofertę.",
+                "b": "📐 **Ile metrów kwadratowych ma Twoje mieszkanie?** Na tej podstawie przygotuję dokładną wycenę.",
+            },
+            {
+                "type": "sqm_to_location",
+                "a": "📍 **W jakim mieście szukasz wykonawcy?** Mamy zespoły w całej Polsce.",
+                "b": "🗺️ **Gdzie znajduje się Twoje mieszkanie?** Sprawdzę dostępność naszych ekip w Twojej okolicy.",
+            },
+            {
+                "type": "price_to_budget",
+                "a": "💰 **Masz już określony budżet? Mogę pokazać opcje finansowania i rozłożenia płatności.**",
+                "b": "💵 **Jaki budżet planujesz przeznaczyć na wykończenie?** Dopasuję najlepszą opcję dla Ciebie.",
+            },
+        ]
+
+        for test in default_tests:
+            result = db.session.execute(
+                text("SELECT id FROM followup_tests WHERE question_type = :qtype"),
+                {"qtype": test["type"]},
+            )
+
+            if result.fetchone() is None:
+                db.session.execute(
+                    text(
+                        """
+                    INSERT INTO followup_tests (question_type, variant_a, variant_b, is_active)
+                    VALUES (:qtype, :variant_a, :variant_b, true)
+                """
+                    ),
+                    {
+                        "qtype": test["type"],
+                        "variant_a": test["a"],
+                        "variant_b": test["b"],
+                    },
+                )
+                db.session.commit()
+                results.append(f"✅ Added A/B test: {test['type']}")
+            else:
+                results.append(f"⚠️  Test exists: {test['type']}")
+
+        # 5. Verify
+        test_count = db.session.execute(text("SELECT COUNT(*) FROM followup_tests")).scalar()
+        intel_count = db.session.execute(text("SELECT COUNT(*) FROM competitive_intel")).scalar()
+
+        return (
+            jsonify(
+                {
+                    "success": True,
+                    "message": "Migration completed successfully",
+                    "results": results,
+                    "verification": {
+                        "followup_tests_count": test_count,
+                        "competitive_intel_count": intel_count,
+                    },
+                }
+            ),
+            200,
+        )
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500
