@@ -78,10 +78,14 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
         )
         db.session.add(user_msg)
 
-        # Check learned FAQs first (higher priority - learned from real users)
-        bot_response = check_learned_faq(user_message)
+        # 1. Check if user wants to book a meeting
+        bot_response = check_booking_intent(user_message, context_memory)
 
-        # Then check standard FAQ
+        # 2. Check learned FAQs (higher priority - learned from real users)
+        if not bot_response:
+            bot_response = check_learned_faq(user_message)
+
+        # 3. Then check standard FAQ
         if not bot_response:
             bot_response = check_faq(user_message)
 
@@ -187,6 +191,58 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                 db.session.add(unknown)
         except Exception as e:
             print(f"[FAQ Learning] Failed to log: {e}")
+            # Don't fail the main flow
+
+        # Automatyczne tworzenie leada w Monday.com gdy użytkownik podaje dane kontaktowe
+        try:
+            # Sprawdź czy mamy wystarczająco danych kontaktowych
+            has_contact_data = (
+                context_memory.get("name")
+                and context_memory.get("email")
+                or context_memory.get("phone")
+            )
+
+            # Sprawdź czy już nie istnieje lead dla tego session_id
+            existing_lead = Lead.query.filter_by(session_id=session_id).first()
+
+            if has_contact_data and not existing_lead:
+                from src.integrations.monday_client import MondayClient
+
+                # Utwórz lead w bazie danych
+                lead = Lead(
+                    session_id=session_id,
+                    name=context_memory.get("name", "Unknown"),
+                    email=context_memory.get("email"),
+                    phone=context_memory.get("phone"),
+                    location=context_memory.get("city"),
+                    property_size=context_memory.get("square_meters"),
+                    interested_package=context_memory.get("package"),
+                    source="chatbot",
+                    status="new",
+                )
+
+                db.session.add(lead)
+                db.session.flush()  # Get lead.id
+
+                # Synchronizuj z Monday.com
+                monday = MondayClient()
+                monday_item_id = monday.create_lead_item(
+                    {
+                        "name": lead.name,
+                        "email": lead.email,
+                        "phone": lead.phone,
+                        "message": f"Lead z chatbota - miasto: {context_memory.get('city', 'N/A')}, metraż: {context_memory.get('square_meters', 'N/A')}m²",
+                        "property_type": "Mieszkanie",  # Default
+                        "budget": context_memory.get("square_meters", ""),
+                    }
+                )
+
+                if monday_item_id:
+                    lead.monday_item_id = monday_item_id
+                    print(f"[Monday] Lead created: {monday_item_id} for session {session_id}")
+
+        except Exception as e:
+            print(f"[Monday] Failed to create lead: {e}")
             # Don't fail the main flow
 
         db.session.commit()
@@ -345,6 +401,51 @@ def chat():
     except Exception as e:
         print(f"Chat error: {e}")
         return jsonify({"error": "Internal server error"}), 500
+
+
+def check_booking_intent(message, context):
+    """
+    Sprawdź czy użytkownik chce umówić spotkanie
+    Jeśli tak - zwróć link do Zencal z pre-filled danymi
+    """
+    booking_keywords = [
+        "umów",
+        "spotkanie",
+        "konsultacj",
+        "rezerwacj",
+        "zapisa",
+        "wizyt",
+        "termin",
+        "rozmow",
+        "przedstawiciel",
+    ]
+
+    message_lower = message.lower()
+
+    # Sprawdź czy użytkownik chce się umówić
+    if any(keyword in message_lower for keyword in booking_keywords):
+        try:
+            from src.integrations.zencal_client import ZencalClient
+
+            zencal = ZencalClient()
+
+            # Pobierz dane z kontekstu jeśli dostępne
+            name = context.get("name") if context else None
+            email = context.get("email") if context else None
+
+            booking_link = zencal.get_booking_link(client_name=name, client_email=email)
+
+            return (
+                f"Świetnie! Możesz umówić spotkanie z naszym ekspertem tutaj:\n\n"
+                f"👉 {booking_link}\n\n"
+                f"Wybierz dogodny termin, a my się skontaktujemy! 📅"
+            )
+
+        except Exception as e:
+            print(f"[Booking Intent] Error: {e}")
+            return None
+
+    return None
 
 
 def check_learned_faq(message):

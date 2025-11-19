@@ -2,8 +2,8 @@ import os
 
 from flask import Blueprint, jsonify, request
 
-from src.integrations.booksy_client import BooksynClient
-from src.models.chatbot import Lead, db
+from src.integrations.zencal_client import ZencalClient
+from src.models.chatbot import Booking, Lead, db
 
 booking_bp = Blueprint("booking", __name__)
 
@@ -19,35 +19,34 @@ def _check_admin_key():
     return (jsonify({"error": "Unauthorized"}), 401)
 
 
-@booking_bp.route("/services", methods=["GET"])
-def get_services():
-    """Get available services from Booksy"""
+@booking_bp.route("/link", methods=["GET"])
+def get_booking_link():
+    """
+    Pobierz link do rezerwacji Zencal (z pre-filled danymi jeśli dostępne)
+
+    Query params:
+        - name: Imię użytkownika (optional)
+        - email: Email użytkownika (optional)
+
+    Returns:
+        JSON z linkiem do rezerwacji
+    """
     try:
-        booksy = BooksynClient()
+        client_name = request.args.get("name")
+        client_email = request.args.get("email")
 
-        if not booksy.test_connection():
-            return jsonify({"error": "Booksy not configured or unavailable"}), 503
+        zencal = ZencalClient()
+        booking_link = zencal.get_booking_link(client_name=client_name, client_email=client_email)
 
-        services = booksy.get_services()
-
-        return jsonify({"services": services, "count": len(services)}), 200
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-@booking_bp.route("/staff", methods=["GET"])
-def get_staff():
-    """Get available staff from Booksy"""
-    try:
-        booksy = BooksynClient()
-
-        if not booksy.test_connection():
-            return jsonify({"error": "Booksy not configured or unavailable"}), 503
-
-        staff = booksy.get_staff()
-
-        return jsonify({"staff": staff, "count": len(staff)}), 200
+        return (
+            jsonify(
+                {
+                    "booking_link": booking_link,
+                    "message": "Kliknij w link aby umówić spotkanie z naszym ekspertem",
+                }
+            ),
+            200,
+        )
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -55,23 +54,20 @@ def get_staff():
 
 @booking_bp.route("/available-slots", methods=["GET"])
 def get_available_slots():
-    """Get available time slots for a service"""
+    """Pobierz dostępne terminy z Zencal"""
     try:
-        service_id = request.args.get("service_id")
-        staff_id = request.args.get("staff_id")
-        date_from = request.args.get("date_from")
-        date_to = request.args.get("date_to")
+        date = request.args.get("date")  # YYYY-MM-DD
 
-        if not service_id:
-            return jsonify({"error": "service_id is required"}), 400
+        if not date:
+            return jsonify({"error": "date parameter is required (YYYY-MM-DD)"}), 400
 
-        booksy = BooksynClient()
+        zencal = ZencalClient()
+        slots = zencal.get_available_slots(date=date)
 
-        slots = booksy.get_available_slots(
-            service_id=service_id, staff_id=staff_id, date_from=date_from, date_to=date_to
-        )
+        if slots is None:
+            return jsonify({"error": "Zencal not configured or unavailable"}), 503
 
-        return jsonify({"service_id": service_id, "slots": slots, "count": len(slots)}), 200
+        return jsonify({"date": date, "slots": slots}), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -79,113 +75,126 @@ def get_available_slots():
 
 @booking_bp.route("/create", methods=["POST"])
 def create_booking():
-    """Create a new consultation booking"""
+    """Utwórz rezerwację w Zencal"""
     try:
         data = request.get_json()
 
-        required_fields = [
-            "client_name",
-            "client_email",
-            "client_phone",
-            "service_id",
-            "start_time",
-        ]
+        required_fields = ["name", "email", "phone", "date", "time"]
         for field in required_fields:
             if field not in data:
                 return jsonify({"error": f"{field} is required"}), 400
 
-        booksy = BooksynClient()
+        zencal = ZencalClient()
 
-        booking_id = booksy.create_booking(
-            client_name=data["client_name"],
-            client_email=data["client_email"],
-            client_phone=data["client_phone"],
-            service_id=data["service_id"],
-            start_time=data["start_time"],
-            staff_id=data.get("staff_id"),
+        # Utwórz rezerwację w Zencal
+        zencal_booking_id = zencal.create_booking(
+            {
+                "name": data["name"],
+                "email": data["email"],
+                "phone": data["phone"],
+                "date": data["date"],
+                "time": data["time"],
+                "notes": data.get("notes", ""),
+            }
+        )
+
+        if not zencal_booking_id:
+            return jsonify({"error": "Failed to create booking in Zencal"}), 500
+
+        # Zapisz rezerwację w bazie danych
+        booking = Booking(
+            client_name=data["name"],
+            client_email=data["email"],
+            client_phone=data["phone"],
+            zencal_booking_id=zencal_booking_id,
+            zencal_link=zencal.get_booking_link(data["name"], data["email"]),
+            appointment_date=f"{data['date']} {data['time']}",
+            status="confirmed",
             notes=data.get("notes"),
         )
 
-        if not booking_id:
-            return jsonify({"error": "Failed to create booking"}), 500
+        # Połącz z leadem jeśli istnieje
+        lead = Lead.query.filter_by(email=data["email"]).first()
+        if lead:
+            booking.lead_id = lead.id
+            lead.status = "consultation_booked"
 
-        # Save booking reference to Lead if email provided
-        try:
-            lead = Lead.query.filter_by(email=data["client_email"]).first()
-            if lead:
-                # Update lead with booking info
-                lead.status = "consultation_booked"
-                db.session.commit()
-        except Exception as e:
-            print(f"Error updating lead: {e}")
+        db.session.add(booking)
+        db.session.commit()
 
         return (
             jsonify(
                 {
                     "message": "Booking created successfully",
-                    "booking_id": booking_id,
-                    "booking_time": data["start_time"],
-                    "client_email": data["client_email"],
+                    "booking_id": booking.id,
+                    "zencal_booking_id": zencal_booking_id,
+                    "appointment_date": f"{data['date']} {data['time']}",
                 }
             ),
             201,
         )
 
     except Exception as e:
+        db.session.rollback()
         return jsonify({"error": str(e)}), 500
 
 
-@booking_bp.route("/cancel/<booking_id>", methods=["DELETE"])
-def cancel_booking(booking_id):
-    """Cancel a booking"""
+@booking_bp.route("/cancel/<int:booking_id>", methods=["DELETE"])
+def cancel_booking_route(booking_id):
+    """Anuluj rezerwację"""
     try:
         # Admin key check
         auth_error = _check_admin_key()
         if auth_error:
             return auth_error
 
-        booksy = BooksynClient()
+        booking = Booking.query.get(booking_id)
+        if not booking:
+            return jsonify({"error": "Booking not found"}), 404
 
-        if booksy.cancel_booking(booking_id):
-            return (
-                jsonify({"message": "Booking cancelled successfully", "booking_id": booking_id}),
-                200,
-            )
-        else:
-            return jsonify({"error": "Failed to cancel booking"}), 500
+        zencal = ZencalClient()
+
+        # Anuluj w Zencal jeśli mamy ID
+        if booking.zencal_booking_id:
+            zencal.cancel_booking(booking.zencal_booking_id)
+
+        # Zmień status w bazie
+        booking.status = "cancelled"
+        db.session.commit()
+
+        return (
+            jsonify({"message": "Booking cancelled successfully", "booking_id": booking_id}),
+            200,
+        )
 
     except Exception as e:
+        db.session.rollback()
         return jsonify({"error": str(e)}), 500
 
 
 @booking_bp.route("/test", methods=["POST"])
-def test_booksy():
-    """Test Booksy connection"""
+def test_zencal():
+    """Test Zencal connection"""
     try:
         # Admin key check
         auth_error = _check_admin_key()
         if auth_error:
             return auth_error
 
-        booksy = BooksynClient()
+        zencal = ZencalClient()
 
-        if not booksy.test_connection():
-            return jsonify({"error": "Failed to connect to Booksy"}), 500
-
-        services = booksy.get_services()
-        staff = booksy.get_staff()
+        connection_ok = zencal.test_connection()
 
         return (
             jsonify(
                 {
-                    "message": "Booksy connection successful",
-                    "api_key_set": bool(booksy.api_key),
-                    "business_id_set": bool(booksy.business_id),
-                    "services_count": len(services),
-                    "staff_count": len(staff),
+                    "message": "Zencal connection " + ("successful" if connection_ok else "failed"),
+                    "api_key_set": bool(zencal.api_key),
+                    "workspace_id_set": bool(zencal.workspace_id),
+                    "booking_url": zencal.booking_page_url,
                 }
             ),
-            200,
+            200 if connection_ok else 500,
         )
 
     except Exception as e:
