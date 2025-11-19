@@ -24,4 +24,4 @@ per-file-ignores =
     src/routes/chatbot.py:E501,E302,E741
     src/routes/swagger_ui.py:E501
     src/api_v1.py:E402,F401,W291,E302
-    tests/*.py:E501
+    tests/*.py:E501,F401,E128,E501
