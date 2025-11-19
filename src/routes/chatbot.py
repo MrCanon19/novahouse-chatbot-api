@@ -1,4 +1,6 @@
+import json
 import os
+import re
 from datetime import datetime, timedelta, timezone
 
 from flask import Blueprint, jsonify, request
@@ -53,10 +55,19 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
         conversation = ChatConversation.query.filter_by(session_id=session_id).first()
         if not conversation:
             conversation = ChatConversation(
-                session_id=session_id, started_at=datetime.now(timezone.utc)
+                session_id=session_id,
+                started_at=datetime.now(timezone.utc),
+                context_data=json.dumps({}),
             )
             db.session.add(conversation)
             db.session.commit()
+
+        # Load context
+        context_memory = json.loads(conversation.context_data or "{}")
+
+        # Extract and update context from user message
+        context_memory = extract_context(user_message, context_memory)
+        conversation.context_data = json.dumps(context_memory)
 
         # Zapisz wiadomość użytkownika
         user_msg = ChatMessage(
@@ -88,9 +99,26 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                     ]
                 )
 
+                # Add memory context
+                memory_prompt = ""
+                if context_memory:
+                    memory_items = []
+                    if context_memory.get("name"):
+                        memory_items.append(f"Imię: {context_memory['name']}")
+                    if context_memory.get("city"):
+                        memory_items.append(f"Miasto: {context_memory['city']}")
+                    if context_memory.get("square_meters"):
+                        memory_items.append(f"Metraż: {context_memory['square_meters']}m²")
+                    if context_memory.get("package"):
+                        memory_items.append(f"Interesujący pakiet: {context_memory['package']}")
+                    if memory_items:
+                        memory_prompt = "\n\nZapamiętane info o kliencie:\n" + "\n".join(
+                            memory_items
+                        )
+
                 print(f"[OpenAI GPT] Przetwarzanie: {user_message[:50]}...")
                 messages = [
-                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "system", "content": SYSTEM_PROMPT + memory_prompt},
                     {"role": "user", "content": f"Context:\n{context}\n\nUser: {user_message}"},
                 ]
                 response = openai_client.chat.completions.create(
@@ -283,6 +311,56 @@ def chat():
     except Exception as e:
         print(f"Chat error: {e}")
         return jsonify({"error": "Internal server error"}), 500
+
+
+def extract_context(message, existing_context):
+    """
+    Extract context information from user message
+    Returns updated context dict with: name, email, city, square_meters, package
+    """
+    message_lower = message.lower()
+
+    # Extract name (after "jestem", "nazywam się", "mam na imię")
+    name_patterns = [
+        r"jestem\s+([A-ZŚŻŹĆŃĄĘÓŁ][a-ząęółćżźśń]+)",
+        r"nazywam się\s+([A-ZŚŻŹĆŃĄĘÓŁ][a-ząęółćżźśń]+)",
+        r"mam na imię\s+([A-ZŚŻŹĆŃĄĘÓŁ][a-ząęółćżźśń]+)",
+    ]
+    for pattern in name_patterns:
+        match = re.search(pattern, message, re.IGNORECASE)
+        if match:
+            existing_context["name"] = match.group(1)
+            break
+
+    # Extract email
+    email_pattern = r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b"
+    email_match = re.search(email_pattern, message)
+    if email_match:
+        existing_context["email"] = email_match.group(0)
+
+    # Extract city
+    cities = ["gdańsk", "warszawa", "wrocław", "sopot", "gdynia", "kraków", "poznań", "łódź"]
+    for city in cities:
+        if city in message_lower:
+            existing_context["city"] = city.title()
+            break
+
+    # Extract square meters
+    sqm_patterns = [r"(\d+)\s*m²", r"(\d+)\s*metrów", r"(\d+)\s*m2", r"(\d+)\s*mkw"]
+    for pattern in sqm_patterns:
+        match = re.search(pattern, message_lower)
+        if match:
+            existing_context["square_meters"] = int(match.group(1))
+            break
+
+    # Extract interested package
+    packages = ["express", "comfort", "premium", "indywidualny"]
+    for pkg in packages:
+        if pkg in message_lower:
+            existing_context["package"] = pkg.title()
+            break
+
+    return existing_context
 
 
 def check_faq(message):

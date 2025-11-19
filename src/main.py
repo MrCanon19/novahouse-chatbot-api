@@ -136,6 +136,10 @@ app.register_blueprint(search_routes)
 app.register_blueprint(file_upload_routes)
 # Register v2.3.1 routes
 app.register_blueprint(swagger_ui_bp)
+# Register calculator route
+from src.routes.calculator import calculator_routes
+
+app.register_blueprint(calculator_routes)
 
 # KROK 6: Tworzymy tabele w kontekście w pełni skonfigurowanej aplikacji.
 with app.app_context():
