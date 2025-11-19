@@ -45,12 +45,9 @@ def get_translations(language):
     """
     try:
         if language not in I18nService.SUPPORTED_LANGUAGES:
+            supported = ", ".join(I18nService.SUPPORTED_LANGUAGES)
             return (
-                jsonify(
-                    {
-                        "error": f"Unsupported language. Supported: {'", "'.join(I18nService.SUPPORTED_LANGUAGES)}"
-                    }
-                ),
+                jsonify({"error": f"Unsupported language. Supported: {supported}"}),
                 400,
             )
 
@@ -130,12 +127,9 @@ def get_faq_translation(intent, language):
     """
     try:
         if language not in I18nService.SUPPORTED_LANGUAGES:
+            supported = ", ".join(I18nService.SUPPORTED_LANGUAGES)
             return (
-                jsonify(
-                    {
-                        "error": f"Unsupported language. Supported: {'", "'.join(I18nService.SUPPORTED_LANGUAGES)}"
-                    }
-                ),
+                jsonify({"error": f"Unsupported language. Supported: {supported}"}),
                 400,
             )
 
