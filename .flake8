@@ -27,4 +27,5 @@ per-file-ignores =
     src/api_v1.py:E402,F401,W291,E302
     src/middleware/rate_limiting.py:E302,W291
     migrations/env.py:E402,E501,F401
+    scripts/*.py:E501,F401
     tests/*.py:E501,F401,E128
