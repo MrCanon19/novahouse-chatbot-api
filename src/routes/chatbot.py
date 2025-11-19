@@ -96,8 +96,8 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                 response = openai_client.chat.completions.create(
                     model="gpt-5-nano",
                     messages=messages,
-                    temperature=0.7,
                     max_completion_tokens=500,
+                    # GPT-5 nano obsługuje tylko domyślną temperature=1
                 )
                 bot_response = response.choices[0].message.content
                 print(f"[OpenAI GPT-5 nano] Odpowiedź: {bot_response[:100]}...")
