@@ -80,6 +80,13 @@ if not db_url:
 
 app.config["SQLALCHEMY_DATABASE_URI"] = db_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+# Connection pool settings dla App Engine
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+    "pool_size": 3,  # Małe - max 3 połączenia na instancję
+    "max_overflow": 1,  # Max 1 dodatkowe połączenie
+    "pool_pre_ping": True,  # Sprawdź czy połączenie działa
+    "pool_recycle": 1800,  # Recykluj połączenia co 30 min
+}
 db.init_app(app)
 
 from src.routes.ab_testing import ab_testing_bp
