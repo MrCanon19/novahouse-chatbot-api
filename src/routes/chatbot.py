@@ -5,6 +5,14 @@ import google.generativeai as genai
 from flask import Blueprint, jsonify, request
 from sqlalchemy.exc import SQLAlchemyError
 
+try:
+    from openai import OpenAI
+
+    OPENAI_AVAILABLE = True
+except ImportError:
+    OPENAI_AVAILABLE = False
+    print("⚠️  openai package not installed - GPT disabled")
+
 from src.knowledge.novahouse_info import (
     COMPANY_INFO,
     COMPANY_STATS,
@@ -64,10 +72,9 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
         # Sprawdź czy wiadomość dotyczy FAQ
         bot_response = check_faq(user_message)
 
-        # Jeśli nie znaleziono w FAQ, użyj Gemini
-        if not bot_response and model:
+        # Jeśli nie znaleziono w FAQ, użyj AI (GPT lub Gemini)
+        if not bot_response and (openai_client or model):
             try:
-                print(f"[Gemini] Przetwarzanie wiadomości: {user_message[:50]}...")
                 # Pobierz historię konwersacji
                 history = (
                     ChatMessage.query.filter_by(conversation_id=conversation.id)
@@ -83,19 +90,33 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                     ]
                 )
 
-                prompt = f"{SYSTEM_PROMPT}\n\nContext:\n{context}\n\nUser: {user_message}\nBot:"
-                response = model.generate_content(prompt)
-                bot_response = response.text
-                print(f"[Gemini] Odpowiedź: {bot_response[:100]}...")
+                if AI_PROVIDER == "openai":
+                    print(f"[OpenAI GPT] Przetwarzanie: {user_message[:50]}...")
+                    messages = [
+                        {"role": "system", "content": SYSTEM_PROMPT},
+                        {"role": "user", "content": f"Context:\n{context}\n\nUser: {user_message}"},
+                    ]
+                    response = openai_client.chat.completions.create(
+                        model="gpt-4o-mini", messages=messages, temperature=0.7, max_tokens=500
+                    )
+                    bot_response = response.choices[0].message.content
+                    print(f"[OpenAI GPT] Odpowiedź: {bot_response[:100]}...")
+
+                elif AI_PROVIDER == "gemini":
+                    print(f"[Gemini] Przetwarzanie wiadomości: {user_message[:50]}...")
+                    prompt = f"{SYSTEM_PROMPT}\n\nContext:\n{context}\n\nUser: {user_message}\nBot:"
+                    response = model.generate_content(prompt)
+                    bot_response = response.text
+                    print(f"[Gemini] Odpowiedź: {bot_response[:100]}...")
 
             except (ValueError, AttributeError, ConnectionError) as e:
-                print(f"[Gemini ERROR] {type(e).__name__}: {e}")
+                print(f"[{AI_PROVIDER.upper()} ERROR] {type(e).__name__}: {e}")
                 bot_response = "Przepraszam, wystąpił problem z przetwarzaniem Twojej wiadomości. Czy możesz spytać inaczej?"
             except Exception as e:
-                print(f"[Gemini UNEXPECTED ERROR] {type(e).__name__}: {e}")
+                print(f"[{AI_PROVIDER.upper()} UNEXPECTED ERROR] {type(e).__name__}: {e}")
                 bot_response = "Przepraszam, wystąpił problem z przetwarzaniem Twojej wiadomości. Czy możesz spytać inaczej?"
         elif not bot_response:
-            print("[WARNING] Gemini model nie jest skonfigurowany - brak GEMINI_API_KEY")
+            print("[WARNING] Brak AI - ustaw OPENAI_API_KEY lub GEMINI_API_KEY")
 
         # Fallback jeśli nadal brak odpowiedzi
         if not bot_response:
@@ -150,15 +171,27 @@ def _check_admin_key():
     return (jsonify({"error": "Unauthorized"}), 401)
 
 
-# Konfiguracja Gemini
+# Konfiguracja AI (GPT lub Gemini)
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-if GEMINI_API_KEY:
+
+# Priorytet: OpenAI GPT > Gemini
+if OPENAI_API_KEY and OPENAI_AVAILABLE:
+    openai_client = OpenAI(api_key=OPENAI_API_KEY)
+    model = None  # Gemini wyłączony
+    AI_PROVIDER = "openai"
+    print("✅ OpenAI GPT enabled")
+elif GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
     model = genai.GenerativeModel("gemini-pro")
+    openai_client = None
+    AI_PROVIDER = "gemini"
     print("✅ Gemini AI enabled")
 else:
     model = None
-    print("⚠️  Gemini AI disabled - set GEMINI_API_KEY to enable")
+    openai_client = None
+    AI_PROVIDER = None
+    print("⚠️  No AI configured - set OPENAI_API_KEY or GEMINI_API_KEY")
 
 SYSTEM_PROMPT = f"""Jesteś pomocnym asystentem NovaHouse — eksperta od wykończenia wnętrz.
 
