@@ -87,3 +87,6 @@ secrets/
 .env.*.local
 app.yaml.secret
 app.yaml.prod
+
+# Sensitive backups (API keys, secrets)
+backups/secrets/

@@ -29,7 +29,7 @@ env_variables:
   DATABASE_URL: "postgresql://chatbot_user:vicNRNoO3TpLZzQ_BkAVbz886dW_J0Yo@/chatbot?host=/cloudsql/glass-core-467907-e9:europe-west1:novahouse-chatbot-db"
 
   # OpenAI API (for GPT chatbot)
-  OPENAI_API_KEY: "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"
+  OPENAI_API_KEY: "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"
 
   # Monday.com
   MONDAY_API_KEY: "eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjU2MTI0OTM2MiwiYWFpIjoxMSwidWlkIjo2NzA0MDY5NCwiaWFkIjoiMjAyNS0wOS0xMlQwNjo1ODoxOC4yNzVaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6MjU4NDk4NzEsInJnbiI6ImV1YzEifQ.Z-5M7pm_QZa1YBQ4a5caSg6XZlM4X1_fTcnF5JmQJyw"
