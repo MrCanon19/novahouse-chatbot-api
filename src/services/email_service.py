@@ -253,7 +253,7 @@ class EmailService:
         return self.send_email(to_email, subject, html_content, text_content)
 
     def send_booking_confirmation(self, booking_data: Dict[str, Any]) -> bool:
-        """Wysyła potwierdzenie rezerwacji Booksy"""
+        """Wysyła potwierdzenie rezerwacji Zencal"""
         to_email = booking_data.get("email")
         if not to_email:
             return False

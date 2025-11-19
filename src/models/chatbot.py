@@ -103,6 +103,11 @@ class Lead(db.Model):
     status = db.Column(db.String(50), default="new")
     notes = db.Column(db.Text)
     monday_item_id = db.Column(db.String(100))
+    # Enhanced fields
+    lead_score = db.Column(db.Integer, default=0)  # 0-100 scoring
+    conversation_summary = db.Column(db.Text)  # AI-generated summary
+    data_confirmed = db.Column(db.Boolean, default=False)  # User confirmed data
+    last_interaction = db.Column(db.DateTime)  # For follow-up timing
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(
         db.DateTime,
@@ -185,6 +190,10 @@ class ChatConversation(db.Model):
     started_at = db.Column(db.DateTime, nullable=False)
     ended_at = db.Column(db.DateTime)
     context_data = db.Column(db.Text)  # JSON: {name, email, city, square_meters, package}
+    # Quality metrics
+    user_satisfaction = db.Column(db.Integer)  # 1-5 rating
+    feedback_text = db.Column(db.Text)  # Optional user feedback
+    awaiting_confirmation = db.Column(db.Boolean, default=False)  # Pending data confirmation
 
     messages = db.relationship(
         "ChatMessage", backref="conversation", lazy=True, cascade="all, delete-orphan"
