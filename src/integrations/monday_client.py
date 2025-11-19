@@ -78,6 +78,16 @@ class MondayClient:
         if lead_data.get("interior_style"):
             column_values["interior_style"] = lead_data.get("interior_style")
 
+        # Enterprise features
+        if lead_data.get("lead_score") is not None:
+            column_values["lead_score"] = str(lead_data.get("lead_score"))
+
+        if lead_data.get("competitor_mentioned"):
+            column_values["competitor_mentioned"] = lead_data.get("competitor_mentioned")
+
+        if lead_data.get("next_action"):
+            column_values["next_action"] = lead_data.get("next_action")
+
         # Status - domyślnie "Nowy Lead"
         column_values["status"] = "New Lead"
 
