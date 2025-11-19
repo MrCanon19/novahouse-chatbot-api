@@ -3,7 +3,6 @@
 Testy dla analytics endpoints
 """
 
-import pytest
 import json
 
 

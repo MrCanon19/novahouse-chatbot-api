@@ -15,17 +15,11 @@ from src.routes import (
     leads,
     booking,
     knowledge,
-    user,
     health,
     dashboard_widgets,
-    qualification,
     search,
     file_upload,
-    backup,
     ab_testing,
-    entities,
-    intents,
-    i18n,
 )
 
 
