@@ -70,9 +70,13 @@ socketio.init_app(
 
 # KROK 3: Konfigurujemy i łączymy bazę danych z aplikacją.
 # Od tego momentu 'db' wie o istnieniu 'app'.
-db_url = os.getenv(
-    "DATABASE_URL", f"sqlite:///{os.path.join(os.path.dirname(__file__), 'database', 'app.db')}"
-)
+db_url = os.getenv("DATABASE_URL")
+if not db_url:
+    # Default to SQLite file, ensure directory exists
+    db_dir = os.path.join(os.path.dirname(__file__), "database")
+    os.makedirs(db_dir, exist_ok=True)
+    db_url = f"sqlite:///{os.path.join(db_dir, 'app.db')}"
+
 app.config["SQLALCHEMY_DATABASE_URI"] = db_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db.init_app(app)
