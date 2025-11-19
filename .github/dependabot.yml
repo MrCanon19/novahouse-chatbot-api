@@ -16,8 +16,6 @@ updates:
     commit-message:
       prefix: "Deps"
       include: "scope"
-    reviewers:
-      - "MrCanon19"
 
   # GitHub Actions
   - package-ecosystem: "github-actions"
@@ -35,8 +33,6 @@ updates:
     commit-message:
       prefix: "CI"
       include: "scope"
-    reviewers:
-      - "MrCanon19"
 
   # Docker dependencies
   - package-ecosystem: "docker"
