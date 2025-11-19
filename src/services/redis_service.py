@@ -29,8 +29,8 @@ class RedisCache:
             self.redis_client.ping()
             self.enabled = True
             print(f"✅ Redis connected: {redis_url}")
-        except Exception as e:
-            print(f"⚠️ Redis unavailable, falling back to in-memory cache: {e}")
+        except Exception:
+            # Redis wyłączony w dev - używamy in-memory cache
             self.enabled = False
             self._fallback_cache = {}
 

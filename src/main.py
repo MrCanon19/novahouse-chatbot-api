@@ -26,7 +26,8 @@ if sentry_dsn:
     )
     print("✅ Sentry monitoring enabled")
 else:
-    print("⚠️  Sentry DSN not configured - error monitoring disabled")
+    # Sentry wyłączony w dev - to normalne
+    pass
 
 # KROK 2: Tworzymy główną instancję aplikacji Flask.
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), "static"))
