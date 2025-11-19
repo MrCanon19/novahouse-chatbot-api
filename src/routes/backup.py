@@ -92,7 +92,7 @@ def cleanup_old_backups():
         return jsonify(
             {
                 "success": True,
-                "message": f"Cleanup completed",
+                "message": "Cleanup completed",
                 "deleted_count": deleted_count,
                 "days_kept": days_to_keep,
             }

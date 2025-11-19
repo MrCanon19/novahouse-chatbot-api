@@ -2,7 +2,12 @@ from flask import Blueprint, request, jsonify
 from datetime import datetime, timedelta, timezone
 from sqlalchemy import func
 from src.models.chatbot import db, Conversation, Lead
-from src.models.analytics import ChatAnalytics, UserEngagement, IntentAnalytics, PerformanceMetrics
+from src.models.analytics import (
+    ChatAnalytics,
+    UserEngagement,
+    IntentAnalytics,
+    PerformanceMetrics,
+)
 
 analytics_bp = Blueprint("analytics", __name__)
 
@@ -205,9 +210,6 @@ def get_intent_analytics():
         days = request.args.get("days", 7, type=int)
         start_date = (datetime.now(timezone.utc) - timedelta(days=days)).date()
 
-        # Analityka intencji
-        intent_analytics = IntentAnalytics.query.filter(IntentAnalytics.date >= start_date).all()
-
         # Agregacja według intencji
         intent_summary = (
             db.session.query(
@@ -220,6 +222,7 @@ def get_intent_analytics():
             .filter(IntentAnalytics.date >= start_date)
             .group_by(IntentAnalytics.intent_name)
             .order_by(func.sum(IntentAnalytics.trigger_count).desc())
+            .limit(10)
             .all()
         )
 
@@ -425,7 +428,7 @@ def dashboard_summary():
     """Dashboard summary - legacy endpoint for compatibility"""
     try:
         days = request.args.get("days", 30, type=int)
-        budget = request.args.get("budget", 0, type=int)  # For future use
+        # budget = request.args.get("budget", 0, type=int)  # For future use
 
         start_date = datetime.now(timezone.utc) - timedelta(days=days)
 

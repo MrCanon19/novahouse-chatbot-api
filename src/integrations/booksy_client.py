@@ -124,7 +124,7 @@ class BooksynClient:
             "client": {"name": client_name, "email": client_email, "phone": client_phone},
             "service_id": service_id,
             "start_time": start_time,
-            "notes": notes or f"Konsultacja z Novahouse chatbota",
+            "notes": notes or "Konsultacja z Novahouse chatbota",
         }
 
         if staff_id:

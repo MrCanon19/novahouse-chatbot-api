@@ -22,7 +22,7 @@ def api_docs():
     <head>
         <meta charset="UTF-8">
         <title>NovaHouse Chatbot API Documentation</title>
-        <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css">
+        <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css">  # noqa: E501
         <link rel="icon" type="image/png" href="https://novahouse.pl/favicon.ico">
         <style>
             html {
@@ -48,7 +48,7 @@ def api_docs():
     <body>
         <div id="swagger-ui"></div>
         <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-standalone-preset.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-standalone-preset.js"></script>  # noqa: E501
         <script>
             window.onload = function() {
                 const ui = SwaggerUIBundle({
@@ -94,7 +94,7 @@ def redoc():
         <title>NovaHouse Chatbot API - ReDoc</title>
         <meta charset="utf-8"/>
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <link href="https://fonts.googleapis.com/css?family=Montserrat:300,400,700|Roboto:300,400,700" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css?family=Montserrat:300,400,700|Roboto:300,400,700" rel="stylesheet">  # noqa: E501
         <style>
             body {
                 margin: 0;
@@ -104,7 +104,7 @@ def redoc():
     </head>
     <body>
         <redoc spec-url='/api/docs/spec'></redoc>
-        <script src="https://cdn.jsdelivr.net/npm/redoc@latest/bundles/redoc.standalone.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/redoc@latest/bundles/redoc.standalone.js"></script>  # noqa: E501
     </body>
     </html>
     """

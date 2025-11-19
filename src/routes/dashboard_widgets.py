@@ -238,7 +238,7 @@ def get_active_sessions():
             from src.services.websocket_service import get_active_connections_count
 
             ws_count = get_active_connections_count()
-        except:
+        except Exception:
             ws_count = 0
 
         return jsonify(
