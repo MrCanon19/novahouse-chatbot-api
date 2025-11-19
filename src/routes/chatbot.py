@@ -259,7 +259,10 @@ def check_faq(message):
         word in message_lower
         for word in ["płatność", "zapłata", "koszt", "ile kosztuje", "cena", "wycena"]
     ):
-        return FAQ.get("ile_kosztuje", FAQ["platnosc"])
+        return FAQ.get(
+            "ile_kosztuje",
+            "Ceny zależą od wybranego pakietu i metrażu. Skontaktuj się z nami po szczegóły.",
+        )
 
     if any(word in message_lower for word in ["produkt", "materiały", "wyposażenie", "urządzenia"]):
         return FAQ.get(
