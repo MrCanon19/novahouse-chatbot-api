@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Start the novahouse-chatbot-api in background (production-like)
 set -euo pipefail
-ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT_DIR"
 source venv/bin/activate
 # Optionally set ADMIN_API_KEY in environment before running

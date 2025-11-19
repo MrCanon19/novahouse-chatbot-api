@@ -18,7 +18,7 @@ NC='\033[0m' # No Color
 # Health endpoint
 echo "1️⃣  Checking /api/health..."
 HEALTH_RESPONSE=$(curl -s -w "\n%{http_code}" "${URL}/api/health")
-HEALTH_BODY=$(echo "$HEALTH_RESPONSE" | head -n -1)
+HEALTH_BODY=$(echo "$HEALTH_RESPONSE" | sed '$d')
 HEALTH_CODE=$(echo "$HEALTH_RESPONSE" | tail -n 1)
 
 if [ "$HEALTH_CODE" -eq 200 ]; then
