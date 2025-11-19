@@ -78,8 +78,12 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
         )
         db.session.add(user_msg)
 
-        # Sprawdź czy wiadomość dotyczy FAQ
-        bot_response = check_faq(user_message)
+        # Check learned FAQs first (higher priority - learned from real users)
+        bot_response = check_learned_faq(user_message)
+
+        # Then check standard FAQ
+        if not bot_response:
+            bot_response = check_faq(user_message)
 
         # Jeśli nie znaleziono w FAQ, użyj AI (OpenAI GPT)
         if not bot_response and openai_client:
@@ -155,6 +159,36 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
             timestamp=datetime.now(timezone.utc),
         )
         db.session.add(bot_msg)
+
+        # Log unknown/unclear questions for FAQ learning
+        try:
+            from src.models.faq_learning import UnknownQuestion
+
+            # Check if response is generic fallback (potential unknown question)
+            is_generic = any(
+                phrase in bot_response.lower()
+                for phrase in [
+                    "jak mogę ci pomóc",
+                    "przepraszam",
+                    "spróbuj ponownie",
+                    "nie jestem pewien",
+                    "nie rozumiem",
+                ]
+            )
+
+            # Log if generic response and not FAQ
+            if is_generic and not check_faq(user_message):
+                unknown = UnknownQuestion(
+                    session_id=session_id,
+                    question=user_message,
+                    bot_response=bot_response,
+                    status="pending",
+                )
+                db.session.add(unknown)
+        except Exception as e:
+            print(f"[FAQ Learning] Failed to log: {e}")
+            # Don't fail the main flow
+
         db.session.commit()
 
         return {
@@ -311,6 +345,34 @@ def chat():
     except Exception as e:
         print(f"Chat error: {e}")
         return jsonify({"error": "Internal server error"}), 500
+
+
+def check_learned_faq(message):
+    """
+    Check if message matches any learned FAQ patterns
+    Returns answer if match found, None otherwise
+    """
+    try:
+        from src.models.faq_learning import LearnedFAQ
+
+        message_lower = message.lower()
+
+        # Get active learned FAQs
+        learned_faqs = LearnedFAQ.query.filter_by(is_active=True).all()
+
+        for faq in learned_faqs:
+            # Simple keyword matching (can be improved with fuzzy matching)
+            keywords = faq.question_pattern.lower().split()
+            if any(keyword in message_lower for keyword in keywords):
+                # Increment usage count
+                faq.usage_count += 1
+                db.session.commit()
+                return faq.answer
+
+        return None
+    except Exception as e:
+        print(f"[Learned FAQ] Error: {e}")
+        return None
 
 
 def extract_context(message, existing_context):
