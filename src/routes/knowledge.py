@@ -153,7 +153,10 @@ def get_partners():
                     "success": True,
                     "count": len(PRODUCT_PARTNERS),
                     "partners": PRODUCT_PARTNERS,
-                    "description": f"Współpracujemy z {len(PRODUCT_PARTNERS)} renomowanymi producentami materiałów wykończeniowych i wyposażenia wnętrz.",
+                    "description": (
+                        f"Współpracujemy z {len(PRODUCT_PARTNERS)} renomowanymi "
+                        f"producentami materiałów wykończeniowych i wyposażenia wnętrz."
+                    ),
                 }
             ),
             200,
