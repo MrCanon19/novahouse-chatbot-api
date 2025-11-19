@@ -16,8 +16,9 @@ exclude =
 # F401: imported but unused
 # F841: local variable assigned but never used
 # E302: expected 2 blank lines
+# E305: expected 2 blank lines after class or function definition
 # E741: ambiguous variable name
-ignore = E203,W503,W291,E302
+ignore = E203,W503,W291,E302,E305
 per-file-ignores =
     src/knowledge/novahouse_info.py:E501,W291
     src/main.py:E402,E501
