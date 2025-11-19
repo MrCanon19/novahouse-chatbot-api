@@ -309,6 +309,14 @@ def check_faq(message):
     if "gwarancja" in message_lower:
         return FAQ["gwarancja"]
 
+    # Najpierw sprawdź pytania o dodatkowe koszty (bardziej specyficzne)
+    if any(
+        word in message_lower
+        for word in ["dodatkowe koszty", "dodatkowe opłaty", "ukryte koszty", "niespodzianki"]
+    ):
+        return FAQ["dodatkowe_oplaty"]
+
+    # Potem ogólne pytania o koszty
     if any(
         word in message_lower
         for word in ["płatność", "zapłata", "koszt", "ile kosztuje", "cena", "wycena"]
@@ -361,8 +369,10 @@ def check_faq(message):
     ):
         return "Zajmujemy się kompleksowym wykończeniem wnętrz pod klucz: projekt i koncepcja, zakupy i logistyka, koordynacja i nadzór, prace wykończeniowe (remonty, montaż podłóg, drzwi, malowanie), zabudowy stolarskie (kuchnie, szafy, meble na wymiar), sprzątanie i przygotowanie do użytkowania. Oferujemy 4 pakiety (Express, Express Plus, Comfort, Premium) oraz projekty indywidulane. Chcesz poznać szczegóły?"
 
-    if any(word in message_lower for word in ["co obejmuje", "co wchodzi", "co jest w cenie"]):
-        return FAQ["co_obejmuje_usluga"]
+    # Pytania o konkretny pakiet - przekaż do AI (nie używaj ogólnego FAQ)
+    # AI lepiej odpowie precyzyjnie na podstawie system prompt
+    # if any(word in message_lower for word in ["co obejmuje", "co wchodzi", "co jest w cenie"]):
+    #     return FAQ["co_obejmuje_usluga"]
 
     # Zabudowy stolarskie
     if any(
