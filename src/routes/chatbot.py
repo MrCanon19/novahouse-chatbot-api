@@ -20,7 +20,6 @@ from src.knowledge.novahouse_info import (
     PRODUCT_PARTNERS,
     TEAM_INFO,
     WHY_CHOOSE_US,
-    get_all_packages_summary,
     get_client_reviews_summary,
     get_package_description,
     get_portfolio_list,
@@ -427,12 +426,14 @@ def check_faq(message):
     if "luxury" in message_lower or "luksus" in message_lower:
         return get_package_description("luxury")
 
-    # Pytania ogólne o pakiety
-    if any(
-        word in message_lower
-        for word in ["pakiety", "oferta", "jakie macie", "co oferujesz", "co mają"]
-    ):
-        return get_all_packages_summary() + "\n\nO który pakiet chciałbyś dowiedzieć się więcej?"
+    # Pytania ogólne o pakiety - WYŁĄCZONE, niech AI odpowie precyzyjnie
+    # Problem: FAQ zwracał wszystkie pakiety nawet gdy pytanie było o "najtańsze pakiety"
+    # Teraz AI sam odpowie na podstawie instrukcji w system prompt
+    # if any(
+    #     word in message_lower
+    #     for word in ["pakiety", "oferta", "jakie macie", "co oferujesz", "co mają"]
+    # ):
+    #     return get_all_packages_summary() + "\n\nO który pakiet chciałbyś dowiedzieć się więcej?"
 
     # Powitania
     greetings = ["cześć", "dzień dobry", "witam", "hej", "hello", "siema", "elo", "co tam"]
