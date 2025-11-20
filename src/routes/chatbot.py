@@ -554,8 +554,10 @@ Zawsze zaczynaj od ciepłego powitania i pytania co klienta interesuje oraz ską
 
 @chatbot_bp.route("/chat", methods=["POST"])
 def chat():
-    """Handle chat messages via REST API"""
+    """Handle chat messages via REST API (NEW: with state machine, validation, rate limiting)"""
     try:
+        from src.services.message_handler import message_handler
+
         data = request.get_json()
 
         if not data or "message" not in data:
@@ -564,11 +566,28 @@ def chat():
         user_message = data["message"]
         session_id = data.get("session_id", "default")
 
-        # Use shared processing function
-        result = process_chat_message(user_message, session_id)
+        # Rate limiting check (manual - decorator doesn't work here)
+        from src.services.rate_limiter import rate_limiter
 
-        if "error" in result:
-            return jsonify({"error": result.get("response")}), 500
+        allowed, retry_after = rate_limiter.check_rate_limit(
+            session_id, "session", max_requests=10, window_seconds=60
+        )
+        if not allowed:
+            return (
+                jsonify(
+                    {
+                        "error": "Rate limit exceeded. Please slow down.",
+                        "retry_after": retry_after,
+                    }
+                ),
+                429,
+            )
+
+        # NEW: Use refactored message handler with state machine
+        result = message_handler.process_message(user_message, session_id)
+
+        if "error" in result and "response" not in result:
+            return jsonify({"error": result["error"]}), 500
 
         return jsonify(result), 200
 
