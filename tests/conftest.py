@@ -29,7 +29,9 @@ def app():
     os.environ["DATABASE_URL"] = "sqlite:///:memory:"
     os.environ["SECRET_KEY"] = "test-secret-key-for-testing-only"
 
+    # Import all models to ensure all tables/columns are created
     from src.main import app as flask_app
+    from src.models.chatbot import db
 
     flask_app.config["TESTING"] = True
     flask_app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
@@ -37,6 +39,7 @@ def app():
     flask_app.config["WTF_CSRF_ENABLED"] = False
 
     with flask_app.app_context():
+        db.drop_all()
         db.create_all()
         yield flask_app
         db.session.remove()
