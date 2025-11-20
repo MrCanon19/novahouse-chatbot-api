@@ -34,7 +34,8 @@ def app():
 
     # Import all models to ensure all tables/columns are created
     from src.main import app as flask_app
-    from src.models.chatbot import db
+
+    # db już zaimportowany wyżej, nie powtarzamy importu
 
     flask_app.config["TESTING"] = True
     flask_app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False

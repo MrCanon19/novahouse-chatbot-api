@@ -22,7 +22,7 @@ from sqlalchemy.orm import sessionmaker
 print("=" * 70)
 print("🚀 PRODUCTION MIGRATION: A/B Testing & Competitive Intelligence")
 print("=" * 70)
-print(f"📦 Database: glass-core-467907-e9:europe-west1:novahouse-chatbot-db")
+print("📦 Database: glass-core-467907-e9:europe-west1:novahouse-chatbot-db")
 print()
 
 try:
@@ -178,7 +178,7 @@ try:
     session.close()
 
 except Exception as e:
-    print(f"\n❌ MIGRATION FAILED!")
+    print("\n❌ MIGRATION FAILED!")
     print(f"Error: {e}")
     print()
     print("Troubleshooting:")
