@@ -288,7 +288,7 @@ class LeadScoringML:
             training_data = []
 
             # Get all leads (these are conversions)
-            leads = Lead.query.filter(Lead.data_confirmed == True).all()
+            leads = Lead.query.filter(Lead.data_confirmed.is_(True)).all()
 
             print(f"[ML Data Collection] Found {len(leads)} confirmed leads")
 
