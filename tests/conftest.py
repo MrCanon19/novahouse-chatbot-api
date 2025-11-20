@@ -11,6 +11,16 @@ import pytest
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 
+from src.models.chatbot import (  # Dodaj tu inne modele jeśli są
+    AuditLog,
+    ChatConversation,
+    ChatMessage,
+    Lead,
+    RodoConsent,
+    db,
+)
+
+
 @pytest.fixture(scope="session")
 def app():
     """Create application for testing"""
@@ -20,7 +30,6 @@ def app():
     os.environ["SECRET_KEY"] = "test-secret-key-for-testing-only"
 
     from src.main import app as flask_app
-    from src.models.chatbot import db
 
     flask_app.config["TESTING"] = True
     flask_app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"

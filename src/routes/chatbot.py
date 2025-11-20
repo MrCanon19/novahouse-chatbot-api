@@ -1,3 +1,6 @@
+genai = None  # Dummy dla testów
+# Pozwala na patchowanie genai w testach
+
 import json
 import os
 import re
