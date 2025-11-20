@@ -91,12 +91,12 @@ class ConversationStateMachine:
         if not any([has_package, has_sqm, has_city, has_name, has_contact]):
             return ConversationState.GREETING
 
-        # Has interest but no contact
+        # Has interest but no contact info at all (not even name)
         has_interest = has_package or has_sqm
-        if has_interest and not has_contact:
+        if has_interest and not has_name and not has_contact:
             return ConversationState.COLLECTING_INFO
 
-        # Has interest + has name but missing contact details
+        # Has interest + has name = qualifying (collecting contact details)
         if has_interest and has_name and not has_contact:
             return ConversationState.QUALIFYING
 

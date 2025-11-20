@@ -1812,7 +1812,7 @@ def export_user_data(session_id):
             "consent": consent.to_dict() if consent else None,
         }
 
-        # Audit the export
+        # Audit the export (if AuditLog table exists)
         try:
             audit = AuditLog(
                 action="export",
@@ -1823,10 +1823,12 @@ def export_user_data(session_id):
             db.session.add(audit)
             db.session.commit()
         except Exception:
+            # Rollback but don't fail the export if audit fails
             db.session.rollback()
 
         return jsonify(result), 200
     except Exception as e:
+        db.session.rollback()
         return jsonify({"error": str(e)}), 500
 
 
