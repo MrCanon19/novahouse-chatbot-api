@@ -23,6 +23,11 @@ def test_rodo_consent_and_export(tmp_path):
     if os.getenv("ADMIN_API_KEY"):
         headers["X-ADMIN-API-KEY"] = os.getenv("ADMIN_API_KEY")
     resp2 = client.get("/api/chatbot/export-data/test-x", headers=headers)
+
+    # If it fails, print error for debugging
+    if resp2.status_code != 200:
+        print(f"Export failed: {resp2.get_json()}")
+
     assert resp2.status_code == 200
     exported = resp2.get_json()
     assert exported["session_id"] == "test-x"
