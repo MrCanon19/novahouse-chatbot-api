@@ -26,7 +26,7 @@ if not db_url:
     print("❌ DATABASE_URL not set!")
     sys.exit(1)
 
-print(f"📦 Connecting to database...")
+    print("📦 Connecting to database...")
 
 # Create engine
 engine = create_engine(db_url)

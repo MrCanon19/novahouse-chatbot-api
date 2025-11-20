@@ -10,10 +10,10 @@ AI Chatbot dla NovaHouse - pomoc klientom w wyborze pakietów wykończeniowych.
 
 ## 🚀 Live Demo
 
-- **Chatbot:** https://glass-core-467907-e9.ey.r.appspot.com/static/chatbot.html
-- **Dashboard:** https://glass-core-467907-e9.ey.r.appspot.com/static/dashboard.html
-- **API Docs (Swagger):** https://glass-core-467907-e9.ey.r.appspot.com/api-docs ⭐ NEW
-- **Health Check:** https://glass-core-467907-e9.ey.r.appspot.com/api/health
+- **Chatbot:** [https://glass-core-467907-e9.ey.r.appspot.com/static/chatbot.html](https://glass-core-467907-e9.ey.r.appspot.com/static/chatbot.html)
+- **Dashboard:** [https://glass-core-467907-e9.ey.r.appspot.com/static/dashboard.html](https://glass-core-467907-e9.ey.r.appspot.com/static/dashboard.html)
+- **API Docs (Swagger):** [https://glass-core-467907-e9.ey.r.appspot.com/api-docs](https://glass-core-467907-e9.ey.r.appspot.com/api-docs) ⭐ NEW
+- **Health Check:** [https://glass-core-467907-e9.ey.r.appspot.com/api/health](https://glass-core-467907-e9.ey.r.appspot.com/api/health)
 
 ## 🐳 Quick Start
 
@@ -92,7 +92,7 @@ python main.py
 
 ## 🚀 Quick Start
 
-### Instalacja lokalna
+## Instalacja lokalna
 
 \`\`\`bash
 
@@ -115,9 +115,9 @@ pip install -r requirements.txt
 python3 src/main.py
 \`\`\`
 
-Otwórz: http://localhost:8080
+Otwórz: [http://localhost:8080](http://localhost:8080)
 
-### Deploy na GCP
+## Deploy na GCP
 
 \`\`\`bash
 gcloud app deploy app.yaml --quiet
@@ -250,16 +250,16 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) file for
 
 ## 🔒 Security
 
-Report security vulnerabilities to: kontakt@novahouse.pl  
+Report security vulnerabilities to: [kontakt@novahouse.pl](mailto:kontakt@novahouse.pl)  
 See [SECURITY.md](SECURITY.md) for details.
 
 ## 🤝 Kontakt
 
 **NovaHouse Sp. z o.o.**
 
-- Email: kontakt@novahouse.pl
+- Email: [kontakt@novahouse.pl](mailto:kontakt@novahouse.pl)
 - Phone: +48 585 004 663
-- Website: https://novahouse.pl
+- Website: [https://novahouse.pl](https://novahouse.pl)
 
 Created by **Michał Marini**
 
