@@ -286,10 +286,21 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                         print(
                             f"[Monday] Confirmed lead created: {monday_item_id} (score: {lead_score})"
                         )
+                        # Logowanie zdarzenia API (lead utworzony)
+                        try:
+                            import sentry_sdk
 
-                    # Send alert for high-priority leads
+                            sentry_sdk.capture_message(
+                                f"Lead created in Monday.com: {lead.name}, score: {lead_score}"
+                            )
+                        except ImportError:
+                            pass
+
+                    # Alert dla leadów o wysokim priorytecie
                     if lead_score >= 70:
                         try:
+                            import sentry_sdk
+
                             from src.services.email_service import email_service
 
                             email_service.send_email(
@@ -298,20 +309,16 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                                 html_content=f"""
                                 <h2>New High-Priority Lead!</h2>
                                 <p><strong>Name:</strong> {lead.name}</p>
-                                <p><strong>Email:</strong> {lead.email or 'N/A'}</p>
-                                <p><strong>Phone:</strong> {lead.phone or 'N/A'}</p>
-                                <p><strong>Lead Score:</strong> {lead_score}/100</p>
-                                <p><strong>Package:</strong> {lead.interested_package or 'Not specified'}</p>
-                                <p><strong>Square Meters:</strong> {lead.property_size or 'Not specified'}</p>
-                                <p><strong>Location:</strong> {lead.location or 'Not specified'}</p>
-                                <p><strong>Summary:</strong> {conv_summary}</p>
-                                <p><strong>Next Action:</strong> {next_action}</p>
-                                <p><strong>Monday.com:</strong> <a href="https://novahouse-squad.monday.com/boards/2145240699">View Lead</a></p>
+                                <p><strong>Email:</strong> {lead.email}</p>
+                                <p><strong>Score:</strong> {lead_score}</p>
+                                <p><strong>Monday.com ID:</strong> {monday_item_id}</p>
                                 """,
-                                text_content=f"New High-Priority Lead: {lead.name} - Score: {lead_score}/100",
                             )
-                        except Exception as e:
-                            print(f"[Email Alert] Error: {e}")
+                            sentry_sdk.capture_message(
+                                f"ALERT: High-priority lead: {lead.name}, score: {lead_score}"
+                            )
+                        except ImportError:
+                            pass
 
                     # Clear awaiting flag
                     conversation.awaiting_confirmation = False
