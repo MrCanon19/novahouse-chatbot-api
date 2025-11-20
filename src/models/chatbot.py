@@ -275,6 +275,11 @@ class ChatConversation(db.Model):
     awaiting_confirmation = db.Column(db.Boolean, default=False)  # Pending data confirmation
     # A/B Testing
     followup_variant = db.Column(db.String(10))  # "A" or "B" for A/B test
+    # V2.4 Improvements
+    conversation_summary = db.Column(db.Text)  # AI-generated summary
+    needs_human_review = db.Column(db.Boolean, default=False)  # Sentiment escalation
+    followup_count = db.Column(db.Integer, default=0)  # Number of followups sent
+    last_followup_at = db.Column(db.DateTime)  # Last followup timestamp
 
     messages = db.relationship(
         "ChatMessage", backref="conversation", lazy=True, cascade="all, delete-orphan"
@@ -291,6 +296,7 @@ class ChatMessage(db.Model):
     message = db.Column(db.Text, nullable=False)
     sender = db.Column(db.String(20), nullable=False)  # 'user' or 'bot'
     timestamp = db.Column(db.DateTime, nullable=False)
+    is_followup = db.Column(db.Boolean, default=False)  # Auto-followup message
 
 
 class RodoConsent(db.Model):
