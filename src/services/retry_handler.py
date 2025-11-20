@@ -146,7 +146,7 @@ class FailedOperationQueue:
 
                     monday = MondayClient()
                     monday.create_lead_item(operation["data"])
-                    print(f"[FailedQueue] Successfully retried monday_lead")
+                    print("[FailedQueue] Successfully retried monday_lead")
                     self.remove(operation)
                     success += 1
 
@@ -154,7 +154,7 @@ class FailedOperationQueue:
                     from src.services.email_service import email_service
 
                     email_service.send_email(**operation["data"])
-                    print(f"[FailedQueue] Successfully retried email")
+                    print("[FailedQueue] Successfully retried email")
                     self.remove(operation)
                     success += 1
 
