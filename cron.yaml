@@ -1,0 +1,30 @@
+cron:
+# Send automated follow-ups to abandoned conversations
+- description: "Send follow-up messages to users (24h/72h/168h)"
+  url: /api/cron/send-followups
+  schedule: every day 10:00
+  timezone: Europe/Warsaw
+  retry_parameters:
+    min_backoff_seconds: 60
+    max_doublings: 3
+  target: default
+
+# Alert about high-value abandoned leads
+- description: "Alert about high-value abandoned conversations (>100k PLN)"
+  url: /api/cron/high-value-alerts
+  schedule: every 6 hours
+  timezone: Europe/Warsaw
+  retry_parameters:
+    min_backoff_seconds: 60
+    max_doublings: 3
+  target: default
+
+# Clean up inactive sessions
+- description: "Clean up old inactive sessions (>30 min)"
+  url: /api/cron/cleanup-sessions
+  schedule: every 1 hours
+  timezone: Europe/Warsaw
+  retry_parameters:
+    min_backoff_seconds: 30
+    max_doublings: 2
+  target: default
