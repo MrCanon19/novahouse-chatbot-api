@@ -255,28 +255,23 @@ class MessageHandler:
         """Handle user confirming data - create lead"""
         try:
             # Check if lead already exists
-            from src.routes.chatbot import (
-                calculate_lead_score,
-                generate_conversation_summary,
-                suggest_next_best_action,
-            )
+            from src.routes.chatbot import generate_conversation_summary, suggest_next_best_action
 
             existing_lead = Lead.query.filter_by(session_id=conversation.session_id).first()
             if existing_lead:
                 return "Lead już został utworzony! 👍", None
 
-            # Get message count for scoring
-            message_count = ChatMessage.query.filter_by(conversation_id=conversation.id).count()
-
-            # Calculate lead score
-            lead_score = calculate_lead_score(context_memory, message_count)
-
-            # Generate summary
+            # Get all messages for ML scoring
             all_messages = (
                 ChatMessage.query.filter_by(conversation_id=conversation.id)
                 .order_by(ChatMessage.timestamp.asc())
                 .all()
             )
+
+            # Calculate lead score using ML (with rule-based fallback)
+            lead_score = self._calculate_lead_score_ml(context_memory, conversation, all_messages)
+
+            # Generate summary
             conv_summary = generate_conversation_summary(all_messages, context_memory)
 
             # Create lead
@@ -382,6 +377,62 @@ class MessageHandler:
         )
         db.session.add(msg)
         db.session.flush()
+
+    def _calculate_lead_score_ml(
+        self, context_memory: Dict, conversation: ChatConversation, messages: list
+    ) -> int:
+        """
+        Calculate lead score using ML model (with rule-based fallback)
+
+        Args:
+            context_memory: Context data
+            conversation: ChatConversation object
+            messages: List of ChatMessage objects
+
+        Returns:
+            Lead score (0-100)
+        """
+        try:
+            from src.models.chatbot import CompetitiveIntel
+            from src.services.lead_scoring_ml import lead_scorer_ml
+
+            # Build conversation data for ML
+            user_messages = [msg.message for msg in messages if msg.sender == "user"]
+            timestamps = [msg.timestamp for msg in messages]
+
+            duration = 0
+            if len(timestamps) >= 2:
+                duration = (timestamps[-1] - timestamps[0]).total_seconds() / 60.0
+
+            # Check for competitive mention
+            competitive_intel = CompetitiveIntel.query.filter_by(
+                session_id=conversation.session_id
+            ).first()
+
+            # Check for booking intent
+            has_booking = any("zencal" in msg.message.lower() for msg in messages)
+
+            conversation_data = {
+                "message_count": len(messages),
+                "duration_minutes": duration,
+                "messages": user_messages,
+                "timestamps": timestamps,
+                "has_competitive_mention": competitive_intel is not None,
+                "has_booking_intent": has_booking,
+            }
+
+            # Use ML model to predict score
+            score = lead_scorer_ml.predict_score(context_memory, conversation_data)
+
+            print(f"[Lead Scoring] ML score: {score}/100")
+            return score
+
+        except Exception as e:
+            print(f"[Lead Scoring] ML error, using rule-based fallback: {e}")
+            # Fallback to rule-based scoring
+            from src.routes.chatbot import calculate_lead_score
+
+            return calculate_lead_score(context_memory, len(messages))
 
 
 # Global instance
