@@ -3,10 +3,10 @@
 ## 📋 Pre-deployment Checklist
 
 - [x] Code committed to repository
-- [ ] Database migration ready
-- [ ] Cron configuration ready
+- [x] Database migration ready
+- [x] Cron configuration ready (⏸️ WSTRZYMANE - do odwołania)
 - [ ] Environment variables configured
-- [ ] Frontend widget updated
+- [x] Frontend widget updated
 
 ## 🗄️ Database Migration
 
