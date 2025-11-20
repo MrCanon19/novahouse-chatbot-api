@@ -150,6 +150,11 @@ from src.routes.migration import migration_bp
 
 app.register_blueprint(migration_bp)
 
+# Register cron routes (v2.4)
+from src.routes.cron import cron_bp
+
+app.register_blueprint(cron_bp, url_prefix="/api/cron")
+
 # KROK 6: Tworzymy tabele w kontekście w pełni skonfigurowanej aplikacji.
 with app.app_context():
     try:

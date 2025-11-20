@@ -11,8 +11,13 @@ from typing import Dict, Optional, Tuple
 from src.models.chatbot import ChatConversation, ChatMessage, Lead, db
 from src.services.context_validator import ContextValidator
 from src.services.conversation_state_machine import ConversationStateMachine
+from src.services.multi_turn_dialog import multi_turn_dialog
+from src.services.proactive_suggestions import proactive_suggestions
 from src.services.rate_limiter import conversation_limiter
 from src.services.retry_handler import failed_operations, retry_monday_api, retry_openai_api
+from src.services.sentiment_service import sentiment_service
+from src.services.session_timeout import session_timeout_service
+from src.services.summarization_service import summarization_service
 
 
 class MessageHandler:
@@ -37,37 +42,70 @@ class MessageHandler:
             # 2. Find or create conversation
             conversation = self._get_or_create_conversation(session_id)
 
-            # 3. Load and validate context
+            # 3. Update session activity (for timeout detection)
+            session_timeout_service.update_activity(session_id)
+
+            # 4. Load and validate context
             context_memory = json.loads(conversation.context_data or "{}")
 
-            # 4. Initialize state machine
+            # 5. Get message history for multi-turn dialog
+            messages = ChatMessage.query.filter_by(conversation_id=conversation.id).all()
+            message_history = [{"sender": m.sender, "message": m.message} for m in messages]
+
+            # 6. Resolve references in multi-turn dialog (a srebrnego?, a w warszawie?)
+            resolved_message = multi_turn_dialog.resolve_references(
+                user_message, context_memory, message_history, session_id
+            )
+            if resolved_message != user_message:
+                print(f"[MultiTurn] Resolved '{user_message}' -> '{resolved_message}'")
+                user_message = resolved_message
+
+            # 7. Initialize state machine
             state_machine = ConversationStateMachine()
             current_state = state_machine.determine_state(context_memory)
             state_machine.current_state = current_state
 
-            # 5. Extract context from message
+            # 8. Extract context from message
             context_memory = self._extract_and_validate_context(user_message, context_memory)
 
-            # 6. Save user message
-            self._save_message(conversation.id, user_message, "user")
-
-            # 7. Generate response based on state
-            bot_response, follow_up = self._generate_response(
-                user_message, context_memory, conversation, state_machine
+            # 9. Analyze sentiment in real-time
+            sentiment_analysis = sentiment_service.analyze_message_sentiment(
+                user_message, session_id
             )
 
-            # 8. Handle state transitions
+            # Save user message
+            self._save_message(conversation.id, user_message, "user")
+
+            # 10. Generate response based on state
+            bot_response, follow_up = self._generate_response(
+                user_message, context_memory, conversation, state_machine, sentiment_analysis
+            )
+
+            # 11. Handle state transitions
             new_state = state_machine.determine_state(context_memory)
             if new_state != current_state:
                 success, error = state_machine.transition(new_state)
                 if not success:
                     print(f"[StateMachine] Transition failed: {error}")
 
-            # 9. Save bot response
+            # 12. Save bot response
             self._save_message(conversation.id, bot_response, "bot")
 
-            # 10. Update conversation context
+            # 13. Generate proactive suggestions
+            suggestions = proactive_suggestions.get_suggestions(
+                new_state, context_memory, user_message
+            )
+
+            # 14. Update conversation context with summary
+            messages = ChatMessage.query.filter_by(conversation_id=conversation.id).all()
+            message_history = [{"sender": m.sender, "message": m.message} for m in messages]
+
+            conversation_summary = summarization_service.generate_summary(
+                context_memory, message_history, 0  # TODO: calculate duration
+            )
+
             conversation.context_data = json.dumps(context_memory)
+            conversation.conversation_summary = conversation_summary  # Will add this column
             db.session.commit()
 
             return {
@@ -75,6 +113,10 @@ class MessageHandler:
                 "session_id": session_id,
                 "conversation_id": conversation.id,
                 "state": state_machine.current_state.value,
+                "sentiment": sentiment_analysis,
+                "suggestions": suggestions,
+                "typing_indicator": True,  # Signal to frontend
+                "summary": summarization_service.generate_short_summary(context_memory),
             }
 
         except Exception as e:
@@ -135,6 +177,7 @@ class MessageHandler:
         context_memory: Dict,
         conversation: ChatConversation,
         state_machine: ConversationStateMachine,
+        sentiment_analysis: Dict = None,
     ) -> Tuple[str, Optional[str]]:
         """
         Generate bot response based on state and message
@@ -156,6 +199,10 @@ class MessageHandler:
         if confirmation_intent == "confirm" and conversation.awaiting_confirmation:
             return self._handle_confirmation(conversation, context_memory)
 
+        # Check for escalation due to negative sentiment
+        if sentiment_analysis and sentiment_analysis.get("should_escalate"):
+            return self._handle_escalation(sentiment_analysis, conversation)
+
         # Response hierarchy (NEW ORDER - GPT earlier)
         bot_response = None
 
@@ -166,17 +213,40 @@ class MessageHandler:
         if not bot_response:
             bot_response = check_faq(user_message)
 
-        # 3. OpenAI GPT (early in hierarchy for better responses)
-        if not bot_response:
-            bot_response = self._get_gpt_response(user_message, conversation, context_memory)
+        # 3. Check if message is unclear - offer clarification
+        if not bot_response and len(user_message.split()) <= 3:
+            clarification = proactive_suggestions.get_smart_clarification(
+                user_message, context_memory
+            )
+            if clarification:
+                return clarification.get("message", ""), None
 
-        # 4. Learned FAQ (as fallback)
+        # 4. OpenAI GPT (early in hierarchy for better responses)
+        if not bot_response:
+            bot_response = self._get_gpt_response(
+                user_message, conversation, context_memory, sentiment_analysis
+            )
+
+        # 5. Learned FAQ (as fallback)
         if not bot_response:
             bot_response = check_learned_faq(user_message)
 
-        # 5. Final fallback
+        # 6. Final fallback with clarification
         if not bot_response:
+            clarification = proactive_suggestions.get_smart_clarification(
+                user_message, context_memory
+            )
+            if clarification:
+                return clarification.get("message", ""), None
             bot_response = get_default_response(user_message)
+
+        # Add empathetic prefix based on sentiment
+        if sentiment_analysis:
+            empathy_prefix = sentiment_service.get_empathetic_response_prefix(
+                sentiment_analysis.get("sentiment"), sentiment_analysis.get("score", 0)
+            )
+            if empathy_prefix:
+                bot_response = empathy_prefix + bot_response
 
         # Generate follow-up question
         follow_up = generate_follow_up_question(
@@ -185,9 +255,34 @@ class MessageHandler:
 
         return bot_response, follow_up
 
+    def _handle_escalation(
+        self, sentiment_analysis: Dict, conversation: ChatConversation
+    ) -> Tuple[str, Optional[str]]:
+        """Handle escalation to human agent"""
+        reason = sentiment_analysis.get("escalation_reason")
+
+        # Mark conversation for human review
+        conversation.needs_human_review = True  # Will add this column
+        db.session.commit()
+
+        escalation_messages = {
+            "critical_frustration": "Rozumiem Twoją frustrację. Przekazuję sprawę do naszego doradcy, który skontaktuje się z Tobą w ciągu 15 minut. Czy mogę prosić o Twój numer telefonu?",
+            "negative_streak": "Widzę, że masz wiele wątpliwości. Chętnie połączę Cię z naszym specjalistą, który odpowie na wszystkie pytania. Jak najlepiej się z Tobą skontaktować?",
+        }
+
+        message = escalation_messages.get(
+            reason, "Przekazuję sprawę do naszego zespołu. Jak możemy się z Tobą skontaktować?"
+        )
+
+        return message, None
+
     @retry_openai_api
     def _get_gpt_response(
-        self, user_message: str, conversation: ChatConversation, context_memory: Dict
+        self,
+        user_message: str,
+        conversation: ChatConversation,
+        context_memory: Dict,
+        sentiment_analysis: Dict = None,
     ) -> Optional[str]:
         """Get response from OpenAI GPT with retry logic"""
         try:
