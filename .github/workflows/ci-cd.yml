@@ -116,9 +116,17 @@ jobs:
         env:
           GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
         run: |
+          if [ -z "$GCP_SA_KEY" ]; then
+            echo "GCP_SA_KEY not set, skipping GCP authentication."
+            exit 0
+          fi
           echo "$GCP_SA_KEY" > ${HOME}/gcp-key.json
           gcloud auth activate-service-account --key-file=${HOME}/gcp-key.json
-          gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
+          if [ -z "$GCP_PROJECT_ID" ]; then
+            echo "GCP_PROJECT_ID not set, skipping project config."
+            exit 0
+          fi
+          gcloud config set project "$GCP_PROJECT_ID"
       - name: Deploy to App Engine
         run: |
           gcloud app deploy app.yaml --quiet

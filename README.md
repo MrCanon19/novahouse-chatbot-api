@@ -92,7 +92,7 @@ python main.py
 
 ## 🚀 Quick Start
 
-## Instalacja lokalna
+### Instalacja lokalna
 
 \`\`\`bash
 
@@ -117,7 +117,7 @@ python3 src/main.py
 
 Otwórz: [http://localhost:8080](http://localhost:8080)
 
-## Deploy na GCP
+### Deploy na GCP
 
 \`\`\`bash
 gcloud app deploy app.yaml --quiet
@@ -250,7 +250,7 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) file for
 
 ## 🔒 Security
 
-Report security vulnerabilities to: [kontakt@novahouse.pl](mailto:kontakt@novahouse.pl)  
+Report security vulnerabilities to: [kontakt@novahouse.pl](mailto:kontakt@novahouse.pl)
 See [SECURITY.md](SECURITY.md) for details.
 
 ## 🤝 Kontakt

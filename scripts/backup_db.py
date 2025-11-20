@@ -11,6 +11,8 @@ def backup_database():
     timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
     backup_file = os.path.join(BACKUP_DIR, f"db_backup_{timestamp}.sqlite")
     try:
+        if not os.path.exists(DB_PATH):
+            raise FileNotFoundError(f"Database file not found: {DB_PATH}")
         with open(DB_PATH, "rb") as src, open(backup_file, "wb") as dst:
             dst.write(src.read())
         print(f"Backup completed: {backup_file}")
