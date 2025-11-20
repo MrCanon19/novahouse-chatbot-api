@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 
 from flask import Blueprint, jsonify, request
 
-from src.main import db
+from src.models.chatbot import db
 from src.models.faq_learning import LearnedFAQ, UnknownQuestion
 
 faq_learning_routes = Blueprint("faq_learning", __name__, url_prefix="/api/faq-learning")
