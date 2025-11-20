@@ -47,7 +47,7 @@ class LeadScoringML:
         if NUMPY_AVAILABLE and os.path.exists(self.model_path):
             self.load_model()
 
-    def extract_features(self, context_memory: Dict, conversation_data: Dict) -> np.ndarray:
+    def extract_features(self, context_memory: Dict, conversation_data: Dict) -> List:
         """
         Extract features from conversation for ML prediction
 
@@ -63,7 +63,7 @@ class LeadScoringML:
             }
 
         Returns:
-            numpy array of features
+            List of features (converted to numpy array internally if available)
         """
         features = []
 
@@ -88,7 +88,7 @@ class LeadScoringML:
                 (timestamps[i + 1] - timestamps[i]).total_seconds()
                 for i in range(len(timestamps) - 1)
             ]
-            avg_response_time = np.mean(diffs) if diffs else 0
+            avg_response_time = sum(diffs) / len(diffs) if diffs else 0
         else:
             avg_response_time = 0
         features.append(avg_response_time)
@@ -102,7 +102,7 @@ class LeadScoringML:
         # Word count average
         if messages:
             word_counts = [len(msg.split()) for msg in messages]
-            avg_word_count = np.mean(word_counts)
+            avg_word_count = sum(word_counts) / len(word_counts)
         else:
             avg_word_count = 0
         features.append(avg_word_count)
@@ -111,7 +111,11 @@ class LeadScoringML:
         features.append(1 if conversation_data.get("has_competitive_mention", False) else 0)
         features.append(1 if conversation_data.get("has_booking_intent", False) else 0)
 
-        return np.array(features).reshape(1, -1)
+        # Convert to numpy array only if available
+        if NUMPY_AVAILABLE:
+            return np.array(features).reshape(1, -1)
+        else:
+            return [features]  # Return as list of lists for compatibility
 
     def predict_score(self, context_memory: Dict, conversation_data: Dict) -> int:
         """
