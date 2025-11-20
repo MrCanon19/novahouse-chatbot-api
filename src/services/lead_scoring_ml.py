@@ -8,7 +8,13 @@ import os
 import pickle
 from typing import Dict, List, Optional
 
-import numpy as np
+try:
+    import numpy as np
+
+    NUMPY_AVAILABLE = True
+except ImportError:
+    NUMPY_AVAILABLE = False
+    print("⚠️ numpy not available - ML scoring disabled, using rule-based fallback")
 
 
 class LeadScoringML:
@@ -37,8 +43,8 @@ class LeadScoringML:
             "booking_intent_detected",
         ]
 
-        # Try to load existing model
-        if os.path.exists(self.model_path):
+        # Try to load existing model (only if numpy available)
+        if NUMPY_AVAILABLE and os.path.exists(self.model_path):
             self.load_model()
 
     def extract_features(self, context_memory: Dict, conversation_data: Dict) -> np.ndarray:
@@ -114,9 +120,12 @@ class LeadScoringML:
         Returns:
             Lead score (0-100)
         """
-        if self.model is None:
+        if not NUMPY_AVAILABLE or self.model is None:
             # Fallback to rule-based scoring
-            print("[ML Lead Scoring] Model not loaded, using rule-based fallback")
+            if not NUMPY_AVAILABLE:
+                print("[ML Lead Scoring] numpy not available, using rule-based fallback")
+            else:
+                print("[ML Lead Scoring] Model not loaded, using rule-based fallback")
             return self._fallback_rule_based_scoring(context_memory, conversation_data)
 
         try:
@@ -190,6 +199,10 @@ class LeadScoringML:
                 - conversation_data
                 - actual_converted (bool) - whether lead converted
         """
+        if not NUMPY_AVAILABLE:
+            print("[ML Training] numpy/scikit-learn not available, cannot train model")
+            return False
+
         try:
             from sklearn.ensemble import RandomForestClassifier
             from sklearn.model_selection import train_test_split
