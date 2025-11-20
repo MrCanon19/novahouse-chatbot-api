@@ -13,13 +13,15 @@ import requests
 class MondayClient:
     """Client for Monday.com GraphQL API"""
 
-    def __init__(self):
-        self.api_key = os.getenv("MONDAY_API_KEY")
+    def __init__(self, api_key: Optional[str] = None):
+        self.api_key = api_key or os.getenv("MONDAY_API_KEY")
         self.board_id = os.getenv("MONDAY_BOARD_ID")
         self.api_url = "https://api.monday.com/v2"
 
         if not self.api_key:
-            print("WARNING: MONDAY_API_KEY not found in environment variables")
+            print(
+                "WARNING: MONDAY_API_KEY not found in environment variables or not passed to MondayClient"
+            )
         if not self.board_id:
             print("WARNING: MONDAY_BOARD_ID not found in environment variables")
 
