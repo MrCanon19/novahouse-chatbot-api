@@ -372,3 +372,68 @@ def fix_null_values():
     except Exception as e:
         db.session.rollback()
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+@migration_bp.route("/api/migration/train-ml-model", methods=["POST"])
+def train_ml_model():
+    """
+    Train ML lead scoring model on historical data
+    Requires admin authentication
+    """
+    import os
+
+    admin_key = os.getenv("API_KEY") or os.getenv("ADMIN_API_KEY")
+    if not admin_key:
+        return jsonify({"error": "Admin key not configured"}), 500
+
+    provided_key = request.headers.get("X-ADMIN-API-KEY") or request.headers.get("X-API-KEY")
+    if provided_key != admin_key:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        from src.services.lead_scoring_ml import lead_scorer_ml
+
+        # Collect training data
+        training_data = lead_scorer_ml.collect_training_data_from_db()
+
+        if len(training_data) < 10:
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "error": f"Not enough training data ({len(training_data)} samples, need 10+)",
+                        "samples_collected": len(training_data),
+                    }
+                ),
+                400,
+            )
+
+        # Train model
+        success = lead_scorer_ml.train_model(training_data)
+
+        if success:
+            return (
+                jsonify(
+                    {
+                        "success": True,
+                        "message": "ML model trained successfully",
+                        "training_samples": len(training_data),
+                        "model_path": lead_scorer_ml.model_path,
+                    }
+                ),
+                200,
+            )
+        else:
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "error": "Training failed (check logs)",
+                        "training_samples": len(training_data),
+                    }
+                ),
+                500,
+            )
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
