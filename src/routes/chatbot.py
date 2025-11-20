@@ -266,7 +266,7 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                     competitor_name = competitor_intel.competitor_name if competitor_intel else None
 
                     # Sync with Monday.com
-                    monday = MondayClient()
+                    monday = MondayClient(api_key=MONDAY_API_KEY)
                     monday_item_id = monday.create_lead_item(
                         {
                             "name": lead.name,
@@ -390,7 +390,7 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                     competitor_name = competitor_intel.competitor_name if competitor_intel else None
                     next_action = suggest_next_best_action(context_memory, lead_score)
 
-                    monday = MondayClient()
+                    monday = MondayClient(api_key=MONDAY_API_KEY)
                     monday_item_id = monday.create_lead_item(
                         {
                             "name": lead.name,
@@ -462,8 +462,9 @@ def _check_admin_key():
     return (jsonify({"error": "Unauthorized"}), 401)
 
 
-# Konfiguracja AI (tylko OpenAI GPT)
+# Konfiguracja AI (OpenAI GPT + Monday.com)
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+MONDAY_API_KEY = os.getenv("MONDAY_API_KEY", "")
 
 if OPENAI_API_KEY and OPENAI_AVAILABLE:
     openai_client = OpenAI(api_key=OPENAI_API_KEY)
@@ -473,6 +474,11 @@ else:
     openai_client = None
     AI_PROVIDER = None
     print("⚠️  No AI configured - set OPENAI_API_KEY")
+
+if MONDAY_API_KEY:
+    print("✅ Monday.com API key loaded")
+else:
+    print("⚠️  No Monday.com API key - set MONDAY_API_KEY")
 
 SYSTEM_PROMPT = f"""Jesteś pomocnym asystentem NovaHouse — eksperta od wykończenia wnętrz.
 
