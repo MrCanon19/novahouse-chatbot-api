@@ -23,6 +23,9 @@ from src.models.chatbot import (  # Dodaj tu inne modele jeśli są
 
 @pytest.fixture(scope="session")
 def app():
+    import logging
+
+    logging.basicConfig(level=logging.INFO)
     """Create application for testing"""
     # Set testing environment variables BEFORE importing app
     os.environ["TESTING"] = "true"
@@ -34,13 +37,18 @@ def app():
     from src.models.chatbot import db
 
     flask_app.config["TESTING"] = True
-    flask_app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
     flask_app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     flask_app.config["WTF_CSRF_ENABLED"] = False
 
     with flask_app.app_context():
         db.drop_all()
         db.create_all()
+        # Loguj listę kolumn w chat_conversations
+        from sqlalchemy import inspect
+
+        inspector = inspect(db.engine)
+        columns = [col["name"] for col in inspector.get_columns("chat_conversations")]
+        print(f"Kolumny chat_conversations: {columns}")
         yield flask_app
         db.session.remove()
         db.drop_all()

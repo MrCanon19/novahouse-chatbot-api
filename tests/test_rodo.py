@@ -1,14 +1,11 @@
 import os
-import sys
 import traceback
 
-# Add src to path before imports
-sys.path.insert(0, "src")
-
-from main import app  # noqa: E402
+import pytest
 
 
-def test_rodo_consent_and_export(tmp_path):
+@pytest.mark.usefixtures("app")
+def test_rodo_consent_and_export(app):
     client = app.test_client()
 
     # create consent

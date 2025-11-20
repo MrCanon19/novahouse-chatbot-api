@@ -16,7 +16,7 @@ echo ""
 
 # 2. Database Migration
 echo "🗄️ [2/5] Running database migration..."
-python src/migrations/add_chat_improvements_v24.py
+python3 src/migrations/add_chat_improvements_v24.py
 echo "✅ Migration completed"
 echo ""
 
@@ -29,7 +29,7 @@ echo ""
 # 4. Health Check
 echo "🏥 [4/5] Checking application health..."
 sleep 5
-curl -s https://novahouse-chatbot-api.appspot.com/api/health | python -m json.tool
+curl -s https://novahouse-chatbot-api.appspot.com/api/health | python3 -m json.tool
 echo ""
 echo "✅ Health check passed"
 echo ""
