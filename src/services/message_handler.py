@@ -1,0 +1,388 @@
+"""
+Refactored Message Handler
+Modular, clean, with state machine and validation
+"""
+
+import json
+import os
+from datetime import datetime, timezone
+from typing import Dict, Optional, Tuple
+
+from src.models.chatbot import ChatConversation, ChatMessage, Lead, db
+from src.services.context_validator import ContextValidator
+from src.services.conversation_state_machine import ConversationStateMachine
+from src.services.rate_limiter import conversation_limiter
+from src.services.retry_handler import failed_operations, retry_monday_api, retry_openai_api
+
+
+class MessageHandler:
+    """Handles chat message processing with state management"""
+
+    def __init__(self):
+        self.validator = ContextValidator()
+
+    def process_message(self, user_message: str, session_id: str) -> Dict:
+        """
+        Main entry point for message processing
+
+        Returns:
+            dict with response, session_id, conversation_id, state
+        """
+        try:
+            # 1. Rate limiting & spam detection
+            spam_check = self._check_spam(session_id, user_message)
+            if spam_check:
+                return {"error": spam_check, "response": "Proszę zwolnić tempo wiadomości."}
+
+            # 2. Find or create conversation
+            conversation = self._get_or_create_conversation(session_id)
+
+            # 3. Load and validate context
+            context_memory = json.loads(conversation.context_data or "{}")
+
+            # 4. Initialize state machine
+            state_machine = ConversationStateMachine()
+            current_state = state_machine.determine_state(context_memory)
+            state_machine.current_state = current_state
+
+            # 5. Extract context from message
+            context_memory = self._extract_and_validate_context(user_message, context_memory)
+
+            # 6. Save user message
+            self._save_message(conversation.id, user_message, "user")
+
+            # 7. Generate response based on state
+            bot_response, follow_up = self._generate_response(
+                user_message, context_memory, conversation, state_machine
+            )
+
+            # 8. Handle state transitions
+            new_state = state_machine.determine_state(context_memory)
+            if new_state != current_state:
+                success, error = state_machine.transition(new_state)
+                if not success:
+                    print(f"[StateMachine] Transition failed: {error}")
+
+            # 9. Save bot response
+            self._save_message(conversation.id, bot_response, "bot")
+
+            # 10. Update conversation context
+            conversation.context_data = json.dumps(context_memory)
+            db.session.commit()
+
+            return {
+                "response": bot_response + (f"\n\n{follow_up}" if follow_up else ""),
+                "session_id": session_id,
+                "conversation_id": conversation.id,
+                "state": state_machine.current_state.value,
+            }
+
+        except Exception as e:
+            print(f"[MessageHandler] Error: {e}")
+            db.session.rollback()
+            return {
+                "error": str(e),
+                "response": "Przepraszam, wystąpił problem. Spróbuj ponownie.",
+            }
+
+    def _check_spam(self, session_id: str, message: str) -> Optional[str]:
+        """Check for spam patterns"""
+        conversation_limiter.add_message(session_id, message)
+        is_spam, reason = conversation_limiter.is_spam(session_id, message)
+        if is_spam:
+            print(f"[Spam] Detected for {session_id}: {reason}")
+            return f"Spam detected: {reason}"
+        return None
+
+    def _get_or_create_conversation(self, session_id: str) -> ChatConversation:
+        """Find or create conversation"""
+        conversation = ChatConversation.query.filter_by(session_id=session_id).first()
+        if not conversation:
+            conversation = ChatConversation(
+                session_id=session_id,
+                started_at=datetime.now(timezone.utc),
+                context_data=json.dumps({}),
+            )
+            db.session.add(conversation)
+            db.session.flush()
+        return conversation
+
+    def _extract_and_validate_context(self, message: str, existing_context: Dict) -> Dict:
+        """Extract context from message and validate"""
+        from src.routes.chatbot import extract_context
+
+        # Extract context
+        updated_context = extract_context(message, existing_context)
+
+        # Validate and sanitize
+        is_valid, sanitized, errors = self.validator.validate_context(updated_context)
+
+        if errors:
+            print(f"[Validation] Errors: {errors}")
+            # Keep original values if validation failed
+            for field, error in errors.items():
+                if field in updated_context and field in existing_context:
+                    updated_context[field] = existing_context[field]
+
+        # Merge sanitized values
+        updated_context.update(sanitized)
+
+        return updated_context
+
+    def _generate_response(
+        self,
+        user_message: str,
+        context_memory: Dict,
+        conversation: ChatConversation,
+        state_machine: ConversationStateMachine,
+    ) -> Tuple[str, Optional[str]]:
+        """
+        Generate bot response based on state and message
+
+        Returns:
+            (bot_response, follow_up_question)
+        """
+        from src.routes.chatbot import (
+            check_booking_intent,
+            check_data_confirmation_intent,
+            check_faq,
+            check_learned_faq,
+            generate_follow_up_question,
+            get_default_response,
+        )
+
+        # Check for data confirmation
+        confirmation_intent = check_data_confirmation_intent(user_message)
+        if confirmation_intent == "confirm" and conversation.awaiting_confirmation:
+            return self._handle_confirmation(conversation, context_memory)
+
+        # Response hierarchy (NEW ORDER - GPT earlier)
+        bot_response = None
+
+        # 1. Booking intent (highest priority)
+        bot_response = check_booking_intent(user_message, context_memory)
+
+        # 2. Standard FAQ (fast, no API call)
+        if not bot_response:
+            bot_response = check_faq(user_message)
+
+        # 3. OpenAI GPT (early in hierarchy for better responses)
+        if not bot_response:
+            bot_response = self._get_gpt_response(user_message, conversation, context_memory)
+
+        # 4. Learned FAQ (as fallback)
+        if not bot_response:
+            bot_response = check_learned_faq(user_message)
+
+        # 5. Final fallback
+        if not bot_response:
+            bot_response = get_default_response(user_message)
+
+        # Generate follow-up question
+        follow_up = generate_follow_up_question(
+            context_memory, user_message, bot_response, conversation
+        )
+
+        return bot_response, follow_up
+
+    @retry_openai_api
+    def _get_gpt_response(
+        self, user_message: str, conversation: ChatConversation, context_memory: Dict
+    ) -> Optional[str]:
+        """Get response from OpenAI GPT with retry logic"""
+        try:
+            from openai import OpenAI
+
+            from src.routes.chatbot import SYSTEM_PROMPT
+
+            openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+            # Get conversation history
+            history = (
+                ChatMessage.query.filter_by(conversation_id=conversation.id)
+                .order_by(ChatMessage.timestamp.desc())
+                .limit(10)
+                .all()
+            )
+
+            context = "\n".join(
+                [
+                    f"{'User' if msg.sender == 'user' else 'Bot'}: {msg.message}"
+                    for msg in reversed(history[:-1])
+                ]
+            )
+
+            # Add memory context
+            memory_prompt = self._build_memory_prompt(context_memory)
+
+            print(f"[GPT] Processing: {user_message[:50]}...")
+            messages = [
+                {"role": "system", "content": SYSTEM_PROMPT + memory_prompt},
+                {"role": "user", "content": f"Context:\n{context}\n\nUser: {user_message}"},
+            ]
+
+            response = openai_client.chat.completions.create(
+                model="gpt-4o-mini", messages=messages, max_tokens=500, temperature=0.7
+            )
+
+            bot_response = response.choices[0].message.content
+            print(f"[GPT] Response: {bot_response[:100]}...")
+            return bot_response
+
+        except Exception as e:
+            print(f"[GPT] Error: {e}")
+            return None
+
+    def _build_memory_prompt(self, context_memory: Dict) -> str:
+        """Build memory prompt for GPT"""
+        memory_items = []
+        if context_memory.get("name"):
+            memory_items.append(f"Imię: {context_memory['name']}")
+        if context_memory.get("city"):
+            memory_items.append(f"Miasto: {context_memory['city']}")
+        if context_memory.get("square_meters"):
+            memory_items.append(f"Metraż: {context_memory['square_meters']}m²")
+        if context_memory.get("package"):
+            memory_items.append(f"Pakiet: {context_memory['package']}")
+
+        if memory_items:
+            return "\n\nZapamiętane info o kliencie:\n" + "\n".join(memory_items)
+        return ""
+
+    def _handle_confirmation(
+        self, conversation: ChatConversation, context_memory: Dict
+    ) -> Tuple[str, None]:
+        """Handle user confirming data - create lead"""
+        try:
+            # Check if lead already exists
+            from src.routes.chatbot import (
+                calculate_lead_score,
+                generate_conversation_summary,
+                suggest_next_best_action,
+            )
+
+            existing_lead = Lead.query.filter_by(session_id=conversation.session_id).first()
+            if existing_lead:
+                return "Lead już został utworzony! 👍", None
+
+            # Get message count for scoring
+            message_count = ChatMessage.query.filter_by(conversation_id=conversation.id).count()
+
+            # Calculate lead score
+            lead_score = calculate_lead_score(context_memory, message_count)
+
+            # Generate summary
+            all_messages = (
+                ChatMessage.query.filter_by(conversation_id=conversation.id)
+                .order_by(ChatMessage.timestamp.asc())
+                .all()
+            )
+            conv_summary = generate_conversation_summary(all_messages, context_memory)
+
+            # Create lead
+            lead = Lead(
+                session_id=conversation.session_id,
+                name=context_memory.get("name", "Unknown"),
+                email=context_memory.get("email"),
+                phone=context_memory.get("phone"),
+                location=context_memory.get("city"),
+                property_size=context_memory.get("square_meters"),
+                interested_package=context_memory.get("package"),
+                source="chatbot",
+                status="qualified",
+                lead_score=lead_score,
+                conversation_summary=conv_summary,
+                data_confirmed=True,
+                last_interaction=datetime.now(timezone.utc),
+            )
+
+            db.session.add(lead)
+            db.session.flush()
+
+            # Suggest next action
+            next_action = suggest_next_best_action(context_memory, lead_score)
+            lead.notes = f"Next Action: {next_action}"
+
+            # Sync with Monday.com (with retry)
+            self._sync_with_monday(lead, context_memory, lead_score, next_action)
+
+            db.session.commit()
+
+            return (
+                f"✅ Świetnie! Twoje dane zostały zapisane (Lead Score: {lead_score}/100). "
+                f"Nasz zespół skontaktuje się z Tobą wkrótce!",
+                None,
+            )
+
+        except Exception as e:
+            print(f"[Lead Creation] Error: {e}")
+            db.session.rollback()
+            return "Przepraszam, wystąpił problem. Spróbuj ponownie później.", None
+
+    @retry_monday_api
+    def _sync_with_monday(
+        self, lead: Lead, context_memory: Dict, lead_score: int, next_action: str
+    ):
+        """Sync lead with Monday.com with retry logic"""
+        try:
+            from src.integrations.monday_client import MondayClient
+            from src.models.chatbot import CompetitiveIntel
+
+            # Check for competitive mentions
+            competitor_intel = (
+                CompetitiveIntel.query.filter_by(session_id=lead.session_id)
+                .order_by(CompetitiveIntel.created_at.desc())
+                .first()
+            )
+            competitor_name = competitor_intel.competitor_name if competitor_intel else None
+
+            monday = MondayClient()
+            monday_item_id = monday.create_lead_item(
+                {
+                    "name": lead.name,
+                    "email": lead.email,
+                    "phone": lead.phone,
+                    "message": f"Score: {lead_score}/100 | {lead.conversation_summary}",
+                    "property_type": "Mieszkanie",
+                    "budget": context_memory.get("square_meters", ""),
+                    "lead_score": lead_score,
+                    "competitor_mentioned": competitor_name,
+                    "next_action": next_action,
+                }
+            )
+
+            if monday_item_id:
+                lead.monday_item_id = monday_item_id
+                print(f"[Monday] Lead created: {monday_item_id}")
+            else:
+                raise Exception("Monday.com returned no item_id")
+
+        except Exception as e:
+            print(f"[Monday] Sync failed: {e}")
+            # Add to failed operations queue
+            failed_operations.add(
+                "monday_lead",
+                {
+                    "name": lead.name,
+                    "email": lead.email,
+                    "phone": lead.phone,
+                    "lead_score": lead_score,
+                },
+                str(e),
+            )
+            raise  # Re-raise for retry mechanism
+
+    def _save_message(self, conversation_id: int, message: str, sender: str):
+        """Save message to database"""
+        msg = ChatMessage(
+            conversation_id=conversation_id,
+            message=message,
+            sender=sender,
+            timestamp=datetime.now(timezone.utc),
+        )
+        db.session.add(msg)
+        db.session.flush()
+
+
+# Global instance
+message_handler = MessageHandler()

@@ -105,20 +105,18 @@ def check_ab_testing_results():
     print(f"\n✅ Found {len(tests)} A/B tests:")
 
     for test in tests:
-        print(f"\n🧪 Test: {test['test_name']}")
-        print(f"   Status: {test['status']}")
-        print(f"   Variants: {test['total_variants']}")
-        print(f"   Total shown: {test['total_shown']}")
-        print(f"   Total responses: {test['total_responses']}")
+        print(f"\n🧪 Test ID: {test['id']}")
+        print(f"   Question Type: {test['question_type']}")
+        print(f"   Active: {test['is_active']}")
+        print(f"   Winner: {test['winner']}")
+        print(f"   Significance: {test['significance']}")
 
-        if test.get("variants"):
+        if test.get("stats"):
             print("   Variant performance:")
-            for variant in test["variants"]:
-                response_rate = (
-                    (variant["responses"] / variant["shown"] * 100) if variant["shown"] > 0 else 0
-                )
+            for variant_key in ["variant_a", "variant_b"]:
+                variant = test["stats"][variant_key]
                 print(
-                    f"      {variant['variant_name']}: {variant['shown']} shown, {variant['responses']} responses ({response_rate:.1f}%)"
+                    f"      {variant_key}: {variant['shown']} shown, {variant['responses']} responses ({variant['conversion_rate']:.1f}%)"
                 )
 
 
