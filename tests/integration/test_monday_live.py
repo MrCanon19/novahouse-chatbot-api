@@ -5,7 +5,10 @@ import pytest
 from src.integrations.monday_client import MondayClient
 
 
-@pytest.mark.skipif(not os.getenv("MONDAY_API_KEY"), reason="Brak MONDAY_API_KEY w środowisku")
+@pytest.mark.skipif(
+    not os.getenv("MONDAY_API_KEY") or not os.getenv("MONDAY_BOARD_ID"),
+    reason="Brak MONDAY_API_KEY lub MONDAY_BOARD_ID w środowisku",
+)
 def test_monday_create_lead_live():
     client = MondayClient(api_key=os.getenv("MONDAY_API_KEY"))
     lead_data = {
