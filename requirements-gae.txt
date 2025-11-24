@@ -27,7 +27,7 @@ APScheduler==3.11.0
 Whoosh==2.7.4
 sentry-sdk[flask]==2.18.0
 python-dotenv==1.0.1
-locust==2.32.3
+locust==2.42.5
 snakeviz==2.2.0
 coverage-badge==1.1.2
 openai>=1.0.0
