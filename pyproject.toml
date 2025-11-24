@@ -75,7 +75,7 @@ test = [
     "snakeviz==2.2.0",
 ]
 docs = [
-    "sphinx==7.2.6",
+    "sphinx==8.2.3",
     "sphinx-rtd-theme==2.0.0",
 ]
 
