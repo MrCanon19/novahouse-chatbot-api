@@ -93,7 +93,7 @@ jobs:
           output: "trivy-results.sarif"
 
       - name: Upload Trivy results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         continue-on-error: true
         with:
           sarif_file: "trivy-results.sarif"
@@ -115,17 +115,18 @@ jobs:
       - name: Authenticate to GCP
         env:
           GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
         run: |
           if [ -z "$GCP_SA_KEY" ]; then
-            echo "GCP_SA_KEY not set, skipping GCP authentication."
-            exit 0
+            echo "ERROR: Sekret GCP_SA_KEY nie jest ustawiony w repozytorium GitHub!"
+            exit 1
+          fi
+          if [ -z "$GCP_PROJECT_ID" ]; then
+            echo "ERROR: Sekret GCP_PROJECT_ID nie jest ustawiony w repozytorium GitHub!"
+            exit 1
           fi
           echo "$GCP_SA_KEY" > ${HOME}/gcp-key.json
           gcloud auth activate-service-account --key-file=${HOME}/gcp-key.json
-          if [ -z "$GCP_PROJECT_ID" ]; then
-            echo "GCP_PROJECT_ID not set, skipping project config."
-            exit 0
-          fi
           gcloud config set project "$GCP_PROJECT_ID"
       - name: Deploy to App Engine
         run: |
