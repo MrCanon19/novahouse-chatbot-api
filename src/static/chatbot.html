@@ -202,8 +202,12 @@
             top: 0;
             width: 100%;
             height: 100%;
+            padding: 16px;
             background-color: rgba(0,0,0,0.7);
             animation: fadeIn 0.3s;
+            align-items: center;
+            justify-content: center;
+            overflow-y: auto;
         }
 
         .rodo-content {
@@ -462,14 +466,15 @@
                         </label>
 
                         <div class="nh-consent__buttons">
-                            <button id="nhConsentAccept" class="nh-btn nh-btn--primary" disabled>Akceptuję i rozpoczynam rozmowę</button>
-                            <button id="nhConsentDecline" class="nh-btn nh-btn--secondary">Nie zgadzam się</button>
+                            <button type="button" id="nhConsentAccept" class="nh-btn nh-btn--primary" disabled>Akceptuję i rozpoczynam rozmowę</button>
+                            <button type="button" id="nhConsentDecline" class="nh-btn nh-btn--secondary">Nie zgadzam się</button>
                         </div>
                     </div>
                 </div>
 
                 <style>
                     .nh-consent {
+                        pointer-events: auto;
                         max-width: 1080px;
                         margin: 20px auto 32px;
                         padding: 20px 22px 18px;
@@ -635,33 +640,6 @@
                     }
                 </style>
 
-                <script>
-                    // Aktywacja przycisku po zaznaczeniu checkboxa
-                    const nhCheckbox = document.getElementById('nhConsentCheckbox');
-                    const nhAccept = document.getElementById('nhConsentAccept');
-                    const nhDecline = document.getElementById('nhConsentDecline');
-
-                    if (nhCheckbox && nhAccept) {
-                        nhCheckbox.addEventListener('change', () => {
-                            nhAccept.disabled = !nhCheckbox.checked;
-                        });
-                    }
-
-                    if (nhAccept) {
-                        nhAccept.addEventListener('click', () => {
-                            // tutaj możesz np. ukryć panel i pokazać / odblokować chat
-                            // document.querySelector('.nh-consent').style.display = 'none';
-                            // np. odblokowanie pola input w chatbocie
-                        });
-                    }
-
-                    if (nhDecline) {
-                        nhDecline.addEventListener('click', () => {
-                            // np. przekierowanie na stronę główną albo komunikat
-                            // window.location.href = '/';
-                        });
-                    }
-                </script>
     </div>
 
     <div class="chat-container">
@@ -827,9 +805,9 @@ Jak mogę Ci pomóc?</div>
         // RODO Modal Logic
         document.addEventListener('DOMContentLoaded', function() {
             const modal = document.getElementById('rodoModal');
-            const checkbox = document.getElementById('rodoCheckbox');
-            const acceptBtn = document.getElementById('rodoAccept');
-            const declineBtn = document.getElementById('rodoDecline');
+            const checkbox = document.getElementById('nhConsentCheckbox');
+            const acceptBtn = document.getElementById('nhConsentAccept');
+            const declineBtn = document.getElementById('nhConsentDecline');
 
             // Inicjalizacja chatbota
             const chatbot = new ChatBot();
@@ -837,35 +815,43 @@ Jak mogę Ci pomóc?</div>
             // Sprawdź czy użytkownik już zaakceptował RODO
             const rodoAccepted = localStorage.getItem('rodoAccepted');
 
-            if (!rodoAccepted) {
-                modal.style.display = 'block';
-            } else {
+            if (modal && !rodoAccepted) {
+                modal.style.display = 'flex';
+            } else if (rodoAccepted) {
                 addRodoBanner();
             }
 
-            // Enable/disable przycisk w zależności od checkboxa
-            checkbox.addEventListener('change', function() {
-                acceptBtn.disabled = !this.checked;
-            });
+            if (checkbox && acceptBtn) {
+                const syncAcceptState = () => {
+                    acceptBtn.disabled = !checkbox.checked;
+                };
 
-            // Akceptacja
-            acceptBtn.addEventListener('click', function() {
-                if (checkbox.checked) {
-                    localStorage.setItem('rodoAccepted', 'true');
-                    localStorage.setItem('rodoAcceptedDate', new Date().toISOString());
-                    modal.style.display = 'none';
-                    addRodoBanner();
+                checkbox.addEventListener('change', syncAcceptState);
+                syncAcceptState();
+            }
 
-                    // Zapisz zgodę w backend
-                    saveRodoConsent(chatbot.sessionId);
-                }
-            });
+            if (acceptBtn) {
+                acceptBtn.addEventListener('click', function() {
+                    if (checkbox && checkbox.checked) {
+                        localStorage.setItem('rodoAccepted', 'true');
+                        localStorage.setItem('rodoAcceptedDate', new Date().toISOString());
+                        if (modal) {
+                            modal.style.display = 'none';
+                        }
+                        addRodoBanner();
 
-            // Odrzucenie
-            declineBtn.addEventListener('click', function() {
-                alert('Bez zgody na przetwarzanie danych nie możemy kontynuować rozmowy. Przekierowujemy na stronę główną.');
-                window.location.href = 'https://novahouse.pl';
-            });
+                        // Zapisz zgodę w backend
+                        saveRodoConsent(chatbot.sessionId);
+                    }
+                });
+            }
+
+            if (declineBtn) {
+                declineBtn.addEventListener('click', function() {
+                    alert('Bez zgody na przetwarzanie danych nie możemy kontynuować rozmowy. Przekierowujemy na stronę główną.');
+                    window.location.href = 'https://novahouse.pl';
+                });
+            }
 
             // Funkcja zapisująca zgodę w backend
             function saveRodoConsent(sessionId) {
