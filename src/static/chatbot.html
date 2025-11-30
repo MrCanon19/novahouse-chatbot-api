@@ -348,7 +348,7 @@
                 height: 100vh;
                 border-radius: 0;
             }
-            
+
             .message-content {
                 max-width: 85%;
             }
@@ -370,34 +370,34 @@
     <div id="rodoModal" class="rodo-modal">
         <div class="rodo-content">
             <h2>🔒 Ochrona Danych Osobowych</h2>
-            
+
             <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px; margin-bottom: 15px; border-radius: 5px;">
                 <strong>⚠️ WAŻNE:</strong> Rozmawiasz z <strong>automatycznym systemem AI (chatbotem)</strong>, nie z człowiekiem.
             </div>
-            
+
             <p><strong>Zanim rozpoczniesz rozmowę, musisz wiedzieć:</strong></p>
             <ul>
-                <li>🤖 <strong>Chatbot AI:</strong> To zautomatyzowany system oparty na sztucznej inteligencji (Google Gemini AI)</li>
+                <li>🤖 <strong>Chatbot AI:</strong> To zautomatyzowany system oparty na sztucznej inteligencji NovaHouse</li>
                 <li>👤 <strong>Administrator danych:</strong> NovaHouse ponosi pełną odpowiedzialność za przetwarzanie Twoich danych</li>
                 <li>📝 <strong>Zbieramy:</strong> treść rozmowy, dane kontaktowe (jeśli je podasz), adres IP, czas rozmowy</li>
                 <li>🔄 <strong>Udostępniamy dane:</strong>
                     <ul style="margin-top: 5px;">
                         <li>Monday.com (system CRM) - na podstawie umowy powierzenia</li>
-                        <li>Google Gemini AI - przetwarzanie zapytań (bez danych osobowych identyfikujących)</li>
+                        <li>System AI NovaHouse - przetwarzanie zapytań (bez danych osobowych identyfikujących)</li>
                     </ul>
                 </li>
                 <li>🌍 <strong>Transfer danych:</strong> Dane mogą być przekazywane poza EOG (Google, Monday.com) z odpowiednimi zabezpieczeniami</li>
                 <li>⏱️ <strong>Okres przechowywania:</strong> Do momentu wycofania zgody lub realizacji celu</li>
                 <li>🛡️ <strong>Twoje prawa:</strong> dostęp, sprostowanie, usunięcie, ograniczenie, przenoszenie, sprzeciw</li>
             </ul>
-            
+
             <div style="background: #e8f4f8; padding: 10px; margin: 15px 0; border-radius: 5px; font-size: 13px;">
                 <strong>📋 Podstawy prawne:</strong><br>
                 • RODO (Rozporządzenie UE 2016/679)<br>
                 • AI Act (Rozporządzenie UE 2024/1689) - systemy AI niskiego ryzyka<br>
                 • Twoja dobrowolna zgoda (Art. 6 ust. 1 lit. a RODO)
             </div>
-            
+
             <label class="checkbox-container">
                 <input type="checkbox" id="rodoCheckbox">
                 <span>Oświadczam, że:<br>
@@ -405,12 +405,12 @@
                 • Zapoznałem się z <a href="/polityka-prywatnosci.html" target="_blank">Polityką Prywatności</a><br>
                 • Zgadzam się na przetwarzanie moich danych osobowych przez NovaHouse zgodnie z RODO</span>
             </label>
-            
+
             <div class="rodo-buttons">
                 <button id="rodoAccept" class="btn-accept" disabled>Akceptuję i rozpocznij chat</button>
                 <button id="rodoDecline" class="btn-decline">Nie zgadzam się</button>
             </div>
-            
+
             <p class="rodo-info-small">
                 <strong>Administrator danych:</strong> NovaHouse, email: m.kubiak@novahouse.pl<br>
                 <strong>Inspektor Ochrony Danych:</strong> kontakt przez m.kubiak@novahouse.pl<br>
@@ -425,12 +425,12 @@
             <h1>🏠 NovaHouse Chatbot</h1>
             <p>Twój asystent w wykańczaniu wnętrz</p>
         </div>
-        
+
         <div class="chat-messages" id="chatMessages">
             <div class="welcome-message">
                 Witaj! Jestem Twoim asystentem NovaHouse. Jak mogę Ci pomóc?
             </div>
-            
+
             <div class="message bot">
                 <div class="avatar bot-avatar">🏠</div>
                 <div class="message-content">Cześć! 👋 Witaj w NovaHouse!
@@ -444,7 +444,7 @@ Jestem Twoim asystentem i pomogę Ci w:
 Jak mogę Ci pomóc?</div>
             </div>
         </div>
-        
+
         <div class="chat-input">
             <input type="text" id="messageInput" placeholder="Napisz wiadomość..." maxlength="500">
             <button id="sendButton">Wyślij</button>
@@ -458,10 +458,10 @@ Jak mogę Ci pomóc?</div>
                 this.messageInput = document.getElementById('messageInput');
                 this.sendButton = document.getElementById('sendButton');
                 this.chatMessages = document.getElementById('chatMessages');
-                
+
                 this.initEventListeners();
             }
-            
+
             generateSessionId() {
                 // Sprawdź czy istnieje zapisana sesja
                 let sessionId = localStorage.getItem('chatbot_session_id');
@@ -471,7 +471,7 @@ Jak mogę Ci pomóc?</div>
                 }
                 return sessionId;
             }
-            
+
             initEventListeners() {
                 this.sendButton.addEventListener('click', () => this.sendMessage());
                 this.messageInput.addEventListener('keypress', (e) => {
@@ -480,19 +480,19 @@ Jak mogę Ci pomóc?</div>
                     }
                 });
             }
-            
+
             async sendMessage() {
                 const message = this.messageInput.value.trim();
                 if (!message) return;
-                
+
                 // Dodaj wiadomość użytkownika
                 this.addMessage(message, 'user');
                 this.messageInput.value = '';
                 this.sendButton.disabled = true;
-                
+
                 // Pokaż wskaźnik pisania
                 this.showTypingIndicator();
-                
+
                 try {
                     const response = await fetch('/api/chatbot/chat', {
                         method: 'POST',
@@ -504,9 +504,9 @@ Jak mogę Ci pomóc?</div>
                             session_id: this.sessionId
                         })
                     });
-                    
+
                     const data = await response.json();
-                    
+
                     if (response.ok) {
                         // Ukryj wskaźnik pisania i dodaj odpowiedź bota
                         this.hideTypingIndicator();
@@ -523,87 +523,87 @@ Jak mogę Ci pomóc?</div>
                     this.sendButton.disabled = false;
                 }
             }
-            
+
             addMessage(content, sender) {
                 const messageDiv = document.createElement('div');
                 messageDiv.className = `message ${sender}`;
-                
+
                 const avatar = document.createElement('div');
                 avatar.className = `avatar ${sender}-avatar`;
                 avatar.textContent = sender === 'bot' ? '🏠' : 'U';
-                
+
                 const messageContent = document.createElement('div');
                 messageContent.className = 'message-content';
                 messageContent.textContent = content;
-                
+
                 messageDiv.appendChild(avatar);
                 messageDiv.appendChild(messageContent);
-                
+
                 this.chatMessages.appendChild(messageDiv);
                 this.scrollToBottom();
             }
-            
+
             showTypingIndicator() {
                 const typingDiv = document.createElement('div');
                 typingDiv.className = 'message bot';
                 typingDiv.id = 'typingIndicator';
-                
+
                 const avatar = document.createElement('div');
                 avatar.className = 'avatar bot-avatar';
                 avatar.textContent = '🏠';
-                
+
                 const typingContent = document.createElement('div');
                 typingContent.className = 'typing-indicator';
                 typingContent.style.display = 'block';
-                
+
                 const typingDots = document.createElement('div');
                 typingDots.className = 'typing-dots';
                 typingDots.innerHTML = '<span></span><span></span><span></span>';
-                
+
                 typingContent.appendChild(typingDots);
                 typingDiv.appendChild(avatar);
                 typingDiv.appendChild(typingContent);
-                
+
                 this.chatMessages.appendChild(typingDiv);
                 this.scrollToBottom();
             }
-            
+
             hideTypingIndicator() {
                 const typingIndicator = document.getElementById('typingIndicator');
                 if (typingIndicator) {
                     typingIndicator.remove();
                 }
             }
-            
+
             scrollToBottom() {
                 this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
             }
         }
-        
+
         // RODO Modal Logic
         document.addEventListener('DOMContentLoaded', function() {
             const modal = document.getElementById('rodoModal');
             const checkbox = document.getElementById('rodoCheckbox');
             const acceptBtn = document.getElementById('rodoAccept');
             const declineBtn = document.getElementById('rodoDecline');
-            
+
             // Inicjalizacja chatbota
             const chatbot = new ChatBot();
-            
+
             // Sprawdź czy użytkownik już zaakceptował RODO
             const rodoAccepted = localStorage.getItem('rodoAccepted');
-            
+
             if (!rodoAccepted) {
                 modal.style.display = 'block';
             } else {
                 addRodoBanner();
             }
-            
+
             // Enable/disable przycisk w zależności od checkboxa
             checkbox.addEventListener('change', function() {
                 acceptBtn.disabled = !this.checked;
             });
-            
+
             // Akceptacja
             acceptBtn.addEventListener('click', function() {
                 if (checkbox.checked) {
@@ -611,18 +611,18 @@ Jak mogę Ci pomóc?</div>
                     localStorage.setItem('rodoAcceptedDate', new Date().toISOString());
                     modal.style.display = 'none';
                     addRodoBanner();
-                    
+
                     // Zapisz zgodę w backend
                     saveRodoConsent(chatbot.sessionId);
                 }
             });
-            
+
             // Odrzucenie
             declineBtn.addEventListener('click', function() {
                 alert('Bez zgody na przetwarzanie danych nie możemy kontynuować rozmowy. Przekierowujemy na stronę główną.');
                 window.location.href = 'https://novahouse.pl';
             });
-            
+
             // Funkcja zapisująca zgodę w backend
             function saveRodoConsent(sessionId) {
                 fetch('/api/chatbot/rodo-consent', {
@@ -639,25 +639,25 @@ Jak mogę Ci pomóc?</div>
                     console.error('Error saving RODO consent:', error);
                 });
             }
-            
+
             // Dodaj baner informacyjny w oknie chatu
             function addRodoBanner() {
                 const chatMessages = document.getElementById('chatMessages');
                 const banner = document.createElement('div');
                 banner.className = 'chat-rodo-banner';
                 banner.innerHTML = `
-                    <strong>🤖 Informacja:</strong> Rozmawiasz z automatycznym systemem AI (chatbotem), nie z człowiekiem. 
+                    <strong>🤖 Informacja:</strong> Rozmawiasz z automatycznym systemem AI (chatbotem), nie z człowiekiem.
                     Administrator danych: NovaHouse. Twoje dane są chronione zgodnie z RODO.<br>
                     <small>
-                        <a href="/polityka-prywatnosci.html" target="_blank">Polityka Prywatności</a> | 
-                        <a href="#" onclick="deleteMyData(); return false;">Usuń moje dane</a> | 
+                        <a href="/polityka-prywatnosci.html" target="_blank">Polityka Prywatności</a> |
+                        <a href="#" onclick="deleteMyData(); return false;">Usuń moje dane</a> |
                         <a href="#" onclick="showDataInfo(); return false;">Jakie dane zbieramy?</a>
                     </small>
                 `;
                 chatMessages.insertBefore(banner, chatMessages.firstChild);
             }
         });
-        
+
         // Funkcja pokazująca informacje o zbieranych danych
         function showDataInfo() {
             alert(`📊 Informacja o przetwarzanych danych:\n\n` +
@@ -678,17 +678,17 @@ Jak mogę Ci pomóc?</div>
                   `• Wniesienie sprzeciwu\n\n` +
                   `📧 Kontakt: m.kubiak@novahouse.pl`);
         }
-        
+
         // Funkcja usuwania danych użytkownika
         function deleteMyData() {
             if (confirm('Czy na pewno chcesz usunąć wszystkie swoje dane? Ta operacja jest nieodwracalna i zakończy bieżącą sesję.')) {
                 const sessionId = localStorage.getItem('chatbot_session_id');
-                
+
                 if (!sessionId) {
                     alert('Nie znaleziono danych sesji.');
                     return;
                 }
-                
+
                 fetch('/api/chatbot/delete-my-data', {
                     method: 'DELETE',
                     headers: {
