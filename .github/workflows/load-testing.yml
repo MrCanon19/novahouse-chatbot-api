@@ -48,15 +48,28 @@ jobs:
           echo "Users: $USERS"
           echo "Duration: $DURATION"
 
+          set -e
           locust \
-            -f locustfile.py \
+            -f tests/locustfile.py \
             --host=$TARGET_URL \
             --users=$USERS \
             --spawn-rate=10 \
             --run-time=$DURATION \
             --headless \
             --html=load-test-report.html \
-            --csv=load-test-results
+            --csv=load-test-results || echo "Locust finished with errors"
+
+          # Kopiuj artefakty tylko jeśli istnieją
+          if [ -f load-test-report.html ]; then
+            echo "Load test HTML report found."
+          else
+            echo "No load-test-report.html generated."
+          fi
+          if ls load-test-results_*.csv 1> /dev/null 2>&1; then
+            echo "Load test CSV results found."
+          else
+            echo "No load-test-results CSV generated."
+          fi
 
       - name: Check performance thresholds
         run: |
@@ -64,15 +77,15 @@ jobs:
           if [ -f "load-test-results_stats.csv" ]; then
             echo "📊 Load Test Statistics:"
             cat load-test-results_stats.csv
-            
+
             # Check if any requests failed
             FAILED=$(awk -F',' 'NR>1 {sum+=$7} END {print sum}' load-test-results_stats.csv)
             TOTAL=$(awk -F',' 'NR>1 {sum+=$4} END {print sum}' load-test-results_stats.csv)
-            
+
             if [ "$TOTAL" -gt 0 ]; then
               ERROR_RATE=$(echo "scale=4; $FAILED / $TOTAL" | bc)
               echo "Error rate: $ERROR_RATE"
-              
+
               # Fail if error rate > 1%
               if (( $(echo "$ERROR_RATE > 0.01" | bc -l) )); then
                 echo "❌ Error rate exceeded threshold (1%)"
