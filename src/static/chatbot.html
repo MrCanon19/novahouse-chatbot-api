@@ -962,4 +962,32 @@ Jak mogę Ci pomóc?</div>
         }
     </script>
 </body>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const nhCheckbox = document.getElementById('nhConsentCheckbox');
+    const nhAccept = document.getElementById('nhConsentAccept');
+    const nhDecline = document.getElementById('nhConsentDecline');
+
+    if (nhCheckbox && nhAccept) {
+        nhCheckbox.addEventListener('change', () => {
+            nhAccept.disabled = !nhCheckbox.checked;
+        });
+    }
+
+    if (nhAccept) {
+        nhAccept.addEventListener('click', () => {
+            // tutaj możesz np. ukryć panel i pokazać / odblokować chat
+            // document.querySelector('.nh-consent').style.display = 'none';
+            // np. odblokowanie pola input w chatbocie
+        });
+    }
+
+    if (nhDecline) {
+        nhDecline.addEventListener('click', () => {
+            // np. przekierowanie na stronę główną albo komunikat
+            // window.location.href = '/';
+        });
+    }
+});
+</script>
 </html>
