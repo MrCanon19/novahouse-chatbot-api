@@ -368,80 +368,300 @@
 <body>
     <!-- RODO Modal -->
     <div id="rodoModal" class="rodo-modal">
-        <div class="rodo-content">
-            <h2>🔒 Ochrona Danych Osobowych</h2>
-            <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px; margin-bottom: 15px; border-radius: 5px;">
-                <strong>⚠️ WAŻNE:</strong> Rozmawiasz z automatycznym systemem AI, a nie z człowiekiem.
-            </div>
-            <p><strong>Zanim rozpoczniesz rozmowę, prosimy o zapoznanie się z poniższą informacją:</strong></p>
-            <h3>🤖 Charakter systemu</h3>
-            <p>Rozmowa odbywa się z <strong>chatbotem AI</strong>. Odpowiedzi są generowane automatycznie i mogą zawierać błędy.<br>
-            System <strong>nie podejmuje decyzji wywołujących skutki prawne ani podobnie istotnych</strong>.</p>
-            <h3>👤 Administrator danych</h3>
-            <p><strong>NovaHouse</strong> — odpowiedzialna za przetwarzanie danych.<br>
-            Kontakt: <a href="mailto:m.kubiak@novahouse.pl">m.kubiak@novahouse.pl</a></p>
-            <h3>🛡️ Inspektor Ochrony Danych</h3>
-            <p>Kontakt przez: <a href="mailto:m.kubiak@novahouse.pl">m.kubiak@novahouse.pl</a></p>
-            <h3>📝 Jakie dane przetwarzamy?</h3>
-            <ul>
-                <li>treść rozmowy</li>
-                <li>dane kontaktowe, jeśli je podasz (np. imię, email, telefon)</li>
-                <li>adres IP oraz dane techniczne (np. data i czas połączenia) — w celu bezpieczeństwa i zapewnienia działania usługi</li>
-            </ul>
-            <h3>🎯 Cele przetwarzania</h3>
-            <ul>
-                <li>obsługa Twojego zapytania</li>
-                <li>utrzymanie i poprawa działania systemu AI</li>
-                <li>zapewnienie bezpieczeństwa systemu</li>
-            </ul>
-            <h3>⚖️ Podstawy prawne</h3>
-            <ul>
-                <li><strong>Art. 6 ust. 1 lit. a RODO</strong> – Twoja dobrowolna zgoda</li>
-                <li>Art. 6 ust. 1 lit. f – prawnie uzasadniony interes (bezpieczeństwo i analiza działania systemu)</li>
-            </ul>
-            <h3>🔄 Odbiorcy danych</h3>
-            <ul>
-                <li><strong>Monday.com</strong> — system CRM (na podstawie umowy powierzenia)</li>
-                <li><strong>System AI NovaHouse</strong> — przetwarzanie treści rozmów (bez identyfikujących danych osobowych)</li>
-            </ul>
-            <h3>🌍 Transfer danych poza EOG</h3>
-            <p>Dane mogą być przekazywane do USA (Google, Monday.com) z zastosowaniem wymaganych zabezpieczeń zgodnych z RODO (np. SCC).</p>
-            <h3>⏱️ Okres przechowywania</h3>
-            <p>Dane przechowujemy <strong>do czasu wycofania zgody</strong> lub zakończenia realizacji celu.</p>
-            <h3>🛡️ Twoje prawa</h3>
-            <ul>
-                <li>dostęp do danych</li>
-                <li>sprostowanie</li>
-                <li>usunięcie („prawo do bycia zapomnianym”)</li>
-                <li>ograniczenie przetwarzania</li>
-                <li>przenoszenie</li>
-                <li>sprzeciw wobec przetwarzania</li>
-                <li>wycofania zgody w dowolnym momencie</li>
-            </ul>
-            <p>Możesz skontaktować się z administratorem: <a href="mailto:m.kubiak@novahouse.pl">m.kubiak@novahouse.pl</a></p>
-            <h3>🏛️ Organ nadzorczy</h3>
-            <p>Urząd Ochrony Danych Osobowych – <a href="https://uodo.gov.pl" target="_blank">uodo.gov.pl</a></p>
-            <h3>📝 Oświadczenie</h3>
-            <label class="checkbox-container">
-                <input type="checkbox" id="rodoCheckbox">
-                <span>Oświadczam, że:<br>
-                ✔ Akceptuję i rozpoczynam rozmowę<br>
-                ✖ Nie wyrażam zgody<br>
-                • Zapoznałem się z <a href="/polityka-prywatnosci.html" target="_blank">Polityką Prywatności</a><br>
-                • Zgadzam się na przetwarzanie moich danych osobowych przez NovaHouse zgodnie z RODO</span>
-            </label>
-            <div class="rodo-buttons">
-                <button id="rodoAccept" class="btn-accept" disabled>Akceptuję i rozpocznij chat</button>
-                <button id="rodoDecline" class="btn-decline">Nie zgadzam się</button>
-            </div>
+                <!-- PANEL ZGODY RODO / AI -->
+                <div class="nh-consent">
+                    <div class="nh-consent__header">
+                        <div class="nh-consent__icon">🔒</div>
+                        <div>
+                            <h2>Ochrona danych osobowych – chatbot NovaHouse</h2>
+                            <p>
+                                Rozmawiasz z <strong>automatycznym systemem AI</strong>, a nie z człowiekiem.
+                                Odpowiedzi są generowane automatycznie i mogą zawierać błędy.
+                                System <strong>nie podejmuje decyzji wywołujących skutki prawne ani podobnie istotnych</strong>.
+                            </p>
+                        </div>
+                    </div>
 
-            <p class="rodo-info-small">
-                <strong>Administrator danych:</strong> NovaHouse, email: m.kubiak@novahouse.pl<br>
-                <strong>Inspektor Ochrony Danych:</strong> kontakt przez m.kubiak@novahouse.pl<br>
-                <strong>Organ nadzorczy:</strong> Urząd Ochrony Danych Osobowych (uodo.gov.pl)<br>
-                <strong>Więcej informacji:</strong> <a href="/polityka-prywatnosci.html" target="_blank">Polityka Prywatności</a>
-            </p>
-        </div>
+                    <div class="nh-consent__grid">
+                        <div class="nh-consent__col">
+                            <h3>Administrator danych</h3>
+                            <p>
+                                Administratorem Twoich danych osobowych jest <strong>NovaHouse</strong>.<br>
+                                Kontakt: <a href="mailto:m.kubiak@novahouse.pl">m.kubiak@novahouse.pl</a><br>
+                                Inspektor Ochrony Danych: kontakt przez ten sam adres e-mail.
+                            </p>
+
+                            <h3>Jakie dane przetwarzamy?</h3>
+                            <ul>
+                                <li>treść rozmowy w chatbotcie,</li>
+                                <li>dane kontaktowe, jeśli je podasz (np. imię, email, telefon),</li>
+                                <li>adres IP oraz dane techniczne (data i czas połączenia, informacje o przeglądarce) – w celu bezpieczeństwa i zapewnienia działania usługi.</li>
+                            </ul>
+                            <p class="nh-consent__note">
+                                Prosimy, abyś nie podawał danych wrażliwych (np. o zdrowiu, poglądach, przekonaniach religijnych).
+                            </p>
+                        </div>
+
+                        <div class="nh-consent__col">
+                            <h3>Cele i podstawy prawne</h3>
+                            <ul>
+                                <li>obsługa Twojego zapytania i komunikacja z Tobą,</li>
+                                <li>utrzymanie i poprawa działania systemu AI,</li>
+                                <li>zapewnienie bezpieczeństwa systemu i zapobieganie nadużyciom.</li>
+                            </ul>
+                            <p>Podstawy prawne:</p>
+                            <ul>
+                                <li><strong>art. 6 ust. 1 lit. a RODO</strong> – Twoja dobrowolna zgoda,</li>
+                                <li><strong>art. 6 ust. 1 lit. f RODO</strong> – prawnie uzasadniony interes administratora (bezpieczeństwo systemu, analiza i poprawa działania usługi).</li>
+                            </ul>
+
+                            <h3>Odbiorcy danych i transfer</h3>
+                            <ul>
+                                <li><strong>Monday.com</strong> – system CRM (na podstawie umowy powierzenia),</li>
+                                <li>system AI wykorzystywany przez NovaHouse – w celu przetwarzania treści rozmów.</li>
+                            </ul>
+                            <p>
+                                Dane mogą być przekazywane poza EOG (np. do USA – Google, Monday.com) przy zastosowaniu zabezpieczeń wymaganych przez RODO
+                                (m.in. standardowe klauzule umowne). Szczegóły:
+                                <a href="LINK_DO_POLITYKI_PRYWATNOSCI" target="_blank" rel="noopener">Polityka Prywatności</a>.
+                            </p>
+                        </div>
+
+                        <div class="nh-consent__col">
+                            <h3>Okres przechowywania</h3>
+                            <p>
+                                Dane przechowujemy przez okres niezbędny do obsługi Twojego zapytania oraz do czasu wycofania zgody,
+                                a następnie zgodnie z terminami przedawnienia roszczeń lub wymogami przepisów prawa.
+                            </p>
+
+                            <h3>Twoje prawa</h3>
+                            <ul>
+                                <li>dostęp do danych,</li>
+                                <li>sprostowanie,</li>
+                                <li>usunięcie („prawo do bycia zapomnianym”),</li>
+                                <li>ograniczenie przetwarzania,</li>
+                                <li>przenoszenie danych,</li>
+                                <li>sprzeciw wobec przetwarzania,</li>
+                                <li>wycofanie zgody w dowolnym momencie.</li>
+                            </ul>
+                            <p>
+                                Kontakt: <a href="mailto:m.kubiak@novahouse.pl">m.kubiak@novahouse.pl</a><br>
+                                Skarga do Prezesa UODO: <a href="https://uodo.gov.pl" target="_blank" rel="noopener">uodo.gov.pl</a>.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="nh-consent__footer">
+                        <label class="nh-consent__checkbox">
+                            <input type="checkbox" id="nhConsentCheckbox">
+                            <span>
+                                Oświadczam, że zapoznałem/am się z
+                                <a href="LINK_DO_POLITYKI_PRYWATNOSCI" target="_blank" rel="noopener">Polityką Prywatności</a>
+                                i wyrażam zgodę na przetwarzanie moich danych osobowych przez NovaHouse w celu obsługi zapytań za pośrednictwem chatbota.
+                            </span>
+                        </label>
+
+                        <div class="nh-consent__buttons">
+                            <button id="nhConsentAccept" class="nh-btn nh-btn--primary" disabled>Akceptuję i rozpoczynam rozmowę</button>
+                            <button id="nhConsentDecline" class="nh-btn nh-btn--secondary">Nie zgadzam się</button>
+                        </div>
+                    </div>
+                </div>
+
+                <style>
+                    .nh-consent {
+                        max-width: 1080px;
+                        margin: 20px auto 32px;
+                        padding: 20px 22px 18px;
+                        background: #ffffff;
+                        border-radius: 18px;
+                        border: 1px solid rgba(148,163,184,0.4);
+                        box-shadow: 0 14px 35px rgba(15,23,42,0.10);
+                        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                        font-size: 14px;
+                        color: #0f172a;
+                    }
+
+                    .nh-consent__header {
+                        display: flex;
+                        gap: 14px;
+                        align-items: flex-start;
+                        margin-bottom: 14px;
+                    }
+
+                    .nh-consent__icon {
+                        font-size: 30px;
+                        flex-shrink: 0;
+                    }
+
+                    .nh-consent__header h2 {
+                        margin: 0 0 4px;
+                        font-size: 20px;
+                    }
+
+                    .nh-consent__header p {
+                        margin: 0;
+                        font-size: 13px;
+                        color: #334155;
+                    }
+
+                    .nh-consent__grid {
+                        display: grid;
+                        grid-template-columns: repeat(3, minmax(0, 1fr));
+                        gap: 18px;
+                        margin-top: 16px;
+                        padding-top: 14px;
+                        border-top: 1px solid rgba(148,163,184,0.4);
+                    }
+
+                    .nh-consent__col h3 {
+                        margin: 0 0 4px;
+                        font-size: 14px;
+                        font-weight: 600;
+                        color: #0f172a;
+                    }
+
+                    .nh-consent__col p {
+                        margin: 0 0 8px;
+                        font-size: 13px;
+                        color: #475569;
+                        line-height: 1.5;
+                    }
+
+                    .nh-consent__col ul {
+                        margin: 4px 0 8px;
+                        padding-left: 18px;
+                    }
+
+                    .nh-consent__col li {
+                        font-size: 13px;
+                        color: #475569;
+                        line-height: 1.4;
+                    }
+
+                    .nh-consent__note {
+                        font-size: 12px;
+                        color: #64748b;
+                    }
+
+                    .nh-consent a {
+                        color: #2563eb;
+                        text-decoration: none;
+                    }
+
+                    .nh-consent a:hover {
+                        text-decoration: underline;
+                    }
+
+                    .nh-consent__footer {
+                        margin-top: 16px;
+                        padding-top: 12px;
+                        border-top: 1px solid rgba(148,163,184,0.4);
+                        display: flex;
+                        flex-direction: column;
+                        gap: 10px;
+                    }
+
+                    .nh-consent__checkbox {
+                        display: flex;
+                        align-items: flex-start;
+                        gap: 8px;
+                        font-size: 13px;
+                        color: #334155;
+                    }
+
+                    .nh-consent__checkbox input {
+                        margin-top: 2px;
+                        width: 16px;
+                        height: 16px;
+                    }
+
+                    .nh-consent__buttons {
+                        display: flex;
+                        gap: 10px;
+                        flex-wrap: wrap;
+                    }
+
+                    .nh-btn {
+                        border-radius: 999px;
+                        border: none;
+                        padding: 9px 16px;
+                        font-size: 14px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.1s ease;
+                    }
+
+                    .nh-btn--primary {
+                        background: #0f766e;
+                        color: #ffffff;
+                        box-shadow: 0 10px 25px rgba(15,118,110,0.4);
+                    }
+
+                    .nh-btn--primary:disabled {
+                        opacity: 0.5;
+                        cursor: not-allowed;
+                        box-shadow: none;
+                    }
+
+                    .nh-btn--primary:not(:disabled):hover {
+                        transform: translateY(-1px);
+                        box-shadow: 0 12px 30px rgba(15,118,110,0.5);
+                    }
+
+                    .nh-btn--secondary {
+                        background: #e2e8f0;
+                        color: #0f172a;
+                    }
+
+                    .nh-btn--secondary:hover {
+                        background: #cbd5e1;
+                    }
+
+                    @media (max-width: 900px) {
+                        .nh-consent__grid {
+                            grid-template-columns: 1fr;
+                        }
+                    }
+
+                    @media (max-width: 640px) {
+                        .nh-consent {
+                            padding: 16px 14px;
+                            border-radius: 14px;
+                        }
+                        .nh-consent__header h2 {
+                            font-size: 18px;
+                        }
+                    }
+                </style>
+
+                <script>
+                    // Aktywacja przycisku po zaznaczeniu checkboxa
+                    const nhCheckbox = document.getElementById('nhConsentCheckbox');
+                    const nhAccept = document.getElementById('nhConsentAccept');
+                    const nhDecline = document.getElementById('nhConsentDecline');
+
+                    if (nhCheckbox && nhAccept) {
+                        nhCheckbox.addEventListener('change', () => {
+                            nhAccept.disabled = !nhCheckbox.checked;
+                        });
+                    }
+
+                    if (nhAccept) {
+                        nhAccept.addEventListener('click', () => {
+                            // tutaj możesz np. ukryć panel i pokazać / odblokować chat
+                            // document.querySelector('.nh-consent').style.display = 'none';
+                            // np. odblokowanie pola input w chatbocie
+                        });
+                    }
+
+                    if (nhDecline) {
+                        nhDecline.addEventListener('click', () => {
+                            // np. przekierowanie na stronę główną albo komunikat
+                            // window.location.href = '/';
+                        });
+                    }
+                </script>
     </div>
 
     <div class="chat-container">
