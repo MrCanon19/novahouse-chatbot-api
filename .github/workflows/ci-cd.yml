@@ -143,8 +143,32 @@ jobs:
             echo "ERROR: Sekret GCP_PROJECT_ID nie jest ustawiony w repozytorium GitHub!"
             exit 1
           fi
-          echo "$GCP_SA_KEY" > ${HOME}/gcp-key.json
-          gcloud auth activate-service-account --key-file=${HOME}/gcp-key.json
+          if echo "$GCP_SA_KEY" | grep -qE '^(file://|/|~)'; then
+            echo "ERROR: Sekret GCP_SA_KEY musi zawierać treść pliku JSON (skopiuj zawartość pliku klucza serwisowego do sekretu), a nie ścieżkę: $GCP_SA_KEY"
+            exit 1
+          fi
+
+          KEY_FILE="${HOME}/gcp-key.json"
+          KEY_CONTENT="$GCP_SA_KEY"
+
+          if printf '%s' "$KEY_CONTENT" | head -c 1 | grep -q '{'; then
+            printf '%s' "$KEY_CONTENT" > "$KEY_FILE"
+          else
+            echo "$KEY_CONTENT" | base64 -d > "$KEY_FILE" 2>/dev/null || true
+          fi
+
+          python - <<'PY'
+import json, os, sys
+key_file = os.environ["KEY_FILE"]
+try:
+    with open(key_file, "r", encoding="utf-8") as f:
+        json.load(f)
+except Exception as exc:  # pragma: no cover - runtime validation
+    print("ERROR: Sekret GCP_SA_KEY musi być treścią JSON klucza serwisowego lub jego base64. Szczegół:", exc)
+    sys.exit(1)
+PY
+
+          gcloud auth activate-service-account --key-file="${HOME}/gcp-key.json"
           gcloud config set project "$GCP_PROJECT_ID"
       - name: Deploy to App Engine
         if: steps.deploy_check.outputs.should_deploy == 'true'
