@@ -105,15 +105,32 @@ jobs:
     needs: [test, lint, security]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
+      - name: Check deploy configuration
+        id: deploy_check
+        env:
+          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+        run: |
+          if [ -z "$GCP_SA_KEY" ] || [ -z "$GCP_PROJECT_ID" ]; then
+            echo "Deployment skipped: GCP_SA_KEY or GCP_PROJECT_ID secrets are not configured."
+            echo "should_deploy=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_deploy=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/checkout@v5
+        if: steps.deploy_check.outputs.should_deploy == 'true'
       - name: Set up Python
         uses: actions/setup-python@v6
+        if: steps.deploy_check.outputs.should_deploy == 'true'
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Install gcloud CLI
+        if: steps.deploy_check.outputs.should_deploy == 'true'
         run: |
             sudo apt-get update && sudo apt-get install -y google-cloud-cli
       - name: Authenticate to GCP
+        if: steps.deploy_check.outputs.should_deploy == 'true'
         env:
           GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
           GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
@@ -130,5 +147,6 @@ jobs:
           gcloud auth activate-service-account --key-file=${HOME}/gcp-key.json
           gcloud config set project "$GCP_PROJECT_ID"
       - name: Deploy to App Engine
+        if: steps.deploy_check.outputs.should_deploy == 'true'
         run: |
           gcloud app deploy app.yaml --quiet
