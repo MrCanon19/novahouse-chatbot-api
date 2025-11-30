@@ -1,0 +1,5 @@
+# Codzienny test alertu Telegram o 7:00
+0 7 * * * python3 /Users/michalmarini/Projects/manus/novahouse-chatbot-api/scripts/telegram_health_check.py
+
+# Wklej powyższy wpis do crontaba poleceniem:
+crontab -e

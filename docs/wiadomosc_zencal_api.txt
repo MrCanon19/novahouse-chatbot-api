@@ -1,0 +1,15 @@
+Szanowni Państwo,
+
+Aby w pełni uruchomić integrację z systemem rezerwacji Zencal w projekcie NovaHouse Chatbot, prosimy o dostarczenie klucza API Zencal.
+
+Instrukcja:
+1. Zaloguj się do panelu Zencal i wygeneruj swój klucz API.
+2. Przejdź do repozytorium GitHub: Settings → Secrets and variables → Actions.
+3. Dodaj nowy sekret o nazwie `ZENCAL_API_KEY` i wklej tam wartość klucza.
+
+Po dodaniu klucza integracja oraz testy automatyczne będą działać w pełni automatycznie.
+
+W razie pytań lub problemów służymy wsparciem.
+
+Pozdrawiamy,
+Zespół NovaHouse

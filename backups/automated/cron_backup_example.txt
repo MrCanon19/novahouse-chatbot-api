@@ -1,0 +1,5 @@
+# Automatyczny backup co 2 tygodnie (np. niedziela, godz. 3:00)
+0 3 * * 0 [ $(($(date +%U) % 2)) -eq 0 ] && bash /Users/michalmarini/Projects/manus/novahouse-chatbot-api/backups/automated/backup.sh
+
+# Wklej powyższy wpis do crontaba poleceniem:
+crontab -e
