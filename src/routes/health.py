@@ -8,30 +8,36 @@ from src.models.chatbot import Entity, Intent, db
 health_bp = Blueprint("health", __name__)
 APP_START_TIME = datetime.now(timezone.utc)
 
+VERSION_ENV_ORDER = [
+    "RELEASE_REVISION",
+    "COMMIT_SHA",
+    "K_REVISION",
+    "GAE_VERSION",
+    "GAE_SERVICE",
+]
+ENVIRONMENT_ENV_ORDER = ["FLASK_ENV", "APP_ENV", "ENVIRONMENT", "ENV"]
+
 
 def _get_uptime_seconds() -> int:
     return int((datetime.now(timezone.utc) - APP_START_TIME).total_seconds())
 
 
 def _get_service_version() -> str:
-    version_env_order = [
-        "RELEASE_REVISION",
-        "COMMIT_SHA",
-        "K_REVISION",
-        "GAE_VERSION",
-        "GAE_SERVICE",
-    ]
-
-    for env_name in version_env_order:
+    for env_name in VERSION_ENV_ORDER:
         value = os.getenv(env_name)
-        if value:
-            return value
+        if value and value.strip():
+            return value.strip()
 
     return "dev"
 
 
 def _get_environment_name() -> str:
-    return os.getenv("FLASK_ENV") or os.getenv("ENV") or "development"
+    for env_name in ENVIRONMENT_ENV_ORDER:
+        value = os.getenv(env_name)
+        if value and value.strip():
+            return value.strip()
+
+    return "development"
 
 
 @health_bp.route("/health", methods=["GET"])
