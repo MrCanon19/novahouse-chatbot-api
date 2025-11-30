@@ -202,8 +202,12 @@
             top: 0;
             width: 100%;
             height: 100%;
+            padding: 16px;
             background-color: rgba(0,0,0,0.7);
             animation: fadeIn 0.3s;
+            align-items: center;
+            justify-content: center;
+            overflow-y: auto;
         }
 
         .rodo-content {
@@ -462,14 +466,15 @@
                         </label>
 
                         <div class="nh-consent__buttons">
-                            <button id="nhConsentAccept" class="nh-btn nh-btn--primary" disabled>Akceptuję i rozpoczynam rozmowę</button>
-                            <button id="nhConsentDecline" class="nh-btn nh-btn--secondary">Nie zgadzam się</button>
+                            <button type="button" id="nhConsentAccept" class="nh-btn nh-btn--primary" disabled>Akceptuję i rozpoczynam rozmowę</button>
+                            <button type="button" id="nhConsentDecline" class="nh-btn nh-btn--secondary">Nie zgadzam się</button>
                         </div>
                     </div>
                 </div>
 
                 <style>
                     .nh-consent {
+                        pointer-events: auto;
                         max-width: 1080px;
                         margin: 20px auto 32px;
                         padding: 20px 22px 18px;
@@ -811,7 +816,7 @@ Jak mogę Ci pomóc?</div>
             const rodoAccepted = localStorage.getItem('rodoAccepted');
 
             if (modal && !rodoAccepted) {
-                modal.style.display = 'block';
+                modal.style.display = 'flex';
             } else if (rodoAccepted) {
                 addRodoBanner();
             }
