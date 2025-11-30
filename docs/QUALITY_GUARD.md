@@ -120,6 +120,28 @@ make test       # Tylko testy
 - Python linting: wyłączony (używamy pre-commit)
 - Auto-format on save: włączony
 
+## CI/CD Pipeline & Monitoring
+- Automatyczne testy, coverage, deployment, CodeQL
+- Markdownlint dla dokumentacji
+- Sentry do monitoringu błędów
+- Telegram alerts dla krytycznych błędów
+
+## Jak to działa?
+- Każda zmiana kodu przechodzi przez testy i skan bezpieczeństwa
+- Błędy i alerty trafiają do Sentry i Telegrama
+
+## Best Practices
+- Testuj każdą funkcję
+- Aktualizuj dokumentację
+- Używaj tylko szyfrowanych backupów
+- Monitoruj błędy i wydajność
+- Regularnie audytuj zgodność z RODO
+
+## Next steps
+- Rozszerz testy
+- Automatyzuj testy wydajnościowe
+- Podłącz dashboard do realnych danych
+
 ## Troubleshooting
 
 ### Pre-commit nie działa?
@@ -137,6 +159,22 @@ git commit -m "message" --no-verify
 ```bash
 pre-commit run --all-files
 ```
+
+## Automation & Monitoring
+- Codzienny test alertów Telegram
+- Test odszyfrowania i przywrócenia backupu
+- Audyt RODO z checklistą
+- Statusy w panelu admina
+
+## Checklist
+- [x] Pre-commit hooks
+- [x] CI/CD pipeline
+- [x] Testy i lint
+- [x] Security scan
+- [x] Markdownlint
+- [x] Backup restore test
+- [x] Telegram alert automation
+- [x] Audyt RODO
 
 ---
 

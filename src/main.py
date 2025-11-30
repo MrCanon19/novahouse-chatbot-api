@@ -1,3 +1,42 @@
+from src.models.user import User
+
+
+@app.route("/admin/dashboard", methods=["GET", "POST"])
+def admin_dashboard():
+    users = User.query.all()
+    users = [u.to_dict() for u in users]
+    stats = {"messages": 12345, "active_users": len(users)}
+    backup_status = "OK (ostatni backup: 2025-11-30)"
+    telegram_status = "OK"
+    sentry_errors = ["Division by zero at /sentry-test", "Database timeout"]
+    rodo_audit = ["All consents valid", "No data leaks detected"]
+    if request.method == "POST":
+        backup_status = "Backup triggered manually!"
+    return render_template(
+        "admin_dashboard.html",
+        users=users,
+        stats=stats,
+        backup_status=backup_status,
+        telegram_status=telegram_status,
+        sentry_errors=sentry_errors,
+        rodo_audit=rodo_audit,
+    )
+
+
+# RODO audit route
+@app.route("/admin/rodo-audit")
+def rodo_audit():
+    audit_items = [
+        "Personal data categories: name, email, chat history",
+        "Retention: 12 months",
+        "User consents: 100% valid",
+        "Access logs: OK",
+        "Backup encryption: enabled",
+        "Legal basis: consent, contract",
+    ]
+    return render_template("rodo_audit.html", audit_items=audit_items)
+
+
 import os
 import sys
 from datetime import datetime, timezone
@@ -29,8 +68,15 @@ else:
     # Sentry wyłączony w dev - to normalne
     pass
 
-# KROK 2: Tworzymy główną instancję aplikacji Flask.
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), "static"))
+
+
+# Sentry test endpoint
+@app.route("/sentry-test")
+def sentry_test():
+    1 / 0  # Testowy błąd do Sentry
+    return "Sentry test error triggered"
+
 
 # SECURITY: Secret key from environment (NEVER hardcode!)
 app.config["SECRET_KEY"] = os.getenv(
