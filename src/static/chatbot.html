@@ -457,10 +457,10 @@
 
                     <div class="nh-consent__footer">
                         <label class="nh-consent__checkbox">
-                            <input type="checkbox" id="nhConsentCheckbox">
+                                <input type="checkbox" id="rodoCheckbox">
                             <span>
                                 Oświadczam, że zapoznałem/am się z
-                                <a href="LINK_DO_POLITYKI_PRYWATNOSCI" target="_blank" rel="noopener">Polityką Prywatności</a>
+                                    <a href="LINK_DO_POLITYKI_PRYWATNOSCI" target="_blank" rel="noopener">Polityką Prywatności</a>
                                 i wyrażam zgodę na przetwarzanie moich danych osobowych przez NovaHouse w celu obsługi zapytań za pośrednictwem chatbota.
                             </span>
                         </label>
@@ -639,8 +639,7 @@
                         }
                     }
                 </style>
-
-    </div>
+            </div>
 
     <div class="chat-container">
         <div class="chat-header">
@@ -805,7 +804,7 @@ Jak mogę Ci pomóc?</div>
         // RODO Modal Logic
         document.addEventListener('DOMContentLoaded', function() {
             const modal = document.getElementById('rodoModal');
-            const checkbox = document.getElementById('nhConsentCheckbox');
+            const checkbox = document.getElementById('rodoCheckbox');
             const acceptBtn = document.getElementById('nhConsentAccept');
             const declineBtn = document.getElementById('nhConsentDecline');
 
@@ -948,32 +947,4 @@ Jak mogę Ci pomóc?</div>
         }
     </script>
 </body>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const nhCheckbox = document.getElementById('nhConsentCheckbox');
-    const nhAccept = document.getElementById('nhConsentAccept');
-    const nhDecline = document.getElementById('nhConsentDecline');
-
-    if (nhCheckbox && nhAccept) {
-        nhCheckbox.addEventListener('change', () => {
-            nhAccept.disabled = !nhCheckbox.checked;
-        });
-    }
-
-    if (nhAccept) {
-        nhAccept.addEventListener('click', () => {
-            // tutaj możesz np. ukryć panel i pokazać / odblokować chat
-            // document.querySelector('.nh-consent').style.display = 'none';
-            // np. odblokowanie pola input w chatbocie
-        });
-    }
-
-    if (nhDecline) {
-        nhDecline.addEventListener('click', () => {
-            // np. przekierowanie na stronę główną albo komunikat
-            // window.location.href = '/';
-        });
-    }
-});
-</script>
 </html>
