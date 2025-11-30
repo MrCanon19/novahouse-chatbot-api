@@ -4,7 +4,7 @@
 
 ## 🎯 Cel Refactoringu
 
-Poprawienie struktury kodu chatbota poprzez wprowadzenie:
+- Poprawienie struktury kodu chatbota poprzez wprowadzenie:
 - **State Machine** - jasny flow konwersacji
 - **Validation** - sanityzacja i walidacja danych użytkownika
 - **Retry Logic** - odporność na błędy integracji zewnętrznych
@@ -17,31 +17,40 @@ Poprawienie struktury kodu chatbota poprzez wprowadzenie:
 
 ### 1. **State Machine** (`src/services/conversation_state_machine.py`)
 
-#### Stany Konwersacji:
+## 📦 Nowe Moduły
+
+### 1. **State Machine** (`src/services/conversation_state_machine.py`)
+
+#### Stany Konwersacji
+
 ```python
 GREETING          → Początek, brak danych
 COLLECTING_INFO   → Zbieranie: pakiet, metraż, miasto
 QUALIFYING        → Ma zainteresowanie, zbiera kontakt
 CONFIRMING        → Wszystkie dane, czeka na potwierdzenie
 CLOSED            → Lead utworzony lub rozmowa porzucona
+
 ```
 
-#### Dozwolone Przejścia:
+#### Dozwolone Przejścia
+
 ```
 GREETING → COLLECTING_INFO, CLOSED
 COLLECTING_INFO → QUALIFYING, GREETING, CLOSED
 QUALIFYING → CONFIRMING, COLLECTING_INFO, CLOSED
 CONFIRMING → CLOSED, QUALIFYING
 CLOSED → (terminal state)
+
 ```
 
-#### Użycie:
+#### Użycie
+
 ```python
 from src.services.conversation_state_machine import ConversationStateMachine, ConversationState
-
 sm = ConversationStateMachine()
 current_state = sm.determine_state(context_memory)
 success, error = sm.transition(ConversationState.QUALIFYING)
+
 ```
 
 ---
@@ -50,15 +59,19 @@ success, error = sm.transition(ConversationState.QUALIFYING)
 
 Waliduje i sanityzuje dane użytkownika:
 
-#### Validowane Pola:
+#### Validowane Pola
+
 - **Email**: format RFC 5322, lowercase, max 100 znaków
 - **Phone**: polski format, normalizacja do `+48XXXXXXXXX`
 - **City**: major Polish cities, fuzzy matching, title case
 - **Square Meters**: range 15-500m²
 - **Package**: Express, Comfort, Premium, etc.
 - **Name**: min 2 znaki, max 100, must contain letters
+- **Package**: Express, Comfort, Premium, etc.
+- **Name**: min 2 znaki, max 100, must contain letters
 
-#### Przykład:
+#### Przykład
+
 ```python
 from src.services.context_validator import ContextValidator
 
@@ -78,6 +91,9 @@ valid, sanitized, errors = validator.validate_context({
 #     "square_meters": 60
 # }
 # errors = {}
+
+
+
 ```
 
 ---
@@ -86,14 +102,17 @@ valid, sanitized, errors = validator.validate_context({
 
 Eksponencjalny backoff dla integracji zewnętrznych:
 
-#### Funkcje:
+#### Funkcje
+
 - `@retry_with_backoff` - uniwersalny dekorator
 - `@retry_monday_api` - retry dla Monday.com (3 próby, 2s delay)
 - `@retry_openai_api` - retry dla OpenAI (2 próby, 1s delay)
 - `@retry_email_send` - retry dla email (3 próby, 1.5s delay)
 
-#### Failed Operations Queue:
+#### Failed Operations Queue
+
 Przechowuje nieudane operacje do późniejszego retry:
+
 ```python
 from src.services.retry_handler import failed_operations
 
@@ -102,9 +121,13 @@ failed_operations.add("monday_lead", lead_data, "Connection timeout")
 
 # Retry wszystkie
 success, failed = failed_operations.retry_all(max_attempts=3)
+
+
+
 ```
 
-#### Przykład użycia:
+#### Przykład użycia
+
 ```python
 from src.services.retry_handler import retry_monday_api
 
@@ -112,13 +135,17 @@ from src.services.retry_handler import retry_monday_api
 def create_monday_lead(data):
     monday = MondayClient()
     return monday.create_lead_item(data)
+
+
+
 ```
 
 ---
 
 ### 4. **Rate Limiter** (`src/services/rate_limiter.py`)
 
-#### Simple Rate Limiter:
+#### Simple Rate Limiter
+
 ```python
 from src.services.rate_limiter import rate_limiter
 
@@ -132,10 +159,15 @@ allowed, retry_after = rate_limiter.check_rate_limit(
 
 if not allowed:
     return jsonify({"error": f"Rate limit. Retry after {retry_after}s"}), 429
+
+
+
 ```
 
-#### Conversation Rate Limiter:
+#### Conversation Rate Limiter
+
 Wykrywa spam patterns:
+
 ```python
 from src.services.rate_limiter import conversation_limiter
 
@@ -147,6 +179,9 @@ is_spam, reason = conversation_limiter.is_spam(session_id, message)
 # - Duplicate message spam (3x ta sama)
 # - Repeated short messages (<3 chars)
 # - Identical messages repeated (3x z rzędu)
+
+
+
 ```
 
 ---
@@ -155,7 +190,8 @@ is_spam, reason = conversation_limiter.is_spam(session_id, message)
 
 Nowy, modularny handler dla wiadomości:
 
-#### Flow:
+#### Flow
+
 ```
 1. Rate limiting & spam detection
 2. Find/create conversation
@@ -167,20 +203,28 @@ Nowy, modularny handler dla wiadomości:
 8. Handle state transitions
 9. Save bot response
 10. Update context & commit
+
+
+
 ```
 
-#### Nowa Hierarchia Odpowiedzi:
+#### Nowa Hierarchia Odpowiedzi
+
 ```
 1. Booking Intent (najwyższy priorytet)
 2. Standard FAQ (szybkie, bez API)
 3. OpenAI GPT (WCZEŚNIEJ - lepsza jakość)
 4. Learned FAQ (fallback)
 5. Default Response (ostatnia deska ratunku)
+
+
+
 ```
 
 **ZMIANA**: GPT jest teraz **#3** zamiast **#4**. To znacznie poprawia jakość odpowiedzi.
 
-#### Użycie:
+#### Użycie
+
 ```python
 from src.services.message_handler import message_handler
 
@@ -201,6 +245,7 @@ result = message_handler.process_message(user_message, session_id)
 ### `/api/chatbot/chat` (POST)
 
 **PRZED:**
+
 ```python
 @chatbot_bp.route("/chat", methods=["POST"])
 def chat():
@@ -209,6 +254,7 @@ def chat():
 ```
 
 **PO:**
+
 ```python
 @chatbot_bp.route("/chat", methods=["POST"])
 def chat():
@@ -227,36 +273,43 @@ def chat():
 ## ✅ Co Zostało Naprawione
 
 ### 1. ✅ **State Machine - Flow jest teraz jasny**
+
 - Zdefiniowane 5 stanów: GREETING → COLLECTING_INFO → QUALIFYING → CONFIRMING → CLOSED
 - Validacja transitions (nie można przeskoczyć stanów)
 - Auto-determination stanu na podstawie context_memory
 
 ### 2. ✅ **Modularność - process_chat_message podzielone**
+
 - **PRZED**: 400+ linii w jednej funkcji
 - **PO**: 5 modułów, każdy <200 linii
 - Łatwiejsze testowanie i maintenance
 
 ### 3. ✅ **Retry Logic - Odporność na błędy**
+
 - Exponential backoff dla Monday.com, OpenAI, Email
 - Failed operations queue dla późniejszego retry
 - Configurable retry policy
 
 ### 4. ✅ **Context Validation - Czyste dane**
+
 - Walidacja email, phone, city, sqm, package, name
 - Sanityzacja (lowercase email, normalized phone, title case city)
 - Graceful degradation (keep old value if validation fails)
 
 ### 5. ✅ **Rate Limiting - Ochrona przed spamem**
+
 - 10 msg/min per session
 - 100 msg/hour per IP
 - Spam pattern detection (duplicates, rapid fire, identical messages)
 
 ### 6. ✅ **GPT wcześniej w hierarchii**
+
 - **PRZED**: FAQ → Learned FAQ → GPT → Fallback
 - **PO**: FAQ → **GPT** → Learned FAQ → Fallback
 - Lepsza jakość odpowiedzi, mniej generic fallbacks
 
 ### 7. ✅ **Lead Scoring (statyczny nadal, ale gotowy do ML)**
+
 - Moduł message_handler przygotowany do podłączenia ML modelu
 - TODO: `src/services/lead_scoring_ml.py` (następny krok)
 
@@ -267,12 +320,14 @@ def chat():
 Nowy plik: `tests/test_refactoring.py`
 
 Testuje wszystkie nowe moduły:
+
 - `TestContextValidator` - 9 testów
 - `TestConversationStateMachine` - 10 testów  
 - `TestRateLimiter` - 3 testy
 - `TestRetryLogic` - 2 testy
 
 **Uruchomienie:**
+
 ```bash
 PYTHONPATH=. python3 tests/test_refactoring.py
 ```
@@ -293,7 +348,8 @@ PYTHONPATH=. python3 tests/test_refactoring.py
 
 ## 🚀 Deployment
 
-### Lokalne Testy:
+### Lokalne Testy
+
 ```bash
 # 1. Test importów
 python3 -c "from src.services.message_handler import message_handler; print('✅ OK')"
@@ -313,14 +369,16 @@ print(sm.current_state)
 "
 ```
 
-### Deploy na GAE:
+### Deploy na GAE
+
 ```bash
 git add src/services/ src/routes/chatbot.py
 git commit -m "feat: Major refactoring - state machine, validation, retry logic"
 gcloud app deploy --quiet
 ```
 
-### Weryfikacja po Deploy:
+### Weryfikacja po Deploy
+
 ```bash
 # Test chat endpoint z rate limitingiem
 for i in {1..15}; do
@@ -337,17 +395,20 @@ done
 
 ## 📝 TODO - Następne Kroki
 
-### Priorytet 1:
+### Priorytet 1
+
 - [ ] ML-based Lead Scoring (`src/services/lead_scoring_ml.py`)
 - [ ] Abandoned conversation follow-up (email po 24h)
 - [ ] Dashboard dla A/B testing i competitive intel
 
-### Priorytet 2:
+### Priorytet 2
+
 - [ ] Redis-backed rate limiter (zamiast in-memory)
 - [ ] Celery task queue dla retry logic
 - [ ] WebSocket support w message_handler
 
-### Priorytet 3:
+### Priorytet 3
+
 - [ ] Context memory persistence (save to DB)
 - [ ] Conversation analytics dashboard
 - [ ] A/B testing auto-winner selection
@@ -366,14 +427,18 @@ done
 ## 📚 Dokumentacja API
 
 ### MessageHandler.process_message()
+
 ```python
 def process_message(user_message: str, session_id: str) -> Dict
 ```
+
 **Args:**
+
 - `user_message`: User's message text
 - `session_id`: Session identifier
 
 **Returns:**
+
 ```python
 {
     "response": str,           # Bot response
@@ -384,6 +449,7 @@ def process_message(user_message: str, session_id: str) -> Dict
 ```
 
 **Errors:**
+
 ```python
 {
     "error": str,             # Error message
@@ -395,9 +461,10 @@ def process_message(user_message: str, session_id: str) -> Dict
 
 ## 👥 Dla Zespołu
 
-### Jak używać nowych modułów:
+### Jak używać nowych modułów
 
 **Context Validation:**
+
 ```python
 from src.services.context_validator import ContextValidator
 
@@ -408,6 +475,7 @@ if not valid:
 ```
 
 **State Machine:**
+
 ```python
 from src.services.conversation_state_machine import ConversationStateMachine
 
@@ -417,6 +485,7 @@ print(f"Current state: {state.value}")
 ```
 
 **Retry Logic:**
+
 ```python
 from src.services.retry_handler import retry_monday_api
 
@@ -427,6 +496,7 @@ def my_function():
 ```
 
 **Rate Limiting:**
+
 ```python
 from src.services.rate_limiter import rate_limiter
 
@@ -440,6 +510,7 @@ allowed, retry_after = rate_limiter.check_rate_limit(
 ## 🎓 Code Quality
 
 Pre-commit checks wszystkie przechodzą:
+
 - ✅ black (formatting)
 - ✅ isort (imports)
 - ✅ autoflake (unused imports)
@@ -455,6 +526,7 @@ Pre-commit checks wszystkie przechodzą:
 ## 📞 Support
 
 Pytania? Problemy?
+
 - Sprawdź logi: `gcloud app logs tail`
 - Test lokalnie: `python3 tests/test_refactoring.py`
 - Debug state: Dodaj `print(sm.get_state_summary())`
