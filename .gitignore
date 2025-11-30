@@ -33,7 +33,9 @@ app.yaml.prod
 *.secret.yaml
 
 # GCP & Backups
-backups/
+backups/*
+!backups/automated/
+!backups/automated/*.gpg
 *.backup
 *.bak
 

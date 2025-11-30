@@ -44,6 +44,7 @@ Dokumentacja poszczególnych feature'ów:
 - **[Redis Setup](features/REDIS_SETUP.md)** - Konfiguracja Redis
 - **[Swagger Setup](features/SWAGGER_SETUP.md)** - Dokumentacja API (Swagger)
 - **[Docker](features/DOCKER.md)** - Konteneryzacja
+- **[Zencal Integration](features/ZENCAL_INTEGRATION.md)** - Integracja z Zencal
 
 ### 🔒 Bezpieczeństwo (`security/`)
 
@@ -227,14 +228,14 @@ git push
 | -------------- | ------ | ------------ | ----------- |
 | Przewodniki    | 7      | ✅ Kompletne | 100%        |
 | Wdrożenie      | 4      | ✅ Kompletne | 100%        |
-| Features       | 7      | ✅ Kompletne | 100%        |
+| Features       | 8      | ✅ Kompletne | 100%        |
 | Bezpieczeństwo | 7      | ✅ Kompletne | 100%        |
 | Testowanie     | 5      | ✅ Kompletne | 100%        |
 | Status         | 5      | ✅ Aktualne  | 100%        |
 | Releases       | 4      | ✅ Kompletne | 100%        |
 | Misc           | 6      | ✅ Kompletne | 100%        |
 
-**Łącznie:** 45 dokumentów | **Status:** ✅ Wszystkie aktualne
+**Łącznie:** 46 dokumentów | **Status:** ✅ Wszystkie aktualne
 
 ---
 

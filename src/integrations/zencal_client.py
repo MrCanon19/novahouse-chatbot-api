@@ -32,7 +32,9 @@ class ZencalClient:
         """Wykonaj request do Zencal API"""
 
         if not self.api_key:
-            print("Zencal not configured")
+            print(
+                "ALERT: ZENCAL_API_KEY not configured or expired! Sprawdź sekret w repozytorium GitHub."
+            )
             return None
 
         headers = {"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"}
@@ -59,6 +61,14 @@ class ZencalClient:
     def get_booking_link(
         self, client_name: Optional[str] = None, client_email: Optional[str] = None
     ) -> str:
+        if not self.api_key:
+            print(
+                "ALERT: ZENCAL_API_KEY not configured or expired! Sprawdź sekret w repozytorium GitHub."
+            )
+        if not self.workspace_id:
+            print(
+                "ALERT: ZENCAL_WORKSPACE_ID not configured! Sprawdź sekret w repozytorium GitHub."
+            )
         """
         Pobierz link do rezerwacji Zencal (pre-filled jeśli dane dostępne)
 
@@ -80,6 +90,14 @@ class ZencalClient:
         return link
 
     def get_available_slots(self, date: str) -> Optional[Dict]:
+        if not self.api_key:
+            print(
+                "ALERT: ZENCAL_API_KEY not configured or expired! Sprawdź sekret w repozytorium GitHub."
+            )
+        if not self.workspace_id:
+            print(
+                "ALERT: ZENCAL_WORKSPACE_ID not configured! Sprawdź sekret w repozytorium GitHub."
+            )
         """
         Pobierz dostępne terminy rezerwacji
 
@@ -101,6 +119,14 @@ class ZencalClient:
         return None
 
     def create_booking(self, booking_data: Dict) -> Optional[str]:
+        if not self.api_key:
+            print(
+                "ALERT: ZENCAL_API_KEY not configured or expired! Sprawdź sekret w repozytorium GitHub."
+            )
+        if not self.workspace_id:
+            print(
+                "ALERT: ZENCAL_WORKSPACE_ID not configured! Sprawdź sekret w repozytorium GitHub."
+            )
         """
         Utwórz rezerwację w Zencal
 
@@ -140,6 +166,14 @@ class ZencalClient:
         return None
 
     def cancel_booking(self, booking_id: str) -> bool:
+        if not self.api_key:
+            print(
+                "ALERT: ZENCAL_API_KEY not configured or expired! Sprawdź sekret w repozytorium GitHub."
+            )
+        if not self.workspace_id:
+            print(
+                "ALERT: ZENCAL_WORKSPACE_ID not configured! Sprawdź sekret w repozytorium GitHub."
+            )
         """
         Anuluj rezerwację w Zencal
 
@@ -159,6 +193,14 @@ class ZencalClient:
         return result is not None
 
     def test_connection(self) -> bool:
+        if not self.api_key:
+            print(
+                "ALERT: ZENCAL_API_KEY not configured or expired! Sprawdź sekret w repozytorium GitHub."
+            )
+        if not self.workspace_id:
+            print(
+                "ALERT: ZENCAL_WORKSPACE_ID not configured! Sprawdź sekret w repozytorium GitHub."
+            )
         """Test połączenia z Zencal API"""
 
         if not self.api_key or not self.workspace_id:

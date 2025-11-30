@@ -20,10 +20,10 @@ class MondayClient:
 
         if not self.api_key:
             print(
-                "WARNING: MONDAY_API_KEY not found in environment variables or not passed to MondayClient"
+                "ALERT: MONDAY_API_KEY not configured or expired! Sprawdź sekret w repozytorium GitHub."
             )
         if not self.board_id:
-            print("WARNING: MONDAY_BOARD_ID not found in environment variables")
+            print("ALERT: MONDAY_BOARD_ID not configured! Sprawdź sekret w repozytorium GitHub.")
 
     def _make_request(self, query: str, variables: Optional[Dict] = None) -> Dict:
         """Make a GraphQL request to Monday.com API"""
@@ -47,6 +47,12 @@ class MondayClient:
     def create_lead_item(self, lead_data: Dict) -> Optional[str]:
         """Create a new item on Monday.com board"""
 
+        if not self.api_key:
+            print(
+                "ALERT: MONDAY_API_KEY not configured or expired! Sprawdź sekret w repozytorium GitHub."
+            )
+        if not self.board_id:
+            print("ALERT: MONDAY_BOARD_ID not configured! Sprawdź sekret w repozytorium GitHub.")
         if not self.api_key or not self.board_id:
             print("Monday.com not configured, skipping lead creation")
             return None
@@ -145,6 +151,9 @@ class MondayClient:
         """Test connection to Monday.com API"""
 
         if not self.api_key:
+            print(
+                "ALERT: MONDAY_API_KEY not configured or expired! Sprawdź sekret w repozytorium GitHub."
+            )
             return False
 
         query = """
@@ -172,7 +181,13 @@ class MondayClient:
 
     def update_item_status(self, item_id, status):
         """Update item status on Monday.com"""
-        if not self.api_key or not self.board_id:
+        if not self.api_key:
+            print(
+                "ALERT: MONDAY_API_KEY not configured lub wygasł! Sprawdź sekret w repozytorium GitHub."
+            )
+            return False
+        if not self.board_id:
+            print("ALERT: MONDAY_BOARD_ID not configured! Sprawdź sekret w repozytorium GitHub.")
             return False
 
         status_map = {
