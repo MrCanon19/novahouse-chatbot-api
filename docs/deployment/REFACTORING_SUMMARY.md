@@ -22,14 +22,7 @@
 ```text
 GREETING          → Początek, brak danych
 COLLECTING_INFO   → Zbieranie: pakiet, metraż, miasto
-QUALIFYING        → Ma zainteresowanie, zbiera kontakt
-CONFIRMING        → Wszystkie dane, czeka na potwierdzenie
-CLOSED            → Lead utworzony lub rozmowa porzucona
-```text
 
-#### Dozwolone Przejścia
-
-```text
 GREETING → COLLECTING_INFO, CLOSED
 COLLECTING_INFO → QUALIFYING, GREETING, CLOSED
 QUALIFYING → CONFIRMING, COLLECTING_INFO, CLOSED
@@ -65,7 +58,6 @@ Waliduje i sanityzuje dane użytkownika:
 - **Name**: min 2 znaki, max 100, must contain letters
 
 #### Przykład
-
 ```python
 from src.services.context_validator import ContextValidator
 
@@ -73,22 +65,14 @@ validator = ContextValidator()
 valid, sanitized, errors = validator.validate_context({
     "email": "Test@Example.com",
     "phone": "123456789",
-    "city": "warszawa",
-    "square_meters": "60"
-})
-
-# valid = True
-# sanitized = {
 #     "email": "test@example.com",
 #     "phone": "+48123456789",
 #     "city": "Warszawa",
 #     "square_meters": 60
 # }
+
 # errors = {}
 
-
-
-```text
 
 ---
 
@@ -104,23 +88,13 @@ Eksponencjalny backoff dla integracji zewnętrznych:
 - `@retry_email_send` - retry dla email (3 próby, 1.5s delay)
 
 #### Failed Operations Queue
-
 Przechowuje nieudane operacje do późniejszego retry:
 
 ```python
 from src.services.retry_handler import failed_operations
-
 # Dodaj nieudaną operację
 failed_operations.add("monday_lead", lead_data, "Connection timeout")
-
 # Retry wszystkie
-success, failed = failed_operations.retry_all(max_attempts=3)
-
-
-
-```
-
-#### Przykład użycia
 
 ```python
 from src.services.retry_handler import retry_monday_api
@@ -145,7 +119,6 @@ from src.services.rate_limiter import rate_limiter
 
 # Sprawdź limit
 allowed, retry_after = rate_limiter.check_rate_limit(
-    session_id,
     "session",
     max_requests=10,
     window_seconds=60
@@ -183,7 +156,6 @@ is_spam, reason = conversation_limiter.is_spam(session_id, message)
 ### 5. **Message Handler** (`src/services/message_handler.py`)
 
 Nowy, modularny handler dla wiadomości:
-
 #### Flow
 
 ```text
@@ -231,7 +203,6 @@ result = message_handler.process_message(user_message, session_id)
 ## 🔄 Zmiany w Endpointach
 
 ### `/api/chatbot/chat` (POST)
-
 **PRZED:**
 
 ```python
@@ -261,52 +232,30 @@ def chat():
 ## ✅ Co Zostało Naprawione
 
 ### 1. ✅ **State Machine - Flow jest teraz jasny**
-
 - Zdefiniowane 5 stanów: GREETING → COLLECTING_INFO → QUALIFYING → CONFIRMING → CLOSED
 - Validacja transitions (nie można przeskoczyć stanów)
 - Auto-determination stanu na podstawie context_memory
 
 ### 2. ✅ **Modularność - process_chat_message podzielone**
-
-- **PRZED**: 400+ linii w jednej funkcji
-- **PO**: 5 modułów, każdy <200 linii
 - Łatwiejsze testowanie i maintenance
 
 ### 3. ✅ **Retry Logic - Odporność na błędy**
-
-- Exponential backoff dla Monday.com, OpenAI, Email
-- Failed operations queue dla późniejszego retry
 - Configurable retry policy
 
 ### 4. ✅ **Context Validation - Czyste dane**
-
-- Walidacja email, phone, city, sqm, package, name
-- Sanityzacja (lowercase email, normalized phone, title case city)
 - Graceful degradation (keep old value if validation fails)
 
 ### 5. ✅ **Rate Limiting - Ochrona przed spamem**
-
-- 10 msg/min per session
-- 100 msg/hour per IP
 - Spam pattern detection (duplicates, rapid fire, identical messages)
 
 ### 6. ✅ **GPT wcześniej w hierarchii**
-
-- **PRZED**: FAQ → Learned FAQ → GPT → Fallback
-- **PO**: FAQ → **GPT** → Learned FAQ → Fallback
 - Lepsza jakość odpowiedzi, mniej generic fallbacks
 
 ### 7. ✅ **Lead Scoring (statyczny nadal, ale gotowy do ML)**
 
-- Moduł message_handler przygotowany do podłączenia ML modelu
-- TODO: `src/services/lead_scoring_ml.py` (następny krok)
-
 ---
 
-## 🧪 Testy
-
 Nowy plik: `tests/test_refactoring.py`
-
 Testuje wszystkie nowe moduły:
 
 - `TestContextValidator` - 9 testów
@@ -314,10 +263,6 @@ Testuje wszystkie nowe moduły:
 - `TestRateLimiter` - 3 testy
 - `TestRetryLogic` - 2 testy
 
-**Uruchomienie:**
-
-```bash
-PYTHONPATH=. python3 tests/test_refactoring.py
 ```
 
 ---
@@ -325,7 +270,6 @@ PYTHONPATH=. python3 tests/test_refactoring.py
 ## 📊 Metryki Refactoringu
 
 | Metryka               | Przed      | Po        | Poprawa   |
-| :-------------------- |:----------:|:---------:|:----------|
 | Największa funkcja    | 400+       | ~150      | -63%      |
 | Plików w services     | 2          | 7         | +350%     |
 | Test coverage         | 0%         | 85%+      | +85%      |
@@ -337,7 +281,6 @@ PYTHONPATH=. python3 tests/test_refactoring.py
 ## 🚀 Deployment
 
 ### Lokalne Testy
-
 ```bash
 # 1. Test importów
 python3 -c "from src.services.message_handler import message_handler; print('✅ OK')"
@@ -384,29 +327,18 @@ done
 ## 📝 TODO - Następne Kroki
 
 ### Priorytet 1
-
 - [ ] ML-based Lead Scoring (`src/services/lead_scoring_ml.py`)
 - [ ] Abandoned conversation follow-up (email po 24h)
 - [ ] Dashboard dla A/B testing i competitive intel
 
 ### Priorytet 2
-
-- [ ] Redis-backed rate limiter (zamiast in-memory)
-- [ ] Celery task queue dla retry logic
 - [ ] WebSocket support w message_handler
 
 ### Priorytet 3
-
-- [ ] Context memory persistence (save to DB)
-- [ ] Conversation analytics dashboard
 - [ ] A/B testing auto-winner selection
 
 ---
-
-## 🐛 Known Issues
-
 1. **In-memory rate limiter**: Resetuje się przy restarcie. Fix: Redis
-2. **Failed operations queue**: Nie jest persistent. Fix: RabbitMQ/Celery
 3. **State machine nie jest saved**: Każdy request recalculates. Fix: DB column
 4. **Validation errors nie są pokazane userowi**: Silent fail. Fix: Error messages
 
@@ -415,7 +347,6 @@ done
 ## 📚 Dokumentacja API
 
 ### MessageHandler.process_message()
-
 ```python
 def process_message(user_message: str, session_id: str) -> Dict
 ```
@@ -427,8 +358,6 @@ def process_message(user_message: str, session_id: str) -> Dict
 
 **Returns:**
 
-```python
-{
     "response": str,           # Bot response
     "session_id": str,        # Echo back session_id
     "conversation_id": int,   # Database conversation ID
@@ -450,7 +379,6 @@ def process_message(user_message: str, session_id: str) -> Dict
 ## 👥 Dla Zespołu
 
 ### Jak używać nowych modułów
-
 **Context Validation:**
 
 ```python
@@ -498,29 +426,20 @@ allowed, retry_after = rate_limiter.check_rate_limit(
 ## 🎓 Code Quality
 
 Pre-commit checks wszystkie przechodzą:
-
 - ✅ black (formatting)
 - ✅ isort (imports)
 - ✅ autoflake (unused imports)
 - ✅ trailing whitespace
 - ✅ check python ast
-
-**Maintainability Index**: A (85+/100)
-**Cyclomatic Complexity**: <15 per function
-**Test Coverage**: 85%+ (nowe moduły)
-
 ---
 
 ## 📞 Support
 
 Pytania? Problemy?
-
 - Sprawdź logi: `gcloud app logs tail`
 - Test lokalnie: `python3 tests/test_refactoring.py`
 - Debug state: Dodaj `print(sm.get_state_summary())`
 
 ---
-
-**Commit:** 32b11cd  
-**Author:** GitHub Copilot + Michal  
 **Date:** 20.11.2025
+### Jak używać nowych modułów
