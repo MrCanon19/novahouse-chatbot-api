@@ -122,6 +122,12 @@ class MessageHandler:
         except Exception as e:
             print(f"[MessageHandler] Error: {e}")
             db.session.rollback()
+            try:
+                from src.utils.telegram_alert import send_telegram_alert
+
+                send_telegram_alert(f"Błąd produkcyjny: {str(e)}")
+            except Exception as alert_exc:
+                print(f"[Telegram Alert] Failed: {alert_exc}")
             return {
                 "error": str(e),
                 "response": "Przepraszam, wystąpił problem. Spróbuj ponownie.",
@@ -290,7 +296,12 @@ class MessageHandler:
 
             from src.routes.chatbot import SYSTEM_PROMPT
 
-            openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+            openai_api_key = os.getenv("OPENAI_API_KEY")
+            if not openai_api_key:
+                print(
+                    "ALERT: OPENAI_API_KEY not configured or expired! Sprawdź sekret w repozytorium GitHub."
+                )
+            openai_client = OpenAI(api_key=openai_api_key)
 
             # Get conversation history
             history = (
