@@ -181,8 +181,8 @@ Dodatkowe (opcjonalne):
 
 - **Status:** ✅ Live in Production
 - **Uptime:** 24/7
-- **Version:** 2.3.0 "Production Ready"
-- **Last Updated:** November 2025
+- **Version:** 2.3.1 "Performance & Testing"
+- **Last Updated:** March 2024
 - **Response Time:** <1s (after warm-up)
 - **Test Coverage:** 18 automated tests
 - **Code Quality:** 9.5/10

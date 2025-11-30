@@ -105,15 +105,70 @@ jobs:
     needs: [test, lint, security]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
+      - name: Check deploy configuration
+        id: deploy_check
+        env:
+          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+        run: |
+          SHOULD_DEPLOY=true
+
+          if [ -z "$GCP_SA_KEY" ] || [ -z "$GCP_PROJECT_ID" ]; then
+            echo "Deployment skipped: GCP_SA_KEY or GCP_PROJECT_ID secrets are not configured."
+            SHOULD_DEPLOY=false
+          else
+            KEY_ERROR=$(python - <<'PY'
+              import base64
+              import json
+              import os
+
+              key_raw = os.environ["GCP_SA_KEY"].strip()
+
+              if key_raw.startswith(("file://", "/", "~")):
+                  print(
+                      "Sekret GCP_SA_KEY wskazuje na ścieżkę lokalną. Wklej treść pliku JSON klucza serwisowego albo jego base64 do sekrety GitHub."
+                  )
+                  raise SystemExit(0)
+
+              def is_json(candidate: str) -> bool:
+                  try:
+                      json.loads(candidate)
+                      return True
+                  except Exception:
+                      return False
+
+              if is_json(key_raw):
+                  raise SystemExit(0)
+
+              try:
+                  decoded = base64.b64decode(key_raw)
+                  json.loads(decoded)
+              except Exception as exc:  # pragma: no cover - runtime validation only
+                  print(f"Sekret GCP_SA_KEY nie jest poprawnym JSON-em ani base64: {exc}")
+            PY
+            )
+
+            if [ -n "$KEY_ERROR" ]; then
+              echo "Deployment skipped: $KEY_ERROR"
+              SHOULD_DEPLOY=false
+            fi
+          fi
+
+          echo "should_deploy=${SHOULD_DEPLOY}" >> "$GITHUB_OUTPUT"
+
       - uses: actions/checkout@v5
+        if: steps.deploy_check.outputs.should_deploy == 'true'
       - name: Set up Python
         uses: actions/setup-python@v6
+        if: steps.deploy_check.outputs.should_deploy == 'true'
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Install gcloud CLI
+        if: steps.deploy_check.outputs.should_deploy == 'true'
         run: |
             sudo apt-get update && sudo apt-get install -y google-cloud-cli
       - name: Authenticate to GCP
+        if: steps.deploy_check.outputs.should_deploy == 'true'
         env:
           GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
           GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
@@ -126,9 +181,38 @@ jobs:
             echo "ERROR: Sekret GCP_PROJECT_ID nie jest ustawiony w repozytorium GitHub!"
             exit 1
           fi
-          echo "$GCP_SA_KEY" > ${HOME}/gcp-key.json
-          gcloud auth activate-service-account --key-file=${HOME}/gcp-key.json
+          if echo "$GCP_SA_KEY" | grep -qE '^(file://|/|~)'; then
+            echo "ERROR: Sekret GCP_SA_KEY musi zawierać treść pliku JSON (skopiuj zawartość pliku klucza serwisowego do sekretu), a nie ścieżkę: $GCP_SA_KEY"
+            exit 1
+          fi
+
+          KEY_FILE="${HOME}/gcp-key.json"
+          KEY_CONTENT="$GCP_SA_KEY"
+
+          if printf '%s' "$KEY_CONTENT" | head -c 1 | grep -q '{'; then
+            printf '%s' "$KEY_CONTENT" > "$KEY_FILE"
+          else
+            echo "$KEY_CONTENT" | base64 -d > "$KEY_FILE" 2>/dev/null || true
+          fi
+
+          python - <<'PY'
+            import json, os, sys
+
+            key_file = os.environ["KEY_FILE"]
+            try:
+                with open(key_file, "r", encoding="utf-8") as f:
+                    json.load(f)
+            except Exception as exc:  # pragma: no cover - runtime validation
+                print(
+                    "ERROR: Sekret GCP_SA_KEY musi być treścią JSON klucza serwisowego lub jego base64. Szczegół:",
+                    exc,
+                )
+                sys.exit(1)
+PY
+
+          gcloud auth activate-service-account --key-file="${HOME}/gcp-key.json"
           gcloud config set project "$GCP_PROJECT_ID"
       - name: Deploy to App Engine
+        if: steps.deploy_check.outputs.should_deploy == 'true'
         run: |
           gcloud app deploy app.yaml --quiet
