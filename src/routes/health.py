@@ -13,6 +13,27 @@ def _get_uptime_seconds() -> int:
     return int((datetime.now(timezone.utc) - APP_START_TIME).total_seconds())
 
 
+def _get_service_version() -> str:
+    version_env_order = [
+        "RELEASE_REVISION",
+        "COMMIT_SHA",
+        "K_REVISION",
+        "GAE_VERSION",
+        "GAE_SERVICE",
+    ]
+
+    for env_name in version_env_order:
+        value = os.getenv(env_name)
+        if value:
+            return value
+
+    return "dev"
+
+
+def _get_environment_name() -> str:
+    return os.getenv("FLASK_ENV") or os.getenv("ENV") or "development"
+
+
 @health_bp.route("/health", methods=["GET"])
 def health_check():
     """Health check endpoint dla Google Cloud Platform"""
@@ -77,10 +98,8 @@ def detailed_status():
                     "status": "healthy",
                     "service": "novahouse-chatbot",
                     "uptime_seconds": _get_uptime_seconds(),
-                    "environment": os.getenv("FLASK_ENV", "development"),
-                    "version": os.getenv("RELEASE_REVISION")
-                    or os.getenv("COMMIT_SHA")
-                    or "dev",
+                    "environment": _get_environment_name(),
+                    "version": _get_service_version(),
                     "database": {
                         "status": "connected",
                         "intents_loaded": intent_count,
