@@ -15,8 +15,8 @@ def test_status_endpoint(client):
 
 
 def test_status_endpoint_reports_version(client, monkeypatch):
-    monkeypatch.delenv("RELEASE_REVISION", raising=False)
-    monkeypatch.delenv("COMMIT_SHA", raising=False)
+    monkeypatch.setenv("RELEASE_REVISION", "")
+    monkeypatch.setenv("COMMIT_SHA", "  ")
     monkeypatch.delenv("GAE_VERSION", raising=False)
     monkeypatch.delenv("GAE_SERVICE", raising=False)
     monkeypatch.setenv("K_REVISION", "kube-rev-123")
@@ -26,6 +26,19 @@ def test_status_endpoint_reports_version(client, monkeypatch):
 
     payload = response.get_json()
     assert payload["version"] == "kube-rev-123"
+
+
+def test_status_endpoint_reports_environment(client, monkeypatch):
+    monkeypatch.setenv("FLASK_ENV", "  staging  ")
+    monkeypatch.delenv("APP_ENV", raising=False)
+    monkeypatch.delenv("ENVIRONMENT", raising=False)
+    monkeypatch.delenv("ENV", raising=False)
+
+    response = client.get("/api/status")
+    assert response.status_code == 200
+
+    payload = response.get_json()
+    assert payload["environment"] == "staging"
 
 
 def test_qualification_questions(client):
