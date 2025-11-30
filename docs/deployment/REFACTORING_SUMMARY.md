@@ -17,41 +17,35 @@
 
 ### 1. **State Machine** (`src/services/conversation_state_machine.py`)
 
-## 📦 Nowe Moduły
-
-### 1. **State Machine** (`src/services/conversation_state_machine.py`)
-
 #### Stany Konwersacji
 
-```python
+```text
 GREETING          → Początek, brak danych
 COLLECTING_INFO   → Zbieranie: pakiet, metraż, miasto
 QUALIFYING        → Ma zainteresowanie, zbiera kontakt
 CONFIRMING        → Wszystkie dane, czeka na potwierdzenie
 CLOSED            → Lead utworzony lub rozmowa porzucona
-
-```
+```text
 
 #### Dozwolone Przejścia
 
-```
+```text
 GREETING → COLLECTING_INFO, CLOSED
 COLLECTING_INFO → QUALIFYING, GREETING, CLOSED
 QUALIFYING → CONFIRMING, COLLECTING_INFO, CLOSED
 CONFIRMING → CLOSED, QUALIFYING
 CLOSED → (terminal state)
+```text
 
-```
-
-#### Użycie
+success, error = sm.transition(ConversationState.QUALIFYING)
+#### Przykład użycia state machine
 
 ```python
 from src.services.conversation_state_machine import ConversationStateMachine, ConversationState
 sm = ConversationStateMachine()
 current_state = sm.determine_state(context_memory)
 success, error = sm.transition(ConversationState.QUALIFYING)
-
-```
+```text
 
 ---
 
@@ -94,7 +88,7 @@ valid, sanitized, errors = validator.validate_context({
 
 
 
-```
+```text
 
 ---
 
@@ -192,7 +186,7 @@ Nowy, modularny handler dla wiadomości:
 
 #### Flow
 
-```
+```text
 1. Rate limiting & spam detection
 2. Find/create conversation
 3. Load & validate context
@@ -203,22 +197,16 @@ Nowy, modularny handler dla wiadomości:
 8. Handle state transitions
 9. Save bot response
 10. Update context & commit
-
-
-
 ```
 
 #### Nowa Hierarchia Odpowiedzi
 
-```
+```text
 1. Booking Intent (najwyższy priorytet)
 2. Standard FAQ (szybkie, bez API)
 3. OpenAI GPT (WCZEŚNIEJ - lepsza jakość)
 4. Learned FAQ (fallback)
 5. Default Response (ostatnia deska ratunku)
-
-
-
 ```
 
 **ZMIANA**: GPT jest teraz **#3** zamiast **#4**. To znacznie poprawia jakość odpowiedzi.
@@ -336,13 +324,13 @@ PYTHONPATH=. python3 tests/test_refactoring.py
 
 ## 📊 Metryki Refactoringu
 
-| Metryka | Przed | Po | Poprawa |
-|---------|-------|-----|---------|
-| Największa funkcja | 400+ linii | ~150 linii | **-63%** |
-| Plików w `src/services/` | 2 | 7 | **+350%** (modularność) |
-| Test coverage (nowe moduły) | 0% | 85%+ | **+85%** |
-| Code duplication | High | Low | **-70%** |
-| Cyclomatic complexity | 45+ | <15 | **-67%** |
+| Metryka               | Przed      | Po        | Poprawa   |
+| :-------------------- |:----------:|:---------:|:----------|
+| Największa funkcja    | 400+       | ~150      | -63%      |
+| Plików w services     | 2          | 7         | +350%     |
+| Test coverage         | 0%         | 85%+      | +85%      |
+| Code duplication      | High       | Low       | -70%      |
+| Cyclomatic complexity | 45+        | <15       | -67%      |
 
 ---
 
