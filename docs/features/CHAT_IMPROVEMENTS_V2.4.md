@@ -6,22 +6,21 @@ Zaimplementowano **9 głównych ulepszeń** chatbota, które znacząco poprawiaj
 
 ---
 
-## ✅ 1. Real-time Sentiment Analysis
+## ✅ 1. Analiza nastroju w czasie rzeczywistym
 
-### Co robi:
 - Analizuje emocje użytkownika w czasie rzeczywistym (pozytywne/negatywne/neutralne)
 - Automatyczna eskalacja do człowieka przy frustracji
 - Dostosowuje ton odpowiedzi do nastroju klienta
 - Wpływa na lead scoring
 
-### Przykład użycia:
+### Przykład użycia
+
 ```python
 sentiment_analysis = sentiment_service.analyze_message_sentiment(
     "To jest okropne, nic nie działa!",
     session_id="abc123"
 )
-
-# Result:
+# Wynik:
 {
     'sentiment': 'negative',
     'score': -0.7,
@@ -31,29 +30,29 @@ sentiment_analysis = sentiment_service.analyze_message_sentiment(
 }
 ```
 
-### Progi eskalacji:
-- **Critical frustration**: score <= -0.6 → natychmiastowa eskalacja
-- **Negative streak**: 2 negatywne wiadomości z rzędu → eskalacja
-- **Lead score adjustment**: avg sentiment +0.3 = +15 points, -0.3 = -15 points
+### Progi eskalacji
+
+- Critical frustration: score <= -0.6 → natychmiastowa eskalacja
+- Negative streak: 2 negatywne wiadomości z rzędu → eskalacja
+- Lead score adjustment: avg sentiment +0.3 = +15 punktów, -0.3 = -15 punktów
 
 ---
 
-## ✅ 2. Proactive Suggestions
+## ✅ 2. Proaktywne sugestie
 
-### Co robi:
 - Podpowiada następne kroki zamiast czekać na pytania
-- Generuje quick action buttons dla kluczowych wyborów
-- Zadaje inteligentne pytania claryfikujące
+- Generuje przyciski szybkich akcji dla kluczowych wyborów
+- Zadaje inteligentne pytania doprecyzowujące
 
-### Przykład użycia:
+### Przykład
+
 ```python
 suggestions = proactive_suggestions.get_suggestions(
     current_state=ConversationState.COLLECTING_INFO,
     context_memory={'city': 'Warszawa'},
     last_user_message="Interesuje mnie wykończenie"
 )
-
-# Result:
+# Wynik:
 {
     'type': 'info_request',
     'message': '📐 Ile ma metrów kwadratowych?',
@@ -66,22 +65,23 @@ suggestions = proactive_suggestions.get_suggestions(
 }
 ```
 
-### Stany z sugestiami:
-- **GREETING**: Wycena, Pakiety, Realizacje, Umówienie
-- **COLLECTING_INFO**: Miasto, Metraż, Pakiet, Email
-- **QUALIFYING**: Wycena szczegółowa, Konsultacja, Zmiana pakietu
-- **CONFIRMING**: Potwierdzenie, Edycja danych
+### Stany z sugestiami
+
+- GREETING: Wycena, Pakiety, Realizacje, Umówienie
+- COLLECTING_INFO: Miasto, Metraż, Pakiet, Email
+- QUALIFYING: Wycena szczegółowa, Konsultacja, Zmiana pakietu
+- CONFIRMING: Potwierdzenie, Edycja danych
 
 ---
 
-## ✅ 3. Context Summarization
+## ✅ 3. Podsumowanie kontekstu rozmowy
 
-### Co robi:
 - Generuje zwięzłe podsumowania rozmów dla Monday.com
 - Ekstrahuje kluczowe informacje (miasto, metraż, pakiet, tematy)
 - Wykrywa pilność/timeline
 
-### Przykład użycia:
+### Przykład podsumowania
+
 ```python
 summary = summarization_service.generate_summary(
     context_memory={
@@ -93,26 +93,26 @@ summary = summarization_service.generate_summary(
     message_history=[...],
     conversation_duration_minutes=8
 )
-
-# Result:
+# Wynik:
 "Klient z Warszawa, mieszkanie 65m², interesuje pakiet Złoty, pytania o ceny, materiały, kontakt: email. ✓ Zaangażowany"
 ```
 
-### Dostępne formaty:
-- `generate_summary()` - jedno zdanie dla Monday.com
-- `generate_monday_description()` - wieloliniowy opis ze szczegółami
-- `generate_short_summary()` - ultra-krótki (60 znaków) dla notyfikacji
+### Format podsumowań
+
+- generate_summary() – jedno zdanie dla Monday.com
+- generate_monday_description() – wieloliniowy opis ze szczegółami
+- generate_short_summary() – ultra-krótki (60 znaków) dla notyfikacji
 
 ---
 
-## ✅ 4. Quick Replies / Suggested Actions
+## ✅ 4. Szybkie odpowiedzi i akcje
 
-### Co robi:
 - Dodaje przyciski akcji do odpowiedzi bota
-- Ułatwia interakcję (click zamiast typing)
+- Ułatwia interakcję (klik zamiast pisania)
 - Zwiększa conversion rate
 
-### Response format:
+### Przykład odpowiedzi
+
 ```json
 {
   "response": "Który pakiet Cię interesuje?",
@@ -142,14 +142,14 @@ summary = summarization_service.generate_summary(
 
 ---
 
-## ✅ 5. Typing Indicators
+## ✅ 5. Wskaźnik pisania
 
-### Co robi:
-- Dodaje `typing_indicator: true` do response
+- Dodaje `typing_indicator: true` do odpowiedzi
 - Frontend może pokazać animację "bot pisze..."
 - Zwiększa naturalność konwersacji
 
-### Implementacja frontend:
+### Przykład implementacji (JavaScript)
+
 ```javascript
 if (response.typing_indicator) {
     showTypingAnimation();
@@ -162,113 +162,90 @@ if (response.typing_indicator) {
 
 ---
 
-## ✅ 6. Multi-turn Dialogs z Memory
+## ✅ 6. Dialogi wielotur z pamięcią
 
-### Co robi:
 - Rozumie odniesienia w kolejnych wiadomościach
 - Rozszerza krótkie pytania do pełnego kontekstu
 - Śledzi tematykę rozmowy
 
-### Przykłady rozwiązywania referencji:
+### Przykłady referencji
 
-**Przykład 1: Pakiety**
-```
+#### Pakiety
+
+```text
 User: "Jaki jest koszt pakietu Złotego?"
 Bot: "Pakiet Złoty kosztuje 3500 zł/m². Dla 65m² to około 227 500 zł."
 User: "a srebrnego?"
-→ System rozszerza do: "Jaki jest koszt pakietu srebrnego?"
+System rozszerza do: "Jaki jest koszt pakietu srebrnego?"
 Bot: "Pakiet Srebrny kosztuje 2000 zł/m². Dla 65m² to około 130 000 zł."
 ```
 
-**Przykład 2: Miasta**
-```
+#### Miasta
+
+```text
 User: "Czy działacie w Warszawie?"
 Bot: "Tak, Warszawa jest w naszym zasięgu..."
 User: "a w krakowie?"
-→ System rozszerza do: "Czy działacie w krakowie?"
+System rozszerza do: "Czy działacie w krakowie?"
 ```
 
-**Przykład 3: Ogólne**
-```
+#### Ogólne
+
+```text
 User: "Jak długo trwa wykończenie?"
 Bot: "Zazwyczaj 6-8 tygodni..."
 User: "a montaż kuchni?"
-→ System rozszerza do: "Jak długo trwa montaż kuchni?"
+System rozszerza do: "Jak długo trwa montaż kuchni?"
 ```
 
 ---
 
-## ✅ 7. Follow-up Automation
+## ✅ 7. Automatyzacja follow-up
 
-### Co robi:
 - Automatyczne follow-upy po 24h, 72h, 7 dni
 - Personalizowane wiadomości na podstawie kontekstu
 - Priorytetyzacja high-value leadów
 
-### Timeline follow-upów:
-```
-T+0h: Konwersacja
-T+24h: Pierwszy follow-up - "Widzę że interesował Cię pakiet..."
-T+72h: Drugi follow-up - "Mogę umówić konsultację..."
-T+168h: Finalny follow-up - "Ostatnia wiadomość - specjalna promocja..."
-```
+### Przykłady wiadomości
 
-### Przykłady wiadomości:
+#### 24h follow-up (ma pakiet + metraż)
 
-**24h follow-up (ma pakiet + metraż):**
-```
+```text
 Cześć! 👋
 Widzę że interesował Cię pakiet Złoty dla 65m².
 Chętnie przygotuję szczegółową wycenę - czy mogę wysłać ją na email?
 ```
 
-**72h follow-up:**
-```
+#### 72h follow-up
+
+```text
 Cześć! 😊
 Wciąż aktualna jest oferta Złoty dla 65m²?
 Mogę umówić Cię na bezpłatną konsultację z naszym doradcą -
 najbliższe terminy to jutro lub pojutrze. Interesuje Cię?
 ```
 
-**168h follow-up (finalny):**
-```
+#### 168h follow-up (finalny)
+
+```text
 Cześć! 🎁
 To moja ostatnia wiadomość - nie chcę być natrętny 😊
-
 Jeśli wciąż myślisz o wykończeniu, mamy specjalną promocję w tym miesiącu.
 Daj znać jeśli chcesz poznać szczegóły!
-
 Pozdrawiam,
 Zespół NovaHouse
 ```
 
-### API Endpoints:
-```bash
-# Wysłanie follow-upów (cron daily)
-POST /api/cron/send-followups
-Header: X-CRON-KEY: your_key
-
-# High-value abandoned (cron 6h)
-POST /api/cron/high-value-alerts
-Header: X-CRON-KEY: your_key
-
-# Test (nie wysyła wiadomości)
-GET /api/cron/test
-Header: X-CRON-KEY: your_key
-```
-
 ---
 
-## ✅ 8. Error Recovery & Clarification
+## ✅ 8. Odzyskiwanie błędów i doprecyzowanie
 
-### Co robi:
-- Inteligentnie handleuje niejasne/błędne inputy
+- Inteligentnie obsługuje niejasne/błędne inputy
 - Zadaje pytania doprecyzowujące z akcjami
 - Pomaga użytkownikowi sformułować pytanie
 
-### Przykład:
+### Przykład doprecyzowania (JSON)
 
-**Input:** "jaki jest cena"
 ```json
 {
   "type": "clarification",
@@ -282,43 +259,24 @@ Header: X-CRON-KEY: your_key
 }
 ```
 
-**Input:** "czas"
-```json
-{
-  "type": "clarification",
-  "message": "⏰ Pytasz o czas? Chcesz wiedzieć:",
-  "actions": [
-    {"text": "Jak długo trwa wykończenie", "payload": "duration_finishing"},
-    {"text": "Kiedy można zacząć", "payload": "start_date"},
-    {"text": "Terminy płatności", "payload": "payment_schedule"}
-  ]
-}
-```
-
 ---
 
-## ✅ 9. Session Timeout & Reengagement
+## ✅ 9. Timeout sesji i reengagement
 
-### Co robi:
 - Gentle nudge po 3 minutach bezczynności
-- Session timeout po 30 minutach
+- Timeout sesji po 30 minutach
 - Kontekstowe wiadomości reengażujące
 
-### Timeline:
-```
-T+0min: Ostatnia wiadomość
-T+3min: Gentle nudge - "Jesteś jeszcze tam? 😊"
-T+30min: Session timeout - "Rozumiem że potrzebujesz czasu..."
-```
+### Przykłady nudge
 
-### Przykłady nudge messages:
 - "Jesteś jeszcze tam? 😊"
 - "Mogę coś jeszcze wyjaśnić?"
 - "Masz jakieś pytania? Chętnie pomogę! 💬"
 - "Czy wszystko jasne? Daj znać jeśli potrzebujesz pomocy!"
 - "Wciąż tu jestem jeśli chcesz porozmawiać 👋"
 
-### Kontekstowe reengagement:
+### Kontekstowe reengagement
+
 ```python
 # Miał pakiet
 "💎 Widzę że interesuje Cię pakiet Złoty. Mogę wysłać szczegółową wycenę na email?"
@@ -370,12 +328,14 @@ T+30min: Session timeout - "Rozumiem że potrzebujesz czasu..."
 ## 🔧 Setup & Configuration
 
 ### 1. Environment Variables
+
 ```bash
 # Dla cron endpoints
 CRON_API_KEY=your_secret_cron_key
 ```
 
 ### 2. Cron Jobs Setup (GAE cron.yaml)
+
 ```yaml
 cron:
 - description: "Send automated follow-ups"
@@ -401,7 +361,9 @@ cron:
 ```
 
 ### 3. Database Migrations (TODO)
+
 Dodać kolumny do ChatConversation:
+
 ```sql
 ALTER TABLE chat_conversation ADD COLUMN conversation_summary TEXT;
 ALTER TABLE chat_conversation ADD COLUMN needs_human_review BOOLEAN DEFAULT FALSE;
@@ -410,6 +372,7 @@ ALTER TABLE chat_conversation ADD COLUMN last_followup_at TIMESTAMP;
 ```
 
 Dodać kolumnę do ChatMessage:
+
 ```sql
 ALTER TABLE chat_message ADD COLUMN is_followup BOOLEAN DEFAULT FALSE;
 ```
@@ -418,17 +381,20 @@ ALTER TABLE chat_message ADD COLUMN is_followup BOOLEAN DEFAULT FALSE;
 
 ## 📈 Expected Impact
 
-### Conversion Rate:
+### Conversion Rate
+
 - **+15-25%** dzięki proactive suggestions i quick replies
 - **+10-15%** dzięki follow-up automation
 - **+5-10%** dzięki sentiment-based responses
 
-### User Experience:
+### User Experience
+
 - **-30%** confused/frustrated users (dzięki clarification)
 - **+40%** engagement (dzięki proactive guidance)
 - **+25%** session completion rate
 
-### Lead Quality:
+### Lead Quality
+
 - **+20%** lead score accuracy (dzięki sentiment)
 - **Better prioritization** dzięki high-value detection
 - **Fewer abandoned high-value leads** dzięki automation
@@ -437,14 +403,16 @@ ALTER TABLE chat_message ADD COLUMN is_followup BOOLEAN DEFAULT FALSE;
 
 ## 🧪 Testing
 
-### Test sentiment analysis:
+### Test sentiment analysis
+
 ```bash
 curl -X POST http://localhost:8080/api/chatbot/chat \
   -H "Content-Type: application/json" \
   -d '{"message": "To jest okropne!", "session_id": "test123"}'
 ```
 
-### Test multi-turn:
+### Test multi-turn
+
 ```bash
 # First message
 curl -X POST http://localhost:8080/api/chatbot/chat \
@@ -455,7 +423,8 @@ curl -X POST http://localhost:8080/api/chatbot/chat \
   -d '{"message": "a srebrnego?", "session_id": "test456"}'
 ```
 
-### Test cron:
+### Test cron
+
 ```bash
 curl http://localhost:8080/api/cron/test \
   -H "X-CRON-KEY: your_key"
@@ -498,9 +467,3 @@ curl http://localhost:8080/api/cron/test \
    - Test different nudge messages
    - Optimize follow-up timing
    - Test suggestion formats
-
----
-
-**Status**: ✅ Ready for deployment
-**Version**: 2.4.0
-**Date**: 2025-11-20
