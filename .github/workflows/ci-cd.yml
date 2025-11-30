@@ -112,7 +112,7 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Install gcloud CLI
         run: |
-          sudo apt-get update && sudo apt-get install -y google-cloud-sdk
+            sudo apt-get update && sudo apt-get install -y google-cloud-cli
       - name: Authenticate to GCP
         env:
           GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
