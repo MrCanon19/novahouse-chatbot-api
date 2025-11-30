@@ -1,8 +1,16 @@
+import os
+from datetime import datetime, timezone
+
 from flask import Blueprint, jsonify
 
 from src.models.chatbot import Entity, Intent, db
 
 health_bp = Blueprint("health", __name__)
+APP_START_TIME = datetime.now(timezone.utc)
+
+
+def _get_uptime_seconds() -> int:
+    return int((datetime.now(timezone.utc) - APP_START_TIME).total_seconds())
 
 
 @health_bp.route("/health", methods=["GET"])
@@ -53,6 +61,48 @@ def readiness_check():
 
     except Exception as e:
         return jsonify({"status": "not_ready", "error": str(e)}), 503
+
+
+@health_bp.route("/status", methods=["GET"])
+def detailed_status():
+    """Return a richer status payload for runtime diagnostics."""
+
+    try:
+        intent_count = Intent.query.count()
+        entity_count = Entity.query.count()
+
+        return (
+            jsonify(
+                {
+                    "status": "healthy",
+                    "service": "novahouse-chatbot",
+                    "uptime_seconds": _get_uptime_seconds(),
+                    "environment": os.getenv("FLASK_ENV", "development"),
+                    "version": os.getenv("RELEASE_REVISION")
+                    or os.getenv("COMMIT_SHA")
+                    or "dev",
+                    "database": {
+                        "status": "connected",
+                        "intents_loaded": intent_count,
+                        "entities_loaded": entity_count,
+                    },
+                }
+            ),
+            200,
+        )
+
+    except Exception as exc:  # pragma: no cover - defensive path
+        return (
+            jsonify(
+                {
+                    "status": "unhealthy",
+                    "service": "novahouse-chatbot",
+                    "error": str(exc),
+                    "uptime_seconds": _get_uptime_seconds(),
+                }
+            ),
+            500,
+        )
 
 
 @health_bp.route("/init-db", methods=["POST"])
