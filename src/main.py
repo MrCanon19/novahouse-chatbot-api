@@ -1,3 +1,12 @@
+import os
+import sys
+from datetime import datetime, timezone
+
+from flask import Flask, render_template, request, send_from_directory
+
+# Inicjalizacja aplikacji Flask na samym początku
+app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), "static"))
+
 from src.models.user import User
 
 
@@ -37,7 +46,6 @@ def rodo_audit():
     return render_template("rodo_audit.html", audit_items=audit_items)
 
 
-import os
 import sys
 from datetime import datetime, timezone
 

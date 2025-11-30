@@ -1,3 +1,5 @@
+# Ignoruj duże pliki backupu
+backups/automated/*.tar.gz
 # Python
 venv/
 env/
