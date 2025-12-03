@@ -52,29 +52,15 @@ from datetime import datetime, timezone
 # DON'T CHANGE THIS !!!
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-import sentry_sdk
 from flask import Flask, send_from_directory
 from flask_cors import CORS
-from sentry_sdk.integrations.flask import FlaskIntegration
 from sqlalchemy import text
 
 # KROK 1: Importujemy TYLKO obiekt 'db' z pliku, gdzie jest zdefiniowany.
 from src.models.chatbot import db
 
-# Initialize Sentry for error monitoring
-sentry_dsn = os.getenv("SENTRY_DSN")
-if sentry_dsn:
-    sentry_sdk.init(
-        dsn=sentry_dsn,
-        integrations=[FlaskIntegration()],
-        traces_sample_rate=0.1,  # 10% of transactions for performance monitoring
-        profiles_sample_rate=0.1,
-        environment=os.getenv("FLASK_ENV", "production"),
-    )
-    print("✅ Sentry monitoring enabled")
-else:
-    # Sentry wyłączony w dev - to normalne
-    pass
+# Error monitoring: GCP Error Reporting działa AUTOMATYCZNIE w App Engine!
+# Logi błędów: https://console.cloud.google.com/errors?project=glass-core-467907-e9
 
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), "static"))
 
