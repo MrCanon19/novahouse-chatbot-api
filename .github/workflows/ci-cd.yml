@@ -166,7 +166,7 @@ jobs:
             echo "ERROR: Sekret GCP_SA_KEY musi zawierać treść pliku JSON (skopiuj zawartość pliku klucza serwisowego do sekretu), a nie ścieżkę: $GCP_SA_KEY"
             exit 1
           fi
-          KEY_FILE="${HOME}/gcp-key.json"
+          export KEY_FILE="${HOME}/gcp-key.json"
           KEY_CONTENT="$GCP_SA_KEY"
           if printf '%s' "$KEY_CONTENT" | head -c 1 | grep -q '{'; then
             printf '%s' "$KEY_CONTENT" > "$KEY_FILE"

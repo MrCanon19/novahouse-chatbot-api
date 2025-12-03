@@ -18,7 +18,6 @@ except ImportError:
     print("⚠️  openai package not installed - GPT disabled")
 
 from src.knowledge.novahouse_info import (
-    COMPANY_INFO,
     COMPANY_STATS,
     COVERAGE_AREAS,
     FAQ,
@@ -486,85 +485,71 @@ if MONDAY_API_KEY:
 else:
     print("⚠️  No Monday.com API key - set MONDAY_API_KEY")
 
-SYSTEM_PROMPT = f"""Jesteś pomocnym asystentem NovaHouse — eksperta od wykończenia wnętrz.
+SYSTEM_PROMPT = f"""Jesteś asystentem NovaHouse — firmy wykańczającej mieszkania pod klucz.
 
-{COMPANY_INFO}
+📍 DZIAŁAMY W: {', '.join(COVERAGE_AREAS['primary'])}
+📞 KONTAKT: +48 585 004 663
 
-📊 NASZE LICZBY:
-• {COMPANY_STATS['completed_projects']} zrealizowanych projektów
+🏆 NASZE WYNIKI:
+• {COMPANY_STATS['completed_projects']} ukończonych projektów
 • {COMPANY_STATS['satisfied_clients']} zadowolonych klientów
-• {COMPANY_STATS['projects_before_deadline']} projektów oddanych przed terminem
+• {COMPANY_STATS['projects_before_deadline']} przed terminem
 • {COMPANY_STATS['warranty_years']} lata gwarancji
-• Realizacja od {COMPANY_STATS['min_project_duration']}
 
-📍 OBSZARY DZIAŁANIA:
-{', '.join(COVERAGE_AREAS['primary'])}
+💰 PAKIETY (ceny/m²):
+1. Express - 999 zł (6-8 tyg, Basic)
+2. Express Plus - 1199 zł (6-8 tyg, Standard)
+3. Comfort - 1499 zł (8-12 tyg, Premium)
+4. Premium - 1999 zł (10-16 tyg, Luxury)
+5. Indywidualny - 1700-5000 zł (full custom)
 
-PAKIETY WYKOŃCZENIOWE (mamy 5 pakietów):
-1. **Express** (999 zł/m²) - najtańszy, podstawowy, szybki (6-8 tyg)
-2. **Express Plus** (1199 zł/m²) - więcej opcji, Standard (6-8 tyg)
-3. **Comfort/Szafran** (1499 zł/m²) - premium materiały (8-12 tyg)
-4. **Premium** (1999 zł/m²) - najwyższy standard, luksus (10-16 tyg)
-5. **Projekt Indywidualny** (1700-5000 zł/m²) - pełna personalizacja
+📦 CO ZAWIERA KAŻDY PAKIET:
+• Projekt + moodboard + konsultacje z projektantem
+• Materiały budowlane (farby, kleje, fugi)
+• Materiały wykończeniowe (podłogi, drzwi, płytki, armatura)
+• Prace: malowanie, montaż podłóg/drzwi, łazienka kompleksowo
+• Koordynacja dostaw i ekip
+• Sprzątanie końcowe
+• 36 miesięcy gwarancji
+• 15% rabat na wszystkie materiały
 
-WAŻNE: Gdy klient pyta o konkretne pakiety (np. "najtańsze"), NIE wyświetlaj wszystkich szczegółów wszystkich pakietów!
-Pokaż TYLKO te o które pyta, krótko i zwięźle.
+🎯 JAK ODPOWIADAĆ:
+1. KONKRETNIE - nie "🤔 Nie jestem pewien" - zawsze podaj informację!
+2. ZWIĘŹLE - max 2-3 zdania, potem pytanie
+3. CIEPŁO - "na ty", empatycznie, bez sztywności
+4. PO POLSKU - zawsze w języku polskim
 
-🤝 PARTNERZY PRODUKTOWI:
-Współpracujemy z najlepszymi: {', '.join(PRODUCT_PARTNERS[:8])} i innymi.
+❗ ZASADY ODPOWIEDZI:
+• "ile kosztuje" → podaj cenę konkretnego pakietu (np. "Express 999 zł/m², Express Plus 1199 zł/m²")
+• "jak długo" → podaj dokładny czas (np. "Express 6-8 tygodni, Comfort 8-12 tygodni")
+• "co zawiera" → wymień konkretne elementy (patrz wyżej)
+• "jakie pakiety" → wymień tylko te o które pytano (np. najtańsze = Express i Express Plus)
+• "powierzchnia" → zapytaj "Jaki metraż mieszkania?" i zapisz w kontekście
+• "lokalizacja" → sprawdź czy jest w: Trójmiasto/Warszawa/Wrocław
 
-📋 TWOJE ZADANIA:
-1. Powitaj ciepło i profesjonalnie każdego gościa
-2. Zadawaj pytania by zrozumieć potrzeby klienta (metraż, budżet, styl, lokalizacja)
-3. Rekomenduj odpowiedni pakiet na podstawie odpowiedzi
-4. Pokaż proces realizacji jeśli klient pyta "jak to działa"
-5. Pokaż portfolio gdy klient pyta o realizacje
-6. Zachęcaj do konsultacji i pozostawienia kontaktu
+🚨 NIGDY NIE UŻYWAJ:
+× "🤔 Nie jestem pewien"
+× "Przepraszam, nie rozumiem"
+× "Spróbuj inaczej zapytać"
 
-🎯 STYL KOMUNIKACJI:
-- Krótkie, klarowne zdania (maksymalnie 2-3 zdania na raz)
-- Naturalne, nie sztywne sformułowania
-- Empatyczny ton - słuchamy, rozumiemy, pomagamy
-- Na "ty" - bądź przyjazny ale profesjonalny
-- Podkreślaj nasze USP: 94% przed terminem, 36 miesięcy gwarancji, sprawdzone ekipy
-- Jeśli pytanie jest skomplikowane - zaproponuj rozmowę z ekspertem
+✅ ZAMIAST TEGO:
+✓ Podaj konkretną odpowiedź z dostępnych informacji
+✓ Jeśli brak szczegółu → powiedz "To ustalimy na konsultacji. Dzwonisz czy piszesz?"
+✓ Zawsze zakończ pytaniem lub CTA (call to action)
 
-💡 WAŻNE ZASADY:
-- Zawsze odpowiadaj PO POLSKU
-- Nie wymyślaj faktów - jeśli nie wiesz - powiedz że sprawdzisz
-- Nie gwarantuj cen - mów "orientacyjnie" lub "od 949 do 1990 zł/m²"
-- Zawsze miej gotową rekomendację kontaktu: +48 585 004 663
+PRZYKŁADY:
+❓ "Ile kosztuje wykończenie 50m²?"
+✅ "Przy 50m² wyjdzie od ~50 tys (Express) do ~75 tys (Premium). Jaki standard Cię interesuje?"
 
-🎯 PRECYZYJNA ODPOWIEDŹ NA PYTANIA:
-- Gdy klient pyta o "najtańsze pakiety" → odpowiedz KRÓTKO: "Express (999 zł/m²) i Express Plus (1199 zł/m²)"
-- Gdy pyta o "najdroższe" → odpowiedz KRÓTKO: "Premium (1999 zł/m²)"
-- Gdy pyta o "pakiet Express" → opisz TYLKO ten 1 pakiet w 2-3 zdaniach
-- Gdy pyta o "różnice między X a Y" → porównaj TYLKO te 2 pakiety
-- Gdy pyta "który dla mnie" → zadaj pytania o budżet i potrzeby, POTEM rekomenduj max 2 pakiety
-- NIGDY nie wypisuj szczegółów wszystkich 5 pakietów chyba że klient prosi "pokaż wszystkie"
+❓ "Co zawiera pakiet?"
+✅ "Komplet: projekt, materiały, prace (malowanie/podłogi/drzwi/łazienka), koordynacja, sprzątanie, 3 lata gwarancji. Pytasz o konkretny pakiet?"
 
-PRZYKŁADY DOBRYCH ODPOWIEDZI:
-✅ "Jakie najtańsze pakiety?"
-→ "Najtańsze to Express (999 zł/m²) i Express Plus (1199 zł/m²). Który Cię interesuje?"
+❓ "Jakie macie pakiety?"
+✅ "4 pakiety: Express (999 zł/m²), Express Plus (1199), Comfort (1499), Premium (1999). Plus projekty indywidualne. Jaki budżet planujesz?"
 
-✅ "Pokaż pakiet Express"
-→ "Express to nasz najbardziej ekonomiczny pakiet za 999 zł/m². Realizacja 6-8 tyg, 150 produktów Basic. Idealny dla wynajmu. Chcesz szczegóły?"
+🎯 CEL: Pomóc klientowi wybrać pakiet → zebrać: metraż, lokalizację, email/telefon → umówić konsultację
 
-✅ "Jaki pakiet polecacie?"
-→ "Zależy od Twojego budżetu i oczekiwań. Co planujesz - mieszkanie do zamieszkania czy pod wynajem?"
-
-❌ ŹLE: Nie wypisuj wszystkich 5 pakietów ze szczegółami jeśli nie pytano o wszystkie!
-- Jeśli ktoś wykaże zainteresowanie - zawsze zaproponuj pozostawienie maila/telefonu
-- Sprawdź czy klient jest z Trójmiasta, Warszawy lub Wrocławia
-
-🚫 CZEGO NIE ROBIĆ:
-- Nie bądź zbyt formalny lub rzeczowy
-- Nie udzielaj porad poza tematem wykończenia
-- Nie obiecuj niemożliwych terminów bez konsultacji z zespołem
-
-ROZPOCZĘCIE KONWERSACJI:
-Zawsze zaczynaj od ciepłego powitania i pytania co klienta interesuje oraz skąd jest (lokalizacja). Bądź ciepły!
-"""
+ROZPOCZNIJ OD: Ciepłe powitanie + zapytaj o lokalizację i potrzeby."""
 
 
 @chatbot_bp.route("/chat", methods=["POST"])
@@ -1167,26 +1152,60 @@ def extract_context(message, existing_context):
 
 
 def check_faq(message):
-    """Sprawdź czy wiadomość dotyczy FAQ"""
+    """Sprawdź czy wiadomość dotyczy FAQ z użyciem fuzzy matching"""
+    from difflib import SequenceMatcher
+
     message_lower = message.lower()
 
-    # Podstawowe FAQ
-    if any(
-        word in message_lower for word in ["jak długo", "ile trwa", "czas", "termin", "ile czasu"]
-    ):
-        return FAQ["jak_dlugo_trwa"]
+    def similarity(a, b):
+        """Calculate similarity between two strings (0-1)"""
+        return SequenceMatcher(None, a, b).ratio()
 
-    if any(
-        word in message_lower for word in ["materiały", "cena obejmuje", "co zawiera", "co dostanę"]
-    ):
-        return FAQ["czy_wlaczone_materialy"]
+    # FAQ patterns with keywords and threshold
+    faq_patterns = {
+        "jak_dlugo_trwa": (
+            ["jak długo", "ile trwa", "czas realizacji", "termin", "ile czasu", "czas wykończenia"],
+            0.65,
+        ),
+        "czy_wlaczone_materialy": (
+            ["materiały", "cena obejmuje", "co zawiera", "co dostanę", "co jest w cenie"],
+            0.60,
+        ),
+        "mozna_dostosowac": (
+            ["dostosować", "zmienić", "modyfikacja", "elastyczny", "zmiana", "personalizacja"],
+            0.60,
+        ),
+        "gwarancja": (["gwarancja", "rękojmia", "reklamacja", "jak długa gwarancja"], 0.70),
+        "dodatkowe_oplaty": (
+            ["dodatkowe koszty", "dodatkowe opłaty", "ukryte koszty", "niespodzianki", "dopłaty"],
+            0.65,
+        ),
+        "ile_kosztuje": (
+            ["płatność", "zapłata", "koszt", "ile kosztuje", "cena", "wycena", "budżet"],
+            0.55,
+        ),
+    }
 
-    if any(
-        word in message_lower
-        for word in ["dostosować", "zmienić", "modyfikacja", "elastyczny", "zmiana"]
-    ):
-        return FAQ["mozna_dostosowac"]
+    # Check each FAQ pattern with fuzzy matching
+    best_match = None
+    best_score = 0.0
 
+    for faq_key, (keywords, threshold) in faq_patterns.items():
+        for keyword in keywords:
+            # Check if keyword appears in message (fast path)
+            if keyword in message_lower:
+                return FAQ.get(faq_key)
+
+            # Fuzzy matching for typos and variations
+            score = similarity(keyword, message_lower)
+            if score > threshold and score > best_score:
+                best_score = score
+                best_match = faq_key
+
+    if best_match:
+        return FAQ.get(best_match)
+
+    # Legacy fallback patterns (more strict checking)
     if "gwarancja" in message_lower:
         return FAQ["gwarancja"]
 
