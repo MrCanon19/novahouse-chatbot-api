@@ -1,0 +1,58 @@
+runtime: python311
+service: default
+instance_class: F2 # MINIMUM! F1 (256 MB) crashuje z 500. NIE ZMIENIAĆ na F1!
+
+# ═══════════════════════════════════════════════════════════════
+# PRODUCTION SECRETS TEMPLATE
+# ═══════════════════════════════════════════════════════════════
+#
+# This is a TEMPLATE file - do NOT put real secrets here!
+#
+# To deploy:
+# 1. Copy this file: cp app.yaml.example app.yaml
+# 2. Fill in real secrets from GCP Secret Manager or secure vault
+# 3. Deploy: gcloud app deploy app.yaml
+# 4. Delete local copy: rm app.yaml (it's in .gitignore)
+#
+# ═══════════════════════════════════════════════════════════════
+
+env_variables:
+  FLASK_ENV: production
+
+  # SECURITY: Generate new credentials for production
+  SECRET_KEY: "CHANGE_ME_use_secrets_token_hex_32"
+
+  # Admin API Key (for backup, dashboard widgets, a/b testing)
+  API_KEY: "CHANGE_ME_generate_random_32_chars"
+
+  # Database - get from GCP Cloud SQL
+  DATABASE_URL: "postgresql://chatbot_user:CHANGE_ME@/chatbot?host=/cloudsql/YOUR_PROJECT:YOUR_REGION:YOUR_INSTANCE"
+
+  # OpenAI API (for GPT chatbot)
+  OPENAI_API_KEY: "sk-proj-CHANGE_ME"
+
+  # Monday.com
+  MONDAY_API_KEY: "CHANGE_ME"
+  MONDAY_BOARD_ID: "CHANGE_ME"
+
+  # Redis (optional)
+  # REDIS_URL: "redis://your-redis-host:6379/0"
+
+  # Twilio SMS (optional)
+  # TWILIO_ACCOUNT_SID: "ACxxxxx"
+  # TWILIO_AUTH_TOKEN: "xxxxx"
+  # TWILIO_PHONE_NUMBER: "+48XXXXXXXXX"
+
+  # Google Cloud Storage (optional)
+  # USE_CLOUD_STORAGE: "true"
+  # GCS_BUCKET_NAME: "novahouse-uploads"
+
+automatic_scaling:
+  min_instances: 0 # ZERO KOSZTÓW gdy nikt nie używa
+  max_instances: 5 # Wystarczy dla małego ruchu
+  target_cpu_utilization: 0.65
+  min_idle_instances: 0 # Cold start OK - oszczędność 100%
+  max_idle_instances: 1
+
+beta_settings:
+  cloud_sql_instances: "YOUR_PROJECT:YOUR_REGION:YOUR_INSTANCE"
