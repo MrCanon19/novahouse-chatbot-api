@@ -20,20 +20,20 @@ env_variables:
   FLASK_ENV: production
 
   # SECURITY: Generate new credentials for production
-  SECRET_KEY: "CHANGE_ME_use_secrets_token_hex_32"
+  SECRET_KEY: "YOUR_SECRET_KEY_HERE"
 
   # Admin API Key (for backup, dashboard widgets, a/b testing)
-  API_KEY: "CHANGE_ME_generate_random_32_chars"
+  API_KEY: "YOUR_API_KEY_HERE"
 
   # Database - get from GCP Cloud SQL
-  DATABASE_URL: "postgresql://chatbot_user:CHANGE_ME@/chatbot?host=/cloudsql/YOUR_PROJECT:YOUR_REGION:YOUR_INSTANCE"
+  DATABASE_URL: "postgresql://YOUR_POSTGRES_USER_HERE:YOUR_POSTGRES_PASSWORD_HERE@/YOUR_POSTGRES_DB_HERE?host=/cloudsql/YOUR_POSTGRES_HOST_HERE"
 
   # OpenAI API (for GPT chatbot)
-  OPENAI_API_KEY: "sk-proj-CHANGE_ME"
+  OPENAI_API_KEY: "YOUR_OPENAI_API_KEY_HERE"
 
   # Monday.com
-  MONDAY_API_KEY: "CHANGE_ME"
-  MONDAY_BOARD_ID: "CHANGE_ME"
+  MONDAY_API_KEY: "YOUR_MONDAY_API_KEY_HERE"
+  MONDAY_BOARD_ID: "YOUR_MONDAY_BOARD_ID_HERE"
 
   # Redis (optional)
   # REDIS_URL: "redis://your-redis-host:6379/0"
@@ -55,4 +55,4 @@ automatic_scaling:
   max_idle_instances: 1
 
 beta_settings:
-  cloud_sql_instances: "YOUR_PROJECT:YOUR_REGION:YOUR_INSTANCE"
+  cloud_sql_instances: "YOUR_POSTGRES_HOST_HERE"
