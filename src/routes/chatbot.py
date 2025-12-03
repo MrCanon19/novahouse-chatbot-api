@@ -1677,7 +1677,8 @@ def delete_user_data():
             )
             db.session.add(audit)
             db.session.commit()
-        except Exception:
+        except Exception as e:
+            print(f"[RODO] Warning: Failed to log audit entry: {e}")
             db.session.rollback()
 
         return (
@@ -1800,7 +1801,8 @@ def cleanup_audit_endpoint():
             )
             db.session.add(audit)
             db.session.commit()
-        except Exception:
+        except Exception as e:
+            print(f"[RODO] Warning: Failed to log cleanup audit entry: {e}")
             db.session.rollback()
 
         return jsonify({"deleted": deleted}), 200
@@ -1856,8 +1858,9 @@ def export_user_data(session_id):
             )
             db.session.add(audit)
             db.session.commit()
-        except Exception:
+        except Exception as e:
             # Rollback but don't fail the export if audit fails
+            print(f"[RODO] Warning: Failed to log export audit entry: {e}")
             db.session.rollback()
 
         return jsonify(result), 200
