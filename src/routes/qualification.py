@@ -94,8 +94,15 @@ def submit_qualification():
         return jsonify({"error": "Answers are required"}), 400
 
     answers = data["answers"]
+    # Validate answers payload
+    if not isinstance(answers, list) or not (1 <= len(answers) <= 100):
+        return jsonify({"error": "Invalid answers payload"}), 400
     contact_info = data.get("contact_info", {})
+    if not isinstance(contact_info, dict):
+        return jsonify({"error": "Invalid contact_info"}), 400
     qualification_data = data.get("qualification_data", {})
+    if not isinstance(qualification_data, dict):
+        return jsonify({"error": "Invalid qualification_data"}), 400
 
     recommendation = calculate_recommendation(answers)
 
@@ -106,10 +113,19 @@ def submit_qualification():
     lead_id = None
     if contact_info.get("name") and contact_info.get("email"):
         try:
+            name = contact_info.get("name")
+            email = contact_info.get("email")
+            if not isinstance(name, str) or not (1 <= len(name.strip()) <= 100):
+                return jsonify({"error": "Invalid name"}), 400
+            if not isinstance(email, str) or "@" not in email or len(email) > 255:
+                return jsonify({"error": "Invalid email"}), 400
+            phone = contact_info.get("phone")
+            if phone is not None and (not isinstance(phone, str) or len(phone) > 20):
+                return jsonify({"error": "Invalid phone"}), 400
             lead = Lead(
-                name=contact_info["name"],
-                email=contact_info["email"],
-                phone=contact_info.get("phone"),
+                name=name.strip(),
+                email=email.strip(),
+                phone=phone,
                 message=(
                     f"Kwalifikacja: {recommendation['recommended_package']} "
                     f"({recommendation['confidence']}% pewności)"
@@ -153,9 +169,19 @@ def submit_qualification():
             print(f"Lead creation error: {e}")
             db.session.rollback()
 
-    return (
-        jsonify(
-            {"recommendation": recommendation, "lead_id": lead_id, "answers_count": len(answers)}
-        ),
-        200,
-    )
+        try:
+            return (
+                jsonify(
+                    {
+                        "recommendation": recommendation,
+                        "lead_id": lead_id,
+                        "answers_count": len(answers),
+                    }
+                ),
+                200,
+            )
+        except Exception as e:
+            logging.getLogger(__name__).error(
+                f"Qualification processing failed: {e}", exc_info=True
+            )
+            return jsonify({"error": "Internal server error"}), 500

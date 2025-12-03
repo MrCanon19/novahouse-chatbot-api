@@ -58,10 +58,38 @@ def upload_image():
 
         # Get parameters
         folder = request.form.get("folder", "general")
+        # Enforce folder whitelist
+        allowed_folders = {"general", "avatars", "projects"}
+        if folder not in allowed_folders:
+            return jsonify({"success": False, "error": "Invalid folder"}), 400
         create_variants = request.form.get("variants", "true").lower() == "true"
+
+        # Security: block potentially dangerous types
+        disallowed_ext = {".svg", ".html", ".htm"}
+        import os
+
+        _, ext = os.path.splitext(file.filename.lower())
+        if ext in disallowed_ext:
+            return jsonify({"success": False, "error": "Disallowed file type"}), 400
 
         # Read file bytes
         file_bytes = file.read()
+        # Enforce max size (10MB)
+        if len(file_bytes) > 10 * 1024 * 1024:
+            return jsonify({"success": False, "error": "File too large (max 10MB)"}), 413
+
+        # MIME validation: block dangerous MIME types regardless of extension
+        import magic
+
+        try:
+            mime = magic.from_buffer(file_bytes[:2048], mime=True)
+            disallowed_mimes = {"image/svg+xml", "text/html", "application/x-httpd-php"}
+            if mime in disallowed_mimes:
+                return jsonify({"success": False, "error": "Disallowed MIME type"}), 400
+        except Exception:
+            # Fallback: if magic unavailable, rely on extension check only
+            pass
+
         filename = secure_filename(file.filename)
 
         # Upload
@@ -72,7 +100,10 @@ def upload_image():
         return jsonify({"success": True, "message": "File uploaded successfully", "data": result})
 
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+        import logging
+
+        logging.getLogger(__name__).error(f"Upload failed: {e}", exc_info=True)
+        return jsonify({"success": False, "error": "Internal server error"}), 500
 
 
 @file_upload_routes.route("/api/upload/multiple", methods=["POST"])
@@ -99,6 +130,9 @@ def upload_multiple_images():
 
         files = request.files.getlist("files[]")
         folder = request.form.get("folder", "general")
+        allowed_folders = {"general", "avatars", "projects"}
+        if folder not in allowed_folders:
+            return jsonify({"success": False, "error": "Invalid folder"}), 400
 
         results = []
 
@@ -110,6 +144,21 @@ def upload_multiple_images():
                 file_bytes = file.read()
                 filename = secure_filename(file.filename)
 
+                # Security: block dangerous types in batch
+                disallowed_ext = {".svg", ".html", ".htm"}
+                import os
+
+                _, ext = os.path.splitext(file.filename.lower())
+                if ext in disallowed_ext:
+                    results.append(
+                        {
+                            "filename": file.filename,
+                            "success": False,
+                            "error": "Disallowed file type",
+                        }
+                    )
+                    continue
+
                 result = file_upload_service.upload_file(
                     file_bytes=file_bytes, filename=filename, folder=folder, create_variants=True
                 )
@@ -117,14 +166,22 @@ def upload_multiple_images():
                 results.append({"filename": filename, "success": True, "data": result})
 
             except Exception as e:
-                results.append({"filename": file.filename, "success": False, "error": str(e)})
+                import logging
+
+                logging.getLogger(__name__).error(f"Upload item failed: {e}", exc_info=True)
+                results.append(
+                    {"filename": file.filename, "success": False, "error": "Internal server error"}
+                )
 
         return jsonify(
             {"success": True, "message": f"Uploaded {len(results)} files", "results": results}
         )
 
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+        import logging
+
+        logging.getLogger(__name__).error(f"Batch upload failed: {e}", exc_info=True)
+        return jsonify({"success": False, "error": "Internal server error"}), 500
 
 
 @file_upload_routes.route("/api/upload/delete", methods=["POST"])
@@ -144,6 +201,8 @@ def delete_file():
         from src.services.file_upload_service import file_upload_service
 
         data = request.get_json()
+        if not isinstance(data, dict):
+            return jsonify({"success": False, "error": "Invalid payload"}), 400
         filepath = data.get("filepath")
 
         if not filepath:
@@ -155,4 +214,7 @@ def delete_file():
         return jsonify({"success": True, "message": "File deleted successfully"})
 
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+        import logging
+
+        logging.getLogger(__name__).error(f"Delete failed: {e}", exc_info=True)
+        return jsonify({"success": False, "error": "Internal server error"}), 500

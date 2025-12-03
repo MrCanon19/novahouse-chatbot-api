@@ -87,10 +87,21 @@ def create_learned_faq():
         if not data or "question_pattern" not in data or "answer" not in data:
             return jsonify({"error": "question_pattern and answer are required"}), 400
 
+        # Validate input types and lengths
+        question_pattern = data["question_pattern"]
+        answer = data["answer"]
+        if not isinstance(question_pattern, str) or not (1 <= len(question_pattern) <= 500):
+            return jsonify({"error": "Invalid question_pattern"}), 400
+        if not isinstance(answer, str) or not (1 <= len(answer) <= 5000):
+            return jsonify({"error": "Invalid answer"}), 400
+        category = data.get("category")
+        if category and (not isinstance(category, str) or len(category) > 100):
+            return jsonify({"error": "Invalid category"}), 400
+
         faq = LearnedFAQ(
-            question_pattern=data["question_pattern"],
-            answer=data["answer"],
-            category=data.get("category"),
+            question_pattern=question_pattern.strip(),
+            answer=answer.strip(),
+            category=category.strip() if category else None,
             created_by=data.get("created_by", "admin"),
         )
 
@@ -101,7 +112,10 @@ def create_learned_faq():
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": str(e)}), 500
+        import logging
+
+        logging.getLogger(__name__).error(f"FAQ creation failed: {e}", exc_info=True)
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @faq_learning_routes.route("/learned/<int:faq_id>", methods=["PUT"])
@@ -109,15 +123,29 @@ def update_learned_faq(faq_id):
     """Update learned FAQ entry"""
     try:
         data = request.get_json()
+        if not isinstance(data, dict):
+            return jsonify({"error": "Invalid payload"}), 400
+
         faq = LearnedFAQ.query.get_or_404(faq_id)
 
         if "question_pattern" in data:
-            faq.question_pattern = data["question_pattern"]
+            qp = data["question_pattern"]
+            if not isinstance(qp, str) or not (1 <= len(qp) <= 500):
+                return jsonify({"error": "Invalid question_pattern"}), 400
+            faq.question_pattern = qp.strip()
         if "answer" in data:
-            faq.answer = data["answer"]
+            ans = data["answer"]
+            if not isinstance(ans, str) or not (1 <= len(ans) <= 5000):
+                return jsonify({"error": "Invalid answer"}), 400
+            faq.answer = ans.strip()
         if "category" in data:
-            faq.category = data["category"]
+            cat = data["category"]
+            if cat and (not isinstance(cat, str) or len(cat) > 100):
+                return jsonify({"error": "Invalid category"}), 400
+            faq.category = cat.strip() if cat else None
         if "is_active" in data:
+            if not isinstance(data["is_active"], bool):
+                return jsonify({"error": "Invalid is_active"}), 400
             faq.is_active = data["is_active"]
 
         db.session.commit()
@@ -126,7 +154,10 @@ def update_learned_faq(faq_id):
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": str(e)}), 500
+        import logging
+
+        logging.getLogger(__name__).error(f"FAQ update failed: {e}", exc_info=True)
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @faq_learning_routes.route("/learned/<int:faq_id>", methods=["DELETE"])
@@ -141,7 +172,10 @@ def delete_learned_faq(faq_id):
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": str(e)}), 500
+        import logging
+
+        logging.getLogger(__name__).error(f"FAQ deletion failed: {e}", exc_info=True)
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @faq_learning_routes.route("/stats", methods=["GET"])
