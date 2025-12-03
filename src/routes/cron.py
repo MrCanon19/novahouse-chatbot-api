@@ -74,6 +74,52 @@ def send_followups():
         return jsonify({"status": "error", "error": str(e)}), 500
 
 
+@cron_bp.route("/check-secrets", methods=["POST"])
+@require_cron_key
+def check_secrets():
+    """
+    Check API keys and secrets for expiration
+    Should be called weekly via cron job
+
+    POST /api/cron/check-secrets
+    Header: X-CRON-KEY: your_cron_key
+    """
+    try:
+        import subprocess
+        import sys
+
+        # Run secret expiration check script
+        script_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+            "scripts",
+            "check_secret_expiration.py",
+        )
+
+        result = subprocess.run(
+            [sys.executable, script_path],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+
+        return (
+            jsonify(
+                {
+                    "status": "success" if result.returncode == 0 else "warning",
+                    "exit_code": result.returncode,
+                    "stdout": result.stdout,
+                    "stderr": result.stderr if result.stderr else None,
+                }
+            ),
+            200,
+        )
+
+    except subprocess.TimeoutExpired:
+        return jsonify({"status": "error", "error": "Script timeout (>30s)"}), 500
+    except Exception as e:
+        return jsonify({"status": "error", "error": str(e)}), 500
+
+
 @cron_bp.route("/cleanup-sessions", methods=["POST"])
 @require_cron_key
 def cleanup_sessions():

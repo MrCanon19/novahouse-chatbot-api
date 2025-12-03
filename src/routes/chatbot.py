@@ -9,13 +9,25 @@ from datetime import datetime, timedelta, timezone
 from flask import Blueprint, jsonify, request
 from sqlalchemy.exc import SQLAlchemyError
 
-try:
-    from openai import OpenAI
+# Lazy load OpenAI to optimize cold start
+OPENAI_AVAILABLE = False
+_openai_client = None
 
-    OPENAI_AVAILABLE = True
-except ImportError:
-    OPENAI_AVAILABLE = False
-    print("⚠️  openai package not installed - GPT disabled")
+
+def get_openai_client():
+    """Lazy load OpenAI client"""
+    global OPENAI_AVAILABLE, _openai_client
+    if _openai_client is None:
+        try:
+            from openai import OpenAI
+
+            _openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+            OPENAI_AVAILABLE = True
+        except ImportError:
+            OPENAI_AVAILABLE = False
+            print("⚠️  openai package not installed - GPT disabled")
+    return _openai_client
+
 
 from src.knowledge.novahouse_info import (
     COMPANY_STATS,
@@ -102,7 +114,8 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
 
         # 4. Jeśli nie znaleziono w FAQ, ZAWSZE użyj AI (OpenAI GPT) - PRIORYTET!
         if not bot_response:
-            if openai_client:
+            client = ensure_openai_client()
+            if client:
                 try:
                     # Pobierz historię konwersacji
                     history = (
@@ -141,7 +154,7 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                         {"role": "system", "content": SYSTEM_PROMPT + memory_prompt},
                         {"role": "user", "content": f"Context:\n{context}\n\nUser: {user_message}"},
                     ]
-                    response = openai_client.chat.completions.create(
+                    response = client.chat.completions.create(
                         model="gpt-4o-mini",  # Zoptymalizowany model
                         messages=messages,
                         max_tokens=500,
@@ -471,14 +484,24 @@ def _check_admin_key():
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 MONDAY_API_KEY = os.getenv("MONDAY_API_KEY", "")
 
-if OPENAI_API_KEY and OPENAI_AVAILABLE:
-    openai_client = OpenAI(api_key=OPENAI_API_KEY)
-    AI_PROVIDER = "openai"
-    print("✅ OpenAI GPT-4o-mini enabled (proven & reliable)")
-else:
-    openai_client = None
-    AI_PROVIDER = None
-    print("⚠️  No AI configured - set OPENAI_API_KEY")
+# Lazy initialize OpenAI client
+openai_client = None
+AI_PROVIDER = None
+
+
+def ensure_openai_client():
+    """Ensure OpenAI client is initialized (lazy loading)"""
+    global openai_client, AI_PROVIDER
+    if openai_client is None and OPENAI_API_KEY:
+        client = get_openai_client()
+        if client:
+            openai_client = client
+            AI_PROVIDER = "openai"
+            print("✅ OpenAI GPT-4o-mini enabled (proven & reliable)")
+        else:
+            print("⚠️  No AI configured - set OPENAI_API_KEY")
+    return openai_client
+
 
 if MONDAY_API_KEY:
     print("✅ Monday.com API key loaded")
