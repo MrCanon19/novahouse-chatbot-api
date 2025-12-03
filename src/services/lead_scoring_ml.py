@@ -4,9 +4,12 @@ Predictive model trained on historical conversation data
 """
 
 import json
+import logging
 import os
 import pickle
 from typing import Dict, List, Optional
+
+logger = logging.getLogger(__name__)
 
 try:
     import numpy as np
@@ -14,7 +17,7 @@ try:
     NUMPY_AVAILABLE = True
 except ImportError:
     NUMPY_AVAILABLE = False
-    print("⚠️ numpy not available - ML scoring disabled, using rule-based fallback")
+    logger.warning("numpy not available - ML scoring disabled, using rule-based fallback")
 
 
 class LeadScoringML:
@@ -127,9 +130,9 @@ class LeadScoringML:
         if not NUMPY_AVAILABLE or self.model is None:
             # Fallback to rule-based scoring
             if not NUMPY_AVAILABLE:
-                print("[ML Lead Scoring] numpy not available, using rule-based fallback")
+                logger.warning("numpy not available, using rule-based fallback")
             else:
-                print("[ML Lead Scoring] Model not loaded, using rule-based fallback")
+                logger.info("Model not loaded, using rule-based fallback")
             return self._fallback_rule_based_scoring(context_memory, conversation_data)
 
         try:
@@ -148,11 +151,11 @@ class LeadScoringML:
             # Clip to valid range
             score = max(0, min(100, score))
 
-            print(f"[ML Lead Scoring] Predicted score: {score}/100")
+            logger.info(f"Predicted score: {score}/100")
             return score
 
         except Exception as e:
-            print(f"[ML Lead Scoring] Prediction error: {e}")
+            logger.error(f"Prediction error: {e}", exc_info=True)
             return self._fallback_rule_based_scoring(context_memory, conversation_data)
 
     def _fallback_rule_based_scoring(self, context_memory: Dict, conversation_data: Dict) -> int:
@@ -204,14 +207,14 @@ class LeadScoringML:
                 - actual_converted (bool) - whether lead converted
         """
         if not NUMPY_AVAILABLE:
-            print("[ML Training] numpy/scikit-learn not available, cannot train model")
+            logger.warning("numpy/scikit-learn not available, cannot train model")
             return False
 
         try:
             from sklearn.ensemble import RandomForestClassifier
             from sklearn.model_selection import train_test_split
 
-            print(f"[ML Training] Training on {len(training_data)} samples...")
+            logger.info(f"Training on {len(training_data)} samples...")
 
             # Extract features and labels
             X = []
@@ -228,7 +231,7 @@ class LeadScoringML:
             y = np.array(y)
 
             if len(X) < 10:
-                print("[ML Training] Not enough data (<10 samples), skipping training")
+                logger.warning("Not enough data (<10 samples), skipping training")
                 return False
 
             # Split data
@@ -251,14 +254,14 @@ class LeadScoringML:
             train_score = self.model.score(X_train, y_train)
             test_score = self.model.score(X_test, y_test)
 
-            print(f"[ML Training] Train accuracy: {train_score:.2%}")
-            print(f"[ML Training] Test accuracy: {test_score:.2%}")
+            logger.info(f"Train accuracy: {train_score:.2%}")
+            logger.info(f"Test accuracy: {test_score:.2%}")
 
             # Feature importance
             importances = self.model.feature_importances_
             for i, importance in enumerate(importances):
                 if importance > 0.05:  # Show only important features
-                    print(f"[ML Training] {self.feature_names[i]}: {importance:.2%}")
+                    logger.info(f"{self.feature_names[i]}: {importance:.2%}")
 
             # Save model
             self.save_model()
@@ -266,10 +269,10 @@ class LeadScoringML:
             return True
 
         except ImportError:
-            print("[ML Training] scikit-learn not installed. Run: pip install scikit-learn")
+            logger.error("scikit-learn not installed. Run: pip install scikit-learn")
             return False
         except Exception as e:
-            print(f"[ML Training] Error: {e}")
+            logger.error(f"Training error: {e}", exc_info=True)
             return False
 
     def save_model(self):
@@ -278,18 +281,18 @@ class LeadScoringML:
             os.makedirs(os.path.dirname(self.model_path), exist_ok=True)
             with open(self.model_path, "wb") as f:
                 pickle.dump(self.model, f)
-            print(f"[ML Model] Saved to {self.model_path}")
+            logger.info(f"Model saved to {self.model_path}")
         except Exception as e:
-            print(f"[ML Model] Save failed: {e}")
+            logger.error(f"Model save failed: {e}", exc_info=True)
 
     def load_model(self):
         """Load trained model from disk"""
         try:
             with open(self.model_path, "rb") as f:
                 self.model = pickle.load(f)
-            print(f"[ML Model] Loaded from {self.model_path}")
+            logger.info(f"Model loaded from {self.model_path}")
         except Exception as e:
-            print(f"[ML Model] Load failed: {e}")
+            logger.warning(f"Model load failed: {e}")
             self.model = None
 
     def collect_training_data_from_db(self) -> List[Dict]:
@@ -307,7 +310,7 @@ class LeadScoringML:
             # Get all leads (these are conversions)
             leads = Lead.query.filter(Lead.data_confirmed.is_(True)).all()
 
-            print(f"[ML Data Collection] Found {len(leads)} confirmed leads")
+            logger.info(f"Found {len(leads)} confirmed leads")
 
             for lead in leads:
                 # Get conversation
@@ -335,12 +338,19 @@ class LeadScoringML:
 
                 duration = (timestamps[-1] - timestamps[0]).total_seconds() / 60.0
 
+                # Check competitive intel mentions
+                from src.models.chatbot import CompetitiveIntel
+
+                has_competitive = (
+                    CompetitiveIntel.query.filter_by(session_id=lead.session_id).first() is not None
+                )
+
                 conversation_data = {
                     "message_count": len(messages),
                     "duration_minutes": duration,
                     "messages": user_messages,
                     "timestamps": timestamps,
-                    "has_competitive_mention": False,  # TODO: check competitive_intel table
+                    "has_competitive_mention": has_competitive,
                     "has_booking_intent": any("zencal" in msg.message.lower() for msg in messages),
                 }
 
@@ -352,14 +362,47 @@ class LeadScoringML:
                     }
                 )
 
-            # TODO: Add negative examples (conversations without leads)
-            # For now, we'll use only positive examples
+            # Add negative examples (conversations without leads)
+            conversations_without_leads = (
+                ChatConversation.query.outerjoin(
+                    Lead, Lead.session_id == ChatConversation.session_id
+                )
+                .filter(Lead.id.is_(None))
+                .filter(ChatConversation.ended_at.isnot(None))
+                .limit(len(training_data))  # Balance positive/negative examples
+                .all()
+            )
 
-            print(f"[ML Data Collection] Collected {len(training_data)} training samples")
+            for conv in conversations_without_leads:
+                messages = ChatMessage.query.filter_by(conversation_id=conv.id).all()
+                if messages:
+                    context_memory = json.loads(conv.context_data or "{}")
+                    user_messages = [msg.message for msg in messages if msg.sender == "user"]
+                    timestamps = [msg.timestamp for msg in messages]
+                    duration = (timestamps[-1] - timestamps[0]).total_seconds() / 60.0
+
+                    conversation_data = {
+                        "message_count": len(messages),
+                        "duration_minutes": duration,
+                        "messages": user_messages,
+                        "timestamps": timestamps,
+                        "has_competitive_mention": False,
+                        "has_booking_intent": False,
+                    }
+
+                    training_data.append(
+                        {
+                            "context_memory": context_memory,
+                            "conversation_data": conversation_data,
+                            "actual_converted": False,  # No lead created
+                        }
+                    )
+
+            logger.info(f"Collected {len(training_data)} training samples")
             return training_data
 
         except Exception as e:
-            print(f"[ML Data Collection] Error: {e}")
+            logger.error(f"Data collection error: {e}", exc_info=True)
             return []
 
 

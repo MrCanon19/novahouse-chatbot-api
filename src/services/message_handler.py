@@ -100,8 +100,27 @@ class MessageHandler:
             messages = ChatMessage.query.filter_by(conversation_id=conversation.id).all()
             message_history = [{"sender": m.sender, "message": m.message} for m in messages]
 
+            # Calculate conversation duration
+            duration_seconds = 0
+            if conversation.started_at and messages:
+                from datetime import timezone
+
+                latest_message_time = max(m.timestamp for m in messages)
+                # Ensure both datetimes are aware
+                started_at = (
+                    conversation.started_at.replace(tzinfo=timezone.utc)
+                    if conversation.started_at.tzinfo is None
+                    else conversation.started_at
+                )
+                latest_time = (
+                    latest_message_time.replace(tzinfo=timezone.utc)
+                    if latest_message_time.tzinfo is None
+                    else latest_message_time
+                )
+                duration_seconds = int((latest_time - started_at).total_seconds())
+
             conversation_summary = summarization_service.generate_summary(
-                context_memory, message_history, 0  # TODO: calculate duration
+                context_memory, message_history, duration_seconds
             )
 
             conversation.context_data = json.dumps(context_memory)

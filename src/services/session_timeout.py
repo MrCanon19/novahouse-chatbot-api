@@ -19,6 +19,7 @@ class SessionTimeoutService:
 
     def __init__(self):
         self.active_sessions = {}  # Track last activity per session
+        self.nudge_sent = {}  # Track sent nudges per session
 
     def update_activity(self, session_id: str):
         """Update last activity timestamp for session"""
@@ -60,8 +61,19 @@ class SessionTimeoutService:
 
     def _nudge_already_sent(self, session_id: str) -> bool:
         """Check if nudge was already sent for this inactivity period"""
-        # TODO: Track in database or memory
-        # For now, return False (always send)
+        if session_id not in self.nudge_sent:
+            self.nudge_sent[session_id] = datetime.now(timezone.utc)
+            return False
+
+        # Check if nudge was sent recently (within last 5 minutes)
+        time_since_nudge = (
+            datetime.now(timezone.utc) - self.nudge_sent[session_id]
+        ).total_seconds() / 60
+        if time_since_nudge < 5:
+            return True
+
+        # Update timestamp and allow new nudge
+        self.nudge_sent[session_id] = datetime.now(timezone.utc)
         return False
 
     def _get_nudge_message(self, session_id: str) -> str:

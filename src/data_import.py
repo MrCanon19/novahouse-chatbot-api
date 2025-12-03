@@ -211,8 +211,8 @@ def import_training_data():
                 response_templates=json.dumps(templates, ensure_ascii=False),
             )
             db.session.add(intent)
-            print(
-                f"✅ Dodano intencję: {intent_name} ({len(intent_info['training_phrases'])} fraz)"
+            logger.info(
+                f"Dodano intencję: {intent_name} ({len(intent_info['training_phrases'])} fraz)"
             )
 
         # Import encji ze wszystkich znalezionych plików
@@ -275,12 +275,12 @@ def import_training_data():
         # Zapisanie zmian
         try:
             db.session.commit()
-            print("🎉 Import danych zakończony pomyślnie!")
+            logger.info("Import danych zakończony pomyślnie!")
 
             # Statystyki
             intents_count = Intent.query.count()
             entities_count = Entity.query.count()
-            print(f"📊 Statystyki: {intents_count} intencji, {entities_count} encji")
+            logger.info(f"Statystyki: {intents_count} intencji, {entities_count} encji")
 
         except Exception as e:
             db.session.rollback()
