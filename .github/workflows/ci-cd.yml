@@ -184,6 +184,33 @@ jobs:
               print("ERROR: Sekret GCP_SA_KEY musi być treścią JSON klucza serwisowego lub jego base64. Szczegół:", exc)
               sys.exit(1)
           PY
+            # Ensure the key belongs to the expected project and service account domain
+            KEY_FILE="$KEY_FILE" GCP_PROJECT_ID="$GCP_PROJECT_ID" python - <<'PY'
+            import json, os, sys
+            key_file = os.environ["KEY_FILE"]
+            expected_project = os.environ["GCP_PROJECT_ID"].strip()
+            try:
+              with open(key_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            except Exception as exc:
+              print("ERROR: Nie udało się odczytać klucza JSON:", exc)
+              sys.exit(1)
+
+            project_id = (data.get("project_id") or "").strip()
+            client_email = (data.get("client_email") or "").strip()
+            expected_domain = f"{expected_project}.iam.gserviceaccount.com"
+
+            # Basic consistency checks
+            if project_id != expected_project or not client_email.endswith(expected_domain):
+              email_domain = client_email.split("@", 1)[1] if "@" in client_email else client_email
+              print(
+                "ERROR: GCP_SA_KEY nie pasuje do projektu.\n"
+                f"  Wykryto: project_id='{project_id}', domena_email='{email_domain}'\n"
+                f"  Oczekiwano: project_id='{expected_project}', domena_email='{expected_domain}'\n"
+                "  Podmień sekret GCP_SA_KEY na klucz konta serwisowego z właściwego projektu."
+              )
+              sys.exit(1)
+            PY
           gcloud auth activate-service-account --key-file="$KEY_FILE"
           gcloud config set project "$GCP_PROJECT_ID"
       - name: Deploy to App Engine
