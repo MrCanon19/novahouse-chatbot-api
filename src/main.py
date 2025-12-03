@@ -46,9 +46,6 @@ def rodo_audit():
     return render_template("rodo_audit.html", audit_items=audit_items)
 
 
-import sys
-from datetime import datetime, timezone
-
 # DON'T CHANGE THIS !!!
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
@@ -65,6 +62,34 @@ from src.models.chatbot import db
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), "static"))
 
 
+# Security headers (HSTS, clickjacking, MIME sniffing, XSS)
+@app.after_request
+def set_security_headers(response):
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    # Enable HSTS in production environments
+    if os.getenv("FLASK_ENV") == "production":
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    # Minimal CSP to reduce risk while keeping compatibility
+    csp_min = "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'"
+    # Prepare strict CSP with nonce (opt-in via ENABLE_STRICT_CSP)
+    # Note: Using nonce requires templates to inject the same nonce into script tags
+    if os.getenv("ENABLE_STRICT_CSP") == "true":
+        import secrets
+
+        nonce = secrets.token_urlsafe(16)
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            f"script-src 'self' 'nonce-{nonce}'; "
+            "style-src 'self'; img-src 'self' data: https:; connect-src 'self'"
+        )
+        response.headers["X-Content-Security-Policy-Nonce"] = nonce
+    else:
+        response.headers["Content-Security-Policy"] = csp_min
+    return response
+
+
 # Sentry test endpoint
 @app.route("/sentry-test")
 def sentry_test():
@@ -73,6 +98,15 @@ def sentry_test():
 
 
 # SECURITY: Secret key from environment (NEVER hardcode!)
+# Fail-fast if critical secrets missing in production
+if os.getenv("FLASK_ENV") == "production":
+    required_secrets = ["SECRET_KEY", "OPENAI_API_KEY", "ADMIN_API_KEY"]
+    missing = [key for key in required_secrets if not os.getenv(key)]
+    if missing:
+        raise RuntimeError(
+            f"Missing critical environment variables in production: {', '.join(missing)}"
+        )
+
 app.config["SECRET_KEY"] = os.getenv(
     "SECRET_KEY", "dev-secret-change-in-production-" + os.urandom(24).hex()
 )
@@ -335,10 +369,6 @@ def deep_health_check():
 @app.route("/qualification")
 def qualification_page():
     return app.send_static_file("qualification.html")
-
-
-def admin_dashboard():
-    return app.send_static_file("admin-dashboard.html")
 
 
 @app.route("/", defaults={"path": ""})

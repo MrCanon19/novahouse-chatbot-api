@@ -31,6 +31,11 @@ def app():
     os.environ["TESTING"] = "true"
     os.environ["DATABASE_URL"] = "sqlite:///:memory:"
     os.environ["SECRET_KEY"] = "test-secret-key-for-testing-only"
+    # Mock secrets to avoid accidental prod usage
+    os.environ.setdefault("API_KEY", "test_api_key")
+    os.environ.setdefault("ADMIN_API_KEY", "test_admin_api_key")
+    os.environ.setdefault("OPENAI_API_KEY", "test_openai_key")
+    os.environ.setdefault("MONDAY_API_KEY", "test_monday_key")
 
     # Import all models to ensure all tables/columns are created
     from src.main import app as flask_app

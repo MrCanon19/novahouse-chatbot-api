@@ -12,6 +12,19 @@ leads_bp = Blueprint("leads", __name__)
 @leads_bp.route("/", methods=["POST"])
 def create_lead():
     """Create a new lead"""
+    # Rate limit lead creation per session/IP
+    try:
+        from src.services.rate_limiter import rate_limiter
+
+        session_id = request.headers.get("X-Session-ID") or request.remote_addr or "default"
+        allowed, retry_after = rate_limiter.check_rate_limit(
+            session_id, "lead_create", max_requests=5, window_seconds=60
+        )
+        if not allowed:
+            return jsonify({"error": "Rate limit exceeded", "retry_after": retry_after}), 429
+    except Exception:
+        # Fail open if limiter unavailable
+        pass
     data = request.get_json()
 
     if not data:
@@ -21,13 +34,26 @@ def create_lead():
     for field in required_fields:
         if field not in data:
             return jsonify({"error": f"Missing required field: {field}"}), 400
+    # Lightweight value validation
+    name = data.get("name")
+    email = data.get("email")
+    if not isinstance(name, str) or not (1 <= len(name.strip()) <= 100):
+        return jsonify({"error": "Invalid name"}), 400
+    if not isinstance(email, str) or "@" not in email or len(email) > 255:
+        return jsonify({"error": "Invalid email"}), 400
+    phone = data.get("phone")
+    if phone is not None and (not isinstance(phone, str) or len(phone) > 20):
+        return jsonify({"error": "Invalid phone"}), 400
+    message = data.get("message")
+    if message is not None and (not isinstance(message, str) or len(message) > 5000):
+        return jsonify({"error": "Invalid message"}), 400
 
     try:
         lead = Lead(
-            name=data["name"],
-            email=data["email"],
-            phone=data.get("phone"),
-            message=data.get("message"),
+            name=name.strip(),
+            email=email.strip(),
+            phone=phone,
+            message=message,
             status="new",
             created_at=datetime.now(timezone.utc),
         )
@@ -91,7 +117,10 @@ def create_lead():
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": str(e)}), 500
+        import logging
+
+        logging.getLogger(__name__).error(f"Lead creation failed: {e}", exc_info=True)
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @leads_bp.route("/", methods=["GET"])

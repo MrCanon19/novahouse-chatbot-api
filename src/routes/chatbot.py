@@ -587,6 +587,11 @@ def chat():
             return jsonify({"error": "Message is required"}), 400
 
         user_message = data["message"]
+        # Lightweight validation to prevent null/oversized inputs
+        if not isinstance(user_message, str) or not user_message.strip():
+            return jsonify({"error": "Message must be a non-empty string"}), 400
+        if len(user_message) > 5000:
+            return jsonify({"error": "Message too long (max 5000 chars)"}), 413
         session_id = data.get("session_id", "default")
 
         # Rate limiting check (manual - decorator doesn't work here)

@@ -194,14 +194,14 @@ def add_context_data_column():
 
         # Define columns to add - HARDCODED for security (prevent SQL injection)
         # NEVER accept column names/types from user input in DDL statements!
-        columns_to_add = [
-            ("context_data", "TEXT"),
-            ("user_satisfaction", "INTEGER"),
-            ("feedback_text", "TEXT"),
-            ("awaiting_confirmation", "BOOLEAN DEFAULT FALSE"),
-        ]
+        SAFE_COLUMNS = {
+            "context_data": "TEXT",
+            "user_satisfaction": "INTEGER",
+            "feedback_text": "TEXT",
+            "awaiting_confirmation": "BOOLEAN DEFAULT FALSE",
+        }
 
-        for column_name, column_type in columns_to_add:
+        for column_name, column_type in SAFE_COLUMNS.items():
             # Check if column exists - use parameterized query
             result = db.session.execute(
                 text(
