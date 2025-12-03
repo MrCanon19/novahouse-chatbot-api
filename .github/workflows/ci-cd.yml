@@ -188,6 +188,31 @@ jobs:
               KEY_FILE="$KEY_FILE" GCP_PROJECT_ID="$GCP_PROJECT_ID" python3 -c 'import json,os,sys; k=os.environ["KEY_FILE"]; exp=os.environ["GCP_PROJECT_ID"].strip(); d=json.load(open(k)); proj=(d.get("project_id") or "").strip(); email=(d.get("client_email") or "").strip(); exp_dom=f"{exp}.iam.gserviceaccount.com"; ed=email.split("@",1)[1] if "@" in email else email; sys.exit(0) if (proj==exp and email.endswith(exp_dom)) else (print("ERROR: GCP_SA_KEY nie pasuje do projektu.\n  Wykryto: project_id='%s', domena_email='%s'\n  Oczekiwano: project_id='%s', domena_email='%s'\n  Podmień sekret GCP_SA_KEY na klucz z właściwego projektu."%(proj,ed,exp,exp_dom)) or sys.exit(1))'
           gcloud auth activate-service-account --key-file="$KEY_FILE"
           gcloud config set project "$GCP_PROJECT_ID"
+      - name: Prepare app.yaml from template
+        if: steps.deploy_check.outputs.should_deploy == 'true'
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          MONDAY_API_KEY: ${{ secrets.MONDAY_API_KEY }}
+          MONDAY_BOARD_ID: ${{ secrets.MONDAY_BOARD_ID }}
+          POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          API_KEY: ${{ secrets.API_KEY }}
+        run: |
+          # Copy template and substitute secrets
+          cp app.yaml.example app.yaml
+          # Use sed to replace placeholders (escape special chars in values)
+          sed -i "s|YOUR_OPENAI_API_KEY_HERE|${OPENAI_API_KEY}|g" app.yaml
+          sed -i "s|YOUR_MONDAY_API_KEY_HERE|${MONDAY_API_KEY}|g" app.yaml
+          sed -i "s|YOUR_MONDAY_BOARD_ID_HERE|${MONDAY_BOARD_ID}|g" app.yaml
+          sed -i "s|YOUR_POSTGRES_HOST_HERE|${POSTGRES_HOST}|g" app.yaml
+          sed -i "s|YOUR_POSTGRES_USER_HERE|${POSTGRES_USER}|g" app.yaml
+          sed -i "s|YOUR_POSTGRES_PASSWORD_HERE|${POSTGRES_PASSWORD}|g" app.yaml
+          sed -i "s|YOUR_POSTGRES_DB_HERE|${POSTGRES_DB}|g" app.yaml
+          sed -i "s|YOUR_SECRET_KEY_HERE|${SECRET_KEY}|g" app.yaml
+          sed -i "s|YOUR_API_KEY_HERE|${API_KEY}|g" app.yaml
       - name: Deploy to App Engine
         if: steps.deploy_check.outputs.should_deploy == 'true'
         run: |
