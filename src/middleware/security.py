@@ -2,6 +2,7 @@
 Rate Limiting & Security Middleware
 """
 
+import os
 import time
 from collections import defaultdict
 from datetime import datetime
@@ -10,15 +11,58 @@ from functools import wraps
 from flask import jsonify, request
 
 
-# Simple in-memory rate limiter (use Redis in production)
+# Distributed rate limiter with Redis support
 class RateLimiter:
     def __init__(self):
+        self.redis = None
+        redis_url = os.getenv("REDIS_URL")
+
+        if redis_url:
+            try:
+                import redis
+
+                self.redis = redis.from_url(
+                    redis_url,
+                    decode_responses=True,
+                    socket_connect_timeout=2,
+                    socket_timeout=2,
+                )
+                self.redis.ping()
+                print(f"✅ Rate limiter using Redis: {redis_url}")
+            except Exception as e:
+                print(f"⚠️  Redis unavailable, fallback to in-memory: {e}")
+                self.redis = None
+
+        # Fallback to in-memory for development
         self.requests = defaultdict(list)
         self.cleanup_interval = 3600  # 1 hour
         self.last_cleanup = time.time()
 
     def is_allowed(self, key: str, max_requests: int, window_seconds: int) -> bool:
-        """Check if request is allowed"""
+        """Check if request is allowed (Redis-distributed or in-memory fallback)"""
+
+        if self.redis:
+            try:
+                # Redis sliding window implementation
+                current = int(time.time())
+                window_start = current - window_seconds
+
+                # Use Redis sorted set for sliding window
+                pipe = self.redis.pipeline()
+                pipe.zremrangebyscore(key, 0, window_start)  # Remove old entries
+                pipe.zadd(key, {str(current): current})  # Add current request
+                pipe.zcount(key, window_start, current)  # Count in window
+                pipe.expire(key, window_seconds)  # Set expiry
+                results = pipe.execute()
+
+                count = results[2]
+                return count <= max_requests
+
+            except Exception as e:
+                print(f"⚠️  Redis rate limit error: {e}, using fallback")
+                # Fall through to in-memory
+
+        # In-memory fallback (original logic)
         now = time.time()
 
         # Cleanup old entries periodically
