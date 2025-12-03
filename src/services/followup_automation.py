@@ -3,10 +3,13 @@ Follow-up Automation Service
 Handles abandoned conversations and automated re-engagement
 """
 
+import logging
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional
 
 from src.models.chatbot import ChatConversation, ChatMessage, db
+
+logger = logging.getLogger(__name__)
 
 
 class FollowUpAutomationService:
@@ -181,13 +184,13 @@ class FollowUpAutomationService:
 
             db.session.commit()
 
-            print(
-                f"[FollowUp] Sent follow-up #{followup_data['followup_number']} to {followup_data['session_id']}"
+            logger.info(
+                f"Sent follow-up #{followup_data['followup_number']} to {followup_data['session_id']}"
             )
             return True
 
         except Exception as e:
-            print(f"[FollowUp] Error sending: {e}")
+            logger.error(f"Error sending follow-up: {e}", exc_info=True)
             db.session.rollback()
             return False
 

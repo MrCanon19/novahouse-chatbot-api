@@ -3,8 +3,11 @@ Session Timeout & Reengagement Service
 Gentle nudges when user goes inactive during conversation
 """
 
+import logging
 from datetime import datetime, timedelta, timezone
 from typing import Dict, Optional
+
+logger = logging.getLogger(__name__)
 
 
 class SessionTimeoutService:
@@ -134,7 +137,7 @@ class SessionTimeoutService:
             del self.active_sessions[sid]
 
         if to_remove:
-            print(f"[SessionTimeout] Cleaned up {len(to_remove)} inactive sessions")
+            logger.info(f"Cleaned up {len(to_remove)} inactive sessions")
 
 
 # Global instance
