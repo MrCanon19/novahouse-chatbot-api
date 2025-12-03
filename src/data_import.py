@@ -4,6 +4,7 @@ Skrypt do importu danych treningowych dla chatbota NovaHouse
 """
 
 import json
+import logging
 import os
 import re
 import sys
@@ -14,6 +15,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from flask import Flask
 
 from src.models.chatbot import Entity, Intent, db
+
+logger = logging.getLogger(__name__)
 
 
 def create_app():
@@ -181,14 +184,14 @@ def import_training_data():
             if os.path.exists(main_entities):
                 entities_files.append(main_entities)
 
-        print("🔄 Rozpoczynam import danych treningowych...")
-        print(f"📁 Znalezione pliki intencji: {len(intents_files)}")
-        print(f"📁 Znalezione pliki encji: {len(entities_files)}")
+        logger.info("Rozpoczynam import danych treningowych...")
+        logger.info(f"Znalezione pliki intencji: {len(intents_files)}")
+        logger.info(f"Znalezione pliki encji: {len(entities_files)}")
 
         # Import intencji ze wszystkich znalezionych plików
         all_intents_data = {}
         for intents_file in intents_files:
-            print(f"📖 Czytam intencje z: {intents_file}")
+            logger.info(f"Czytam intencje z: {intents_file}")
             file_intents = parse_intents_file(intents_file)
             all_intents_data.update(file_intents)
 
@@ -196,7 +199,7 @@ def import_training_data():
             # Sprawdzenie czy intencja już istnieje
             existing_intent = Intent.query.filter_by(name=intent_name).first()
             if existing_intent:
-                print(f"⚠️  Intencja '{intent_name}' już istnieje - pomijam")
+                logger.warning(f"Intencja '{intent_name}' już istnieje - pomijam")
                 continue
 
             # Użycie przygotowanych szablonów odpowiedzi lub domyślnych
@@ -215,7 +218,7 @@ def import_training_data():
         # Import encji ze wszystkich znalezionych plików
         all_entities_data = {}
         for entities_file in entities_files:
-            print(f"📖 Czytam encje z: {entities_file}")
+            logger.info(f"Czytam encje z: {entities_file}")
             file_entities = parse_entities_file(entities_file)
             all_entities_data.update(file_entities)
 
@@ -223,12 +226,12 @@ def import_training_data():
             # Sprawdzenie czy encja już istnieje
             existing_entity = Entity.query.filter_by(name=entity_name).first()
             if existing_entity:
-                print(f"⚠️  Encja '{entity_name}' już istnieje - pomijam")
+                logger.warning(f"Encja '{entity_name}' już istnieje - pomijam")
                 continue
 
             entity = Entity(name=entity_name, values=json.dumps(entity_values, ensure_ascii=False))
             db.session.add(entity)
-            print(f"✅ Dodano encję: {entity_name} ({len(entity_values)} wartości)")
+            logger.info(f"Dodano encję: {entity_name} ({len(entity_values)} wartości)")
 
         # Dodanie dodatkowych intencji, które mogą nie być w pliku
         additional_intents = {
@@ -267,7 +270,7 @@ def import_training_data():
                     ),
                 )
                 db.session.add(intent)
-                print(f"✅ Dodano dodatkową intencję: {intent_name}")
+                logger.info(f"Dodano dodatkową intencję: {intent_name}")
 
         # Zapisanie zmian
         try:
@@ -281,7 +284,7 @@ def import_training_data():
 
         except Exception as e:
             db.session.rollback()
-            print(f"❌ Błąd podczas zapisywania: {e}")
+            logger.error(f"Błąd podczas zapisywania: {e}", exc_info=True)
             return False
 
     return True
@@ -290,7 +293,7 @@ def import_training_data():
 if __name__ == "__main__":
     success = import_training_data()
     if success:
-        print("✨ Dane treningowe zostały pomyślnie zaimportowane!")
+        logger.info("Dane treningowe zostały pomyślnie zaimportowane!")
     else:
-        print("💥 Wystąpił błąd podczas importu danych!")
+        logger.error("Wystąpił błąd podczas importu danych!")
         sys.exit(1)
