@@ -44,6 +44,7 @@ def search():
         return jsonify({"success": True, "query": query, "results": results, "count": len(results)})
 
     except Exception as e:
+        print(f"[SEARCH] Error in search endpoint: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
 
