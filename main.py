@@ -7,24 +7,11 @@ Główny plik aplikacji dla Google App Engine
 import os
 import sys
 
-import sentry_sdk
-from sentry_sdk.integrations.flask import FlaskIntegration
-
 # Dodanie ścieżki do modułów
 sys.path.insert(0, os.path.dirname(__file__))
 
-# Inicjalizacja Sentry (monitoring błędów)
-SENTRY_DSN = os.getenv("SENTRY_DSN", "")
-if SENTRY_DSN:
-    sentry_sdk.init(
-        dsn=SENTRY_DSN,
-        integrations=[FlaskIntegration()],
-        traces_sample_rate=1.0,
-        environment=os.getenv("ENV", "development"),
-    )
-    print("✅ Sentry monitoring enabled")
-else:
-    print("⚠️  Sentry DSN not set – monitoring wyłączony")
+# Sentry monitoring - WYŁĄCZONY (za skomplikowany dla App Engine cold start)
+# Zamiast Sentry używamy GCP Error Reporting (automatyczny w App Engine)
 
 # Import aplikacji Flask
 from src.main import app
