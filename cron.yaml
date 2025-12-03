@@ -28,3 +28,13 @@ cron:
     min_backoff_seconds: 30
     max_doublings: 2
   target: default
+
+# Check secret expiration and rotation status
+- description: "Monitor API keys and secrets for expiration"
+  url: /api/cron/check-secrets
+  schedule: every monday 09:00
+  timezone: Europe/Warsaw
+  retry_parameters:
+    min_backoff_seconds: 60
+    max_doublings: 2
+  target: default

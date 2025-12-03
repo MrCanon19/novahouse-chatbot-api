@@ -130,6 +130,28 @@ if db_url.startswith("postgresql://"):
     }
 db.init_app(app)
 
+# Slow query logging (queries >100ms)
+import logging
+import time
+
+from sqlalchemy import event
+from sqlalchemy.engine import Engine
+
+logger = logging.getLogger(__name__)
+
+
+@event.listens_for(Engine, "before_cursor_execute")
+def before_cursor_execute(conn, cursor, statement, parameters, context, executemany):
+    conn.info.setdefault("query_start_time", []).append(time.time())
+
+
+@event.listens_for(Engine, "after_cursor_execute")
+def after_cursor_execute(conn, cursor, statement, parameters, context, executemany):
+    total = time.time() - conn.info["query_start_time"].pop(-1)
+    if total > 0.1:  # 100ms threshold
+        logger.warning(f"Slow query ({total:.3f}s): {statement[:200]}")
+
+
 from src.routes.ab_testing import ab_testing_bp
 from src.routes.analytics import analytics_bp
 from src.routes.backup import backup_routes
