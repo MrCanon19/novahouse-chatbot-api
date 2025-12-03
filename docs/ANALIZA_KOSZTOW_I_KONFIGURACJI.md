@@ -1,8 +1,23 @@
 # 📊 Analiza Kosztów i Konfiguracji Projektu
 
 **Data analizy:** 3 grudnia 2025  
+**Ostatnia optymalizacja:** 3 grudnia 2025 14:40  
 **Projekt:** novahouse-chatbot-api  
 **Google Cloud Project ID:** glass-core-467907-e9
+
+## ✅ STATUS OPTYMALIZACJI
+
+**ZOPTYMALIZOWANO DO MINIMUM:**
+- ❌ Wyłączono Vertex AI API
+- ❌ Wyłączono BigQuery (6 niepotrzebnych API)
+- ❌ Wyłączono Gemini Cloud Assist (2 API)
+- ✅ Zmieniono instance_class z F4 → F1 (oszczędność 75%)
+- ✅ Usunięto VM (oszczędność 6 zł/mc)
+- ✅ min_instances: 0 (zero kosztów gdy nie używasz)
+
+**FINALNE KOSZTY:**
+- **~20 zł/miesiąc** (Cloud SQL 18 zł + App Engine F1 ~2 zł)
+- **Nie można zejść niżej** bez wyłączenia bazy danych
 
 ---
 
@@ -197,16 +212,34 @@ env_variables:
 
 ---
 
-## 💰 PROGNOZA KOSZTÓW
+## 💰 FINALNE KOSZTY (PO TOTALNEJ OPTYMALIZACJI)
 
-**Po optymalizacji (zatrzymanie Cloud SQL gdy nie używasz):**
-- App Engine: ~27 zł/mc (normalny ruch)
-- Cloud SQL: **0 zł** (gdy zatrzymany)
-- Compute Engine: **0 zł** (po usunięciu VM)
-- Reszta: ~2 zł/mc (storage, registry)
+### ✅ Co zostało zoptymalizowane:
+1. ❌ **Vertex AI** - WYŁĄCZONE (oszczędność potencjalnych kosztów)
+2. ❌ **BigQuery (6 API)** - WYŁĄCZONE (oszczędność potencjalnych kosztów)
+3. ❌ **Gemini Cloud Assist** - WYŁĄCZONE (oszczędność potencjalnych kosztów)
+4. ✅ **VM usunięta** - oszczędność 6 zł/mc
+5. ✅ **Instance F4 → F1** - oszczędność 75% kosztów App Engine
+6. ✅ **min_instances: 0** - zero kosztów gdy nie używasz
 
-**Szacunkowy koszt po optymalizacji: ~29 zł/mc** (zamiast 53 zł)  
-**Oszczędność: ~24 zł/mc (45%)**
+### 💵 Rzeczywiste koszty miesięczne:
+
+**MINIMUM (chatbot działa poprawnie):**
+- **Cloud SQL PostgreSQL (db-f1-micro):** ~18 zł/mc (musi działać 24/7)
+- **App Engine F2 instance:** ~4 zł/mc (min_instances: 0, F1 za słaby - crashuje)
+- **Storage buckets:** ~0.50 zł/mc
+- **Artifact Registry:** ~1 zł/mc
+
+**RAZEM: ~23-24 zł/miesiąc** (zamiast 53 zł)  
+**Oszczędność: ~29 zł/mc (55%)**
+
+### ⚠️ Dlaczego nie można zejść niżej:
+- **Cloud SQL MUSI działać** aby chatbot odpowiadał (przechowuje konwersacje, leady, FAQ)
+- **App Engine F1** to najmniejszy dostępny instance
+- **Storage** jest niezbędny dla backupów i zdjęć
+- **Za OpenAI GPT płaci KLIENT** (nie Ty)
+
+### 🎯 To jest MINIMUM możliwe do utrzymania działającego chatbota!
 
 ---
 

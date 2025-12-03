@@ -13,8 +13,12 @@ from whoosh.fields import DATETIME, ID, KEYWORD, TEXT, Schema
 from whoosh.index import create_in, exists_in, open_dir
 from whoosh.qparser import FuzzyTermPlugin, MultifieldParser
 
-# Search index directory
-INDEX_DIR = os.path.join(os.path.dirname(__file__), "..", "search_index")
+# Search index directory (use /tmp in App Engine - read-only filesystem)
+INDEX_DIR = (
+    "/tmp/search_index"
+    if os.getenv("GAE_ENV")
+    else os.path.join(os.path.dirname(__file__), "..", "search_index")
+)
 
 # Schema for search index
 search_schema = Schema(
@@ -214,12 +218,7 @@ class AdvancedSearchService:
     def index_knowledge_base(self):
         """Index all knowledge base content"""
         try:
-            from src.knowledge.novahouse_info import (
-                BLOG_ARTICLES,
-                CLIENT_REVIEWS,
-                FAQ,
-                PORTFOLIO,
-            )
+            from src.knowledge.novahouse_info import BLOG_ARTICLES, CLIENT_REVIEWS, FAQ, PORTFOLIO
 
             # Index FAQ (FAQ is a dict with key=question, value=answer)
             for i, (question, answer) in enumerate(FAQ.items()):
