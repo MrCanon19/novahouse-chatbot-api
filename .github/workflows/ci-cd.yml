@@ -130,35 +130,11 @@ jobs:
             echo "Deployment skipped: GCP_SA_KEY or GCP_PROJECT_ID secrets are not configured."
             SHOULD_DEPLOY=false
           else
-            KEY_ERROR=$(python - <<'PY'
-              import base64
-              import json
-              import os
-              key_raw = os.environ["GCP_SA_KEY"].strip()
-              if key_raw.startswith(("file://", "/", "~")):
-                  print(
-                      "Sekret GCP_SA_KEY wskazuje na ścieżkę lokalną. Wklej treść pliku JSON klucza serwisowego albo jego base64 do sekrety GitHub."
-                  )
-                  raise SystemExit(0)
-              def is_json(candidate: str) -> bool:
-                  try:
-                      json.loads(candidate)
-                      return True
-                  except Exception:
-                      return False
-              if is_json(key_raw):
-                  raise SystemExit(0)
-              try:
-                  decoded = base64.b64decode(key_raw)
-                  json.loads(decoded)
-              except Exception as exc:  # pragma: no cover - runtime validation only
-                  print(f"Sekret GCP_SA_KEY nie jest poprawnym JSON-em ani base64: {exc}")
-            PY
-            )
-            if [ -n "$KEY_ERROR" ]; then
-              echo "Deployment skipped: $KEY_ERROR"
+            # Validate GCP_SA_KEY format
+            python3 -c "import base64, json, os, sys; key=os.environ.get('GCP_SA_KEY','').strip(); json.loads(key if not key.startswith(('file://','/',chr(126))) else (json.loads(base64.b64decode(key)) if key else sys.exit(1)))" 2>/dev/null || {
+              echo "Deployment skipped: Invalid GCP_SA_KEY format"
               SHOULD_DEPLOY=false
-            fi
+            }
           fi
           echo "should_deploy=${SHOULD_DEPLOY}" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v5
