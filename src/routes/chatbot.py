@@ -1524,7 +1524,8 @@ def get_abandonment_alerts():
         two_hours_ago = datetime.now(timezone.utc) - timedelta(hours=2)
 
         active_conversations = (
-            ChatConversation.query.filter(
+            ChatConversation.query.options(db.joinedload(ChatConversation.messages))
+            .filter(
                 ChatConversation.started_at >= two_hours_ago,
                 ChatConversation.ended_at.is_(None),
             )
