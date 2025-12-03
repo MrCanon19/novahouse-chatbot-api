@@ -101,71 +101,70 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
         if not bot_response:
             bot_response = check_faq(user_message)
 
-        # Jeśli nie znaleziono w FAQ, użyj AI (OpenAI GPT)
-        if not bot_response and openai_client:
-            try:
-                # Pobierz historię konwersacji
-                history = (
-                    ChatMessage.query.filter_by(conversation_id=conversation.id)
-                    .order_by(ChatMessage.timestamp.desc())
-                    .limit(10)
-                    .all()
-                )
-
-                context = "\n".join(
-                    [
-                        f"{'User' if msg.sender == 'user' else 'Bot'}: {msg.message}"
-                        for msg in reversed(history[:-1])  # Exclude current message
-                    ]
-                )
-
-                # Add memory context
-                memory_prompt = ""
-                if context_memory:
-                    memory_items = []
-                    if context_memory.get("name"):
-                        memory_items.append(f"Imię: {context_memory['name']}")
-                    if context_memory.get("city"):
-                        memory_items.append(f"Miasto: {context_memory['city']}")
-                    if context_memory.get("square_meters"):
-                        memory_items.append(f"Metraż: {context_memory['square_meters']}m²")
-                    if context_memory.get("package"):
-                        memory_items.append(f"Interesujący pakiet: {context_memory['package']}")
-                    if memory_items:
-                        memory_prompt = "\n\nZapamiętane info o kliencie:\n" + "\n".join(
-                            memory_items
-                        )
-
-                print(f"[OpenAI GPT] Przetwarzanie: {user_message[:50]}...")
-                messages = [
-                    {"role": "system", "content": SYSTEM_PROMPT + memory_prompt},
-                    {"role": "user", "content": f"Context:\n{context}\n\nUser: {user_message}"},
-                ]
-                response = openai_client.chat.completions.create(
-                    model="gpt-4o-mini",  # Wracam do 4o-mini - szybszy, stabilniejszy
-                    messages=messages,
-                    max_tokens=500,
-                    temperature=0.7,
-                )
-                bot_response = response.choices[0].message.content
-                print(f"[OpenAI GPT-5 nano] Raw response: {repr(bot_response)}")
-                print(
-                    f"[OpenAI GPT-5 nano] Odpowiedź: {bot_response[:100] if bot_response else 'PUSTA'}..."
-                )
-
-            except (ValueError, AttributeError, ConnectionError) as e:
-                print(f"[GPT ERROR] {type(e).__name__}: {e}")
-                bot_response = "Przepraszam, wystąpił problem z przetwarzaniem Twojej wiadomości. Czy możesz spytać inaczej?"
-            except Exception as e:
-                print(f"[GPT UNEXPECTED ERROR] {type(e).__name__}: {e}")
-                bot_response = "Przepraszam, wystąpił problem z przetwarzaniem Twojej wiadomości. Czy możesz spytać inaczej?"
-        elif not bot_response:
-            print("[WARNING] Brak OpenAI API key - ustaw OPENAI_API_KEY")
-
-        # Fallback jeśli nadal brak odpowiedzi
+        # 4. Jeśli nie znaleziono w FAQ, ZAWSZE użyj AI (OpenAI GPT) - PRIORYTET!
         if not bot_response:
-            print("[FALLBACK] Używam domyślnej odpowiedzi")
-            bot_response = "Dziękuję za wiadomość! Jak mogę Ci pomóc? Możesz zapytać o nasze pakiety, ceny, realizacje czy proces wykończenia."
+            if openai_client:
+                try:
+                    # Pobierz historię konwersacji
+                    history = (
+                        ChatMessage.query.filter_by(conversation_id=conversation.id)
+                        .order_by(ChatMessage.timestamp.desc())
+                        .limit(10)
+                        .all()
+                    )
+
+                    context = "\n".join(
+                        [
+                            f"{'User' if msg.sender == 'user' else 'Bot'}: {msg.message}"
+                            for msg in reversed(history[:-1])  # Exclude current message
+                        ]
+                    )
+
+                    # Add memory context
+                    memory_prompt = ""
+                    if context_memory:
+                        memory_items = []
+                        if context_memory.get("name"):
+                            memory_items.append(f"Imię: {context_memory['name']}")
+                        if context_memory.get("city"):
+                            memory_items.append(f"Miasto: {context_memory['city']}")
+                        if context_memory.get("square_meters"):
+                            memory_items.append(f"Metraż: {context_memory['square_meters']}m²")
+                        if context_memory.get("package"):
+                            memory_items.append(f"Interesujący pakiet: {context_memory['package']}")
+                        if memory_items:
+                            memory_prompt = "\n\nZapamiętane info o kliencie:\n" + "\n".join(
+                                memory_items
+                            )
+
+                    print(f"[OpenAI GPT] Przetwarzanie: {user_message[:50]}...")
+                    messages = [
+                        {"role": "system", "content": SYSTEM_PROMPT + memory_prompt},
+                        {"role": "user", "content": f"Context:\n{context}\n\nUser: {user_message}"},
+                    ]
+                    response = openai_client.chat.completions.create(
+                        model="gpt-4o-mini",  # Zoptymalizowany model
+                        messages=messages,
+                        max_tokens=500,
+                        temperature=0.7,
+                    )
+                    bot_response = response.choices[0].message.content
+                    print(
+                        f"[OpenAI GPT] Response: {bot_response[:100] if bot_response else 'EMPTY'}..."
+                    )
+
+                except Exception as e:
+                    print(f"[GPT ERROR] {type(e).__name__}: {e}")
+                    # Fallback tylko przy błędzie GPT
+                    bot_response = get_default_response(user_message)
+            else:
+                print("[WARNING] OpenAI nie skonfigurowany - używam fallback")
+                bot_response = get_default_response(user_message)
+
+        # Jeśli NADAL brak odpowiedzi (nie powinno się zdarzyć)
+        if not bot_response:
+            print("[CRITICAL FALLBACK] Używam awaryjnej odpowiedzi")
+            bot_response = get_default_response(user_message)
 
         # Track A/B test response (if user responded to follow-up question)
         if conversation.followup_variant and len(user_message) > 3:

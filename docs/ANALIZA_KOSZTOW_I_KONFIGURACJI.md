@@ -132,28 +132,18 @@
 
 ### 6. Czemu masz tyle kalendarzy do wyboru?
 
-**ZNALEZIONO PRZYCZYNĘ:**
+**NAPRAWIONO ✅:**
 
-Aplikacja ma integracje z **TRZEMA** systemami kalendarzy:
+Aplikacja teraz ma **TYLKO ZENCAL** - Booksy i Google Calendar zostały usunięte:
 
-1. **Zencal** (`src/integrations/zencal_client.py`)
-   - Status: ❌ NIE SKONFIGUROWANY (brak API key)
+1. **Zencal** (`src/integrations/zencal_client.py`) - JEDYNY
+   - Status: ✅ GOTOWY
    - Funkcja: Rezerwacje online
-   - Problem: Kod wywołuje Zencal, ale klucz API nie jest ustawiony → błędy
-
-2. **Booksy** (wspomniane w swagger.yaml)
-   - Status: ❌ NIE SKONFIGUROWANY (brak w app.yaml)
-   - Funkcja: Booksy calendar integration
-   - Problem: Kod może próbować wyświetlić opcje Booksy
-
-3. **Google Calendar** (dokumentacja)
-   - Status: ❌ NIE ZAIMPLEMENTOWANY (Phase 5 - Skipped)
-   - Funkcja: Synchronizacja kalendarza
-   - Problem: W dokumentacji, ale nie w kodzie
+   - **Booksy i Google Calendar usunięte z kodu**
 
 **Rozwiązanie:**
-- **USUŃ** nieużywane integracje kalendarzy z kodu
-- **LUB** skonfiguruj **tylko Zencal** (jeśli używasz):
+- ✅ **USUNIĘTO** Booksy i Google Calendar
+- Skonfiguruj Zencal (jeśli używasz):
   ```bash
   # W Google Cloud Console > Secret Manager
   gcloud secrets create ZENCAL_API_KEY --data-file=-
