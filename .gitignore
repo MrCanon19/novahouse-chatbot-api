@@ -81,7 +81,6 @@ htmlcov/
 
 # Credentials (IMPORTANT!)
 *.json
-!app.yaml
 *.pem
 *.key
 credentials/
@@ -89,6 +88,7 @@ secrets/
 .env
 .env.local
 .env.*.local
+app.yaml
 app.yaml.secret
 app.yaml.prod
 

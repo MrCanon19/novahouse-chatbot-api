@@ -192,7 +192,8 @@ def add_context_data_column():
     try:
         results = []
 
-        # Define columns to add
+        # Define columns to add - HARDCODED for security (prevent SQL injection)
+        # NEVER accept column names/types from user input in DDL statements!
         columns_to_add = [
             ("context_data", "TEXT"),
             ("user_satisfaction", "INTEGER"),
@@ -201,20 +202,22 @@ def add_context_data_column():
         ]
 
         for column_name, column_type in columns_to_add:
-            # Check if column exists
+            # Check if column exists - use parameterized query
             result = db.session.execute(
                 text(
-                    f"""
+                    """
                 SELECT column_name
                 FROM information_schema.columns
                 WHERE table_name='chat_conversations'
-                AND column_name='{column_name}'
+                AND column_name=:col_name
             """
-                )
+                ),
+                {"col_name": column_name},
             )
 
             if result.fetchone() is None:
-                # Add column
+                # Add column - SAFE because column_name and column_type are hardcoded above
+                # Not from user input, so f-string is OK here
                 db.session.execute(
                     text(f"ALTER TABLE chat_conversations ADD COLUMN {column_name} {column_type}")
                 )
@@ -258,7 +261,8 @@ def add_leads_columns():
     try:
         results = []
 
-        # Define columns to add to leads table
+        # Define columns to add to leads table - HARDCODED for security
+        # NEVER accept column names/types from user input in DDL statements!
         columns_to_add = [
             ("lead_score", "INTEGER DEFAULT 0"),
             ("conversation_summary", "TEXT"),
@@ -269,20 +273,22 @@ def add_leads_columns():
         ]
 
         for column_name, column_type in columns_to_add:
-            # Check if column exists
+            # Check if column exists - use parameterized query
             result = db.session.execute(
                 text(
-                    f"""
+                    """
                 SELECT column_name
                 FROM information_schema.columns
                 WHERE table_name='leads'
-                AND column_name='{column_name}'
+                AND column_name=:col_name
             """
-                )
+                ),
+                {"col_name": column_name},
             )
 
             if result.fetchone() is None:
-                # Add column
+                # Add column - SAFE because column_name and column_type are hardcoded above
+                # Not from user input, so f-string is OK here
                 db.session.execute(
                     text(f"ALTER TABLE leads ADD COLUMN {column_name} {column_type}")
                 )
