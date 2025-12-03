@@ -5,19 +5,23 @@
 **Projekt:** novahouse-chatbot-api  
 **Google Cloud Project ID:** glass-core-467907-e9
 
-## ✅ STATUS OPTYMALIZACJI
+## ✅ STATUS OPTYMALIZACJI - WSZYSTKO OGARNIĘTE!
 
-**ZOPTYMALIZOWANO DO MINIMUM:**
-- ❌ Wyłączono Vertex AI API
+**ZOPTYMALIZOWANO DO ABSOLUTNEGO MINIMUM:**
+- ❌ Wyłączono Vertex AI API (oszczędność potencjalnych kosztów)
 - ❌ Wyłączono BigQuery (6 niepotrzebnych API)
 - ❌ Wyłączono Gemini Cloud Assist (2 API)
-- ✅ Zmieniono instance_class z F4 → F1 (oszczędność 75%)
-- ✅ Usunięto VM (oszczędność 6 zł/mc)
-- ✅ min_instances: 0 (zero kosztów gdy nie używasz)
+- ✅ App Engine F2 instance (F1 crashował)
+- ✅ Usunięto VM "novahouse-bot" (oszczędność 6 zł/mc)
+- ✅ min_instances: 0 (ZERO kosztów gdy nikt nie używa)
+- ✅ Naprawiono chatbot logic (OpenAI GPT priorytet)
+- ✅ Naprawiono search_service.py (read-only filesystem)
+- ❌ Usunięto GCS bucket (niepotrzebny - nie używasz zdjęć)
 
 **FINALNE KOSZTY:**
-- **~20 zł/miesiąc** (Cloud SQL 18 zł + App Engine F1 ~2 zł)
-- **Nie można zejść niżej** bez wyłączenia bazy danych
+- **~24 zł/miesiąc** (Cloud SQL 18 zł + App Engine F2 ~4 zł + storage ~1.5 zł)
+- **55% oszczędności** (było 53 zł/mc)
+- **To jest ABSOLUTNE MINIMUM** - nie można zejść niżej bez wyłączenia chatbota
 
 ---
 
