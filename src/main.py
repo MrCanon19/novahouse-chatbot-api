@@ -53,10 +53,10 @@ def rodo_audit():
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from flask_cors import CORS
-from sqlalchemy import text
+from sqlalchemy import event, text
 
-# KROK 1: Importujemy TYLKO obiekt 'db' z pliku, gdzie jest zdefiniowany.
 from src.models.chatbot import db
+from src.services.auto_migration import run_auto_migration
 
 # Error monitoring: GCP Error Reporting działa AUTOMATYCZNIE w App Engine!
 # Logi błędów: https://console.cloud.google.com/errors?project=glass-core-467907-e9
@@ -164,8 +164,6 @@ db.init_app(app)
 def run_auto_migration_once():
     """Run migration only once per app instance"""
     if not hasattr(app, "_migration_done"):
-        from src.services.auto_migration import run_auto_migration
-
         try:
             run_auto_migration(db)
             app._migration_done = True
