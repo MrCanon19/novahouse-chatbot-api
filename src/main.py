@@ -162,9 +162,8 @@ db.init_app(app)
 _auto_migration_done = False
 
 
-# Run automatic database migration on first request
-@app.before_request
-def run_auto_migration_on_first_request():
+# Initialize database and run auto-migration after app context is created
+def _run_auto_migration():
     global _auto_migration_done
     if not _auto_migration_done:
         try:
@@ -173,6 +172,12 @@ def run_auto_migration_on_first_request():
             pass  # Fail silently
         finally:
             _auto_migration_done = True
+
+
+# Run migration when app context is pushed for the first time
+@app.before_request
+def trigger_auto_migration():
+    _run_auto_migration()
 
 
 # Slow query logging (queries >100ms)
