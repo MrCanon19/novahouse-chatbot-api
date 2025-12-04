@@ -371,7 +371,7 @@ FAQ = {
     # Usługi dodatkowe
     "klimatyzacja": "Tak, oferujemy montaż klimatyzacji. W pakiecie Waniliowy/Express cena za jedną jednostkę zaczyna się od 7800 zł. W pozostałych pakietach wycena jest przygotowywana indywidualnie po zrobieniu projektu.",
     "schody_na_zamowienie": "Tak, wykonujemy schody na zamówienie. Wycena jest przygotowywana indywidualnie po zrobieniu projektu, uwzględniającego wszystkie potrzeby i preferencje.",
-    "wizualizacje": "Oferujemy wizualizacje 3D projektowanych wnętrz, które pozwalają zobaczyć, jak będzie wyglądać gotowa przestrzeń przed rozpoczęciem prac. Wizualizacje są dostępne w pakietach Comfort (łazienka, kuchnia), Premium (łazienka, salon, kuchnia, hol) oraz w projektach indywidualnych (całe mieszkanie).",
+    "wizualizacje": "Tak! Wizualizacje 3D i moodboardy są dostępne w KAŻDYM pakiecie (Express, Express Plus, Comfort, Premium, Indywidualny). Zakres wizualizacji zależy od pakietu: Express i Express Plus (podstawowe wizualizacje), Comfort (wizualizacje łazienki i kuchni), Premium (wizualizacje łazienki, salonu, kuchni, holu), Indywidualny (pełne wizualizacje całego mieszkania).",
     "nadzor_prace": "Tak, zapewniamy pełen nadzór nad pracami. Nasi Projektanci nadzorują każdy etap realizacji – dbają o zgodność z projektem, normy techniczne oraz terminowe dostawy materiałów. Dzięki temu nie musisz martwić się przepisami budowlanymi ani technicznymi szczegółami.",
     "raporty_postep": "Tak, regularnie przesyłamy raporty dotyczące postępu prac, w tym zdjęcia. Dzięki temu możesz na bieżąco śledzić postępy bez konieczności wychodzenia z domu.",
     # Informacje firmowe
@@ -381,8 +381,8 @@ FAQ = {
     # Brakujące klucze FAQ
     "cennik_dodatkowy": "Każde dodatkowe prace wyceniamy na podstawie naszego cennika pisemnie przed wykonaniem. Zero niespodzianek i pełna kontrola kosztów. Wszystko pokazujemy z góry i podpisujemy przed pracami.",
     "co_obejmuje_usluga": "Wspólny zakres dla wszystkich pakietów: Odbiór lokalu od dewelopera przez inspektora budowlanego, kompleksowe prace wykonawcze (malowanie, montaż podłóg, drzwi, pełne wykończenie łazienki: płytki, armatura, prysznic/wanna, WC, lustro, oświetlenie), materiały budowlane (kleje, farby, fugi, hydroizolacja), materiały wykończeniowe (podłogi, listwy, płytki, drzwi, klamki, armatura, ceramika), koordynacja zamówień materiałów i prac, sprzątanie pobudowlane, projekt pakietowy (układ funkcjonalny, rzuty wykonawcze, moodboardy, lista zakupowa, konsultacje z projektantem). Wyższe pakiety Comfort i Premium posiadają dodatkowo wizualizacje wybranych pomieszczeń.",
-    "czy_wlaczone_materialy": "Tak! W cenę pakietu wliczone są wszystkie podstawowe materiały budowlane (kleje, farby, fugi, hydroizolacja) oraz materiały wykończeniowe zgodne z katalogiem danego pakietu (podłogi, listwy, płytki, drzwi, klamki, armatura, ceramika). Dodatkowo otrzymujesz 15% rabatu na wszystkie materiały.",
-    "jak_dlugo_trwa": "W przypadku pakietów Express i Express Plus: zazwyczaj od 7 do 10 tygodni – w zależności od pakietu, zakresu i metrażu. W przypadku pakietów Comfort i Premium: zazwyczaj od 12 do 18 tygodni – w zależności od pakietu, zakresu i metrażu. W przypadku projektu indywidualnego: zazwyczaj od 14 do 20 tygodni – w zależności od zakresu i metrażu.",
+    "czy_wlaczone_materialy": "Tak! Wszystkie materiały są WLICZONE w cenę pakietu: materiały budowlane (kleje, farby, fugi, hydroizolacja) oraz wszystkie materiały wykończeniowe zgodne z katalogiem danego pakietu (podłogi, listwy, płytki, drzwi, klamki, armatura, ceramika). Nie ma ukrytych kosztów. Dodatkowo otrzymujesz 15% rabatu na wszystkie materiały.",
+    "jak_dlugo_trwa": "Czasy realizacji (projekt + wykonanie): Express/Express Plus: 6-8 tygodni (1,5-2 miesiące), Comfort: 8-12 tygodni (2-3 miesiące), Premium: 10-16 tygodni (2,5-4 miesiące), Indywidualny: 14-20 tygodni (3,5-5 miesięcy). Podany czas obowiązuje dla mieszkań 20-90 m².",
     "mozna_dostosowac": "Tak. W pliku masz jasno określone limity zmian: Express: 2 zmiany produktów, Express Plus: 3 zmiany, Comfort/Szafran: 5 zmian, Premium/Pomarańczowy/Cynamonowy: 7 zmian. Wszystkie zmiany rozliczane są różnicą cenową danego produktu. Możesz także wybierać produkty z poza katalogu z 7 sklepów partnerskich.",
     "zabudowy_stolarskie": "Oferujemy kompleksowe zabudowy stolarskie na wymiar: szafy, garderoby, dressing roomy, biblioteczki, regały, zabudowy kuchenne i łazienkowe, kuchnie na wymiar. Proces obejmuje kompleksowe podejście od projektu, przez produkcję, aż po montaż. Korzystamy z najwyższej jakości materiałów dla trwałości i funkcjonalności. Wycena jest przygotowywana indywidualnie po zrobieniu projektu.",
 }
@@ -469,7 +469,9 @@ def get_package_description(package_name):
     if not package:
         return None
 
-    description = f"**{package['name']}** ({package['price_range']})\n\n"
+    description = (
+        f"**{package['name']}** ({package['price_per_sqm']}, {package['execution_time']})\n\n"
+    )
     description += f"{package['description']}\n\n"
     description += "**Co zawiera:**\n"
     for feature in package["features"]:

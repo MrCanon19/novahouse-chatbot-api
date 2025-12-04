@@ -34,13 +34,12 @@ class ChatbotUser(HttpUser):
         ]
 
         self.client.post(
-            "/api/chatbot/message",
+            "/api/chatbot/chat",
             json={
                 "message": random.choice(messages),
                 "session_id": self.session_id,
-                "language": "pl",
             },
-            headers={"Content-Type": "application/json", "X-API-Key": "test-api-key"},
+            headers={"Content-Type": "application/json"},
         )
 
     @task(5)  # Weight: 5
@@ -56,13 +55,12 @@ class ChatbotUser(HttpUser):
         self.client.get(
             f"/api/knowledge/search",
             params={"query": random.choice(queries), "limit": 5},
-            headers={"X-API-Key": "test-api-key"},
         )
 
     @task(2)  # Weight: 2
     def get_analytics(self):
         """Test analytics endpoint"""
-        self.client.get("/api/analytics/summary", headers={"X-API-Key": "test-api-key"})
+        self.client.get("/api/analytics/summary")
 
     @task(1)  # Weight: 1
     def create_lead(self):
@@ -76,7 +74,6 @@ class ChatbotUser(HttpUser):
                 "source": "load_test",
                 "message": "Load testing lead",
             },
-            headers={"Content-Type": "application/json", "X-API-Key": "test-api-key"},
         )
 
 
@@ -115,9 +112,8 @@ class ApiStressTest(HttpUser):
     def spam_chatbot(self):
         """Spam chatbot endpoint"""
         self.client.post(
-            "/api/chatbot/message",
+            "/api/chatbot/chat",
             json={"message": "stress test", "session_id": f"stress-{random.randint(1, 100)}"},
-            headers={"X-API-Key": "test-api-key"},
         )
 
 

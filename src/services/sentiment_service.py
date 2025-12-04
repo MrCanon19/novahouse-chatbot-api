@@ -116,14 +116,9 @@ class SentimentService:
 
     def get_empathetic_response_prefix(self, sentiment: str, score: float) -> str:
         """Get empathetic response prefix based on sentiment"""
-        if sentiment == "negative" and score < -0.4:
-            return "Rozumiem Twoją frustrację. "
-        elif sentiment == "negative":
-            return "Przykro mi, że masz wątpliwości. "
-        elif sentiment == "positive":
-            return "Cieszę się, że mogę pomóc! "
-        else:
-            return ""
+        # REMOVED empathetic prefixes - GPT handles this naturally
+        # No need for "Przykro mi" or similar phrases
+        return ""
 
     def adjust_lead_score_by_sentiment(self, base_score: int, session_id: str) -> int:
         """Adjust lead score based on sentiment trend"""
