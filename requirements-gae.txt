@@ -25,7 +25,6 @@ google-cloud-storage==2.19.0
 twilio==9.4.1
 APScheduler==3.11.0
 Whoosh==2.7.4
-sentry-sdk[flask]==2.18.0
 python-dotenv==1.0.1
 locust==2.32.3
 snakeviz==2.2.0
