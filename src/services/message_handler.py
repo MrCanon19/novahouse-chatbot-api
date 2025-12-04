@@ -709,16 +709,11 @@ class MessageHandler:
                         lead.monday_item_id = monday_item_id
                         print(f"[Monday] Lead synced: {monday_item_id} (score: {lead_score})")
 
-                        # Send Sentry alert for high-priority leads
+                        # Log high-priority leads
                         if lead_score >= 70:
-                            try:
-                                import sentry_sdk
-
-                                sentry_sdk.capture_message(
-                                    f"🔥 HIGH-PRIORITY LEAD from chatbot: {lead.name}, score: {lead_score}"
-                                )
-                            except ImportError:
-                                pass
+                            print(
+                                f"🔥 HIGH-PRIORITY LEAD from chatbot: {lead.name}, score: {lead_score}"
+                            )
                     else:
                         print("[Monday] Failed to create lead item")
 

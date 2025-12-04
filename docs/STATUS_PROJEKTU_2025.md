@@ -5,7 +5,7 @@
 **Status:** 🟢 Production-ready - wszystkie systemy działają  
 **Deployment:** ✅ GCP App Engine (v20251204t192630) - wszystkie 8 endpointów OK  
 **CI/CD:** ✅ GitHub Actions pipeline simplified & stabilized  
-**Monitoring:** GCP Error Reporting (Sentry w kodzie dla alertów)
+**Monitoring:** GCP Error Reporting (natywny dla App Engine)
 
 ### 🔧 Ostatnia naprawa produkcji (4 grudnia 2025)
 - ✅ **Problem:** Worker failed to boot na GCP App Engine (wersja 20251204t165805)
@@ -187,8 +187,7 @@
 - Twilio (SMS)
 - Google Cloud Storage
 - Redis (Cache)
-- GCP Error Reporting (produkcja)
-- Sentry SDK (alerting dla high-priority leadów)
+- GCP Error Reporting (monitoring produkcji)
 
 ---
 

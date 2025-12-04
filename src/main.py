@@ -22,7 +22,6 @@ def admin_dashboard():
     stats = {"messages": 12345, "active_users": len(users)}
     backup_status = "OK (ostatni backup: 2025-11-30)"
     telegram_status = "OK"
-    sentry_errors = ["Division by zero at /sentry-test", "Database timeout"]
     rodo_audit = ["All consents valid", "No data leaks detected"]
     if request.method == "POST":
         backup_status = "Backup triggered manually!"
@@ -32,7 +31,6 @@ def admin_dashboard():
         stats=stats,
         backup_status=backup_status,
         telegram_status=telegram_status,
-        sentry_errors=sentry_errors,
         rodo_audit=rodo_audit,
     )
 
@@ -92,13 +90,6 @@ def set_security_headers(response):
     else:
         response.headers["Content-Security-Policy"] = csp_min
     return response
-
-
-# Sentry test endpoint
-@app.route("/sentry-test")
-def sentry_test():
-    1 / 0  # Testowy błąd do Sentry
-    return "Sentry test error triggered"
 
 
 # SECURITY: Secret key from environment (NEVER hardcode!)

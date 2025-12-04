@@ -333,21 +333,11 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                             print(
                                 f"[Monday] Confirmed lead created: {monday_item_id} (score: {lead_score})"
                             )
-                            # Logowanie zdarzenia API (lead utworzony)
-                            try:
-                                import sentry_sdk
-
-                                sentry_sdk.capture_message(
-                                    f"Lead created in Monday.com: {lead.name}, score: {lead_score}"
-                                )
-                            except ImportError:
-                                pass
+                            print(f"Lead created in Monday.com: {lead.name}, score: {lead_score}")
 
                         # Alert dla leadów o wysokim priorytecie
                         if lead_score >= 70:
                             try:
-                                import sentry_sdk
-
                                 from src.services.email_service import email_service
 
                                 email_service.send_email(
@@ -361,11 +351,11 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                                     <p><strong>Monday.com ID:</strong> {monday_item_id}</p>
                                     """,
                                 )
-                                sentry_sdk.capture_message(
+                                print(
                                     f"ALERT: High-priority lead: {lead.name}, score: {lead_score}"
                                 )
-                            except ImportError:
-                                pass
+                            except Exception as e:
+                                print(f"Failed to send high-priority alert: {e}")
 
                         # Clear awaiting flag
                         conversation.awaiting_confirmation = False
@@ -712,21 +702,11 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                         print(
                             f"[Monday] Confirmed lead created: {monday_item_id} (score: {lead_score})"
                         )
-                        # Logowanie zdarzenia API (lead utworzony)
-                        try:
-                            import sentry_sdk
-
-                            sentry_sdk.capture_message(
-                                f"Lead created in Monday.com: {lead.name}, score: {lead_score}"
-                            )
-                        except ImportError:
-                            pass
+                        print(f"Lead created in Monday.com: {lead.name}, score: {lead_score}")
 
                     # Alert dla leadów o wysokim priorytecie
                     if lead_score >= 70:
                         try:
-                            import sentry_sdk
-
                             from src.services.email_service import email_service
 
                             email_service.send_email(
@@ -740,11 +720,9 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                                 <p><strong>Monday.com ID:</strong> {monday_item_id}</p>
                                 """,
                             )
-                            sentry_sdk.capture_message(
-                                f"ALERT: High-priority lead: {lead.name}, score: {lead_score}"
-                            )
-                        except ImportError:
-                            pass
+                            print(f"ALERT: High-priority lead: {lead.name}, score: {lead_score}")
+                        except Exception as e:
+                            print(f"Failed to send high-priority alert: {e}")
 
                     # Clear awaiting flag
                     conversation.awaiting_confirmation = False
