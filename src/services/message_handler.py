@@ -8,7 +8,7 @@ import os
 from datetime import datetime, timezone
 from typing import Dict, Optional, Tuple
 
-from src.models.chatbot import ChatConversation, ChatMessage, Lead, db
+from src.models.chatbot import ChatConversation, ChatMessage, CompetitiveIntel, Lead, db
 from src.services.context_validator import ContextValidator
 from src.services.conversation_state_machine import ConversationStateMachine
 from src.services.multi_turn_dialog import multi_turn_dialog
@@ -124,8 +124,11 @@ class MessageHandler:
             )
 
             conversation.context_data = json.dumps(context_memory)
-            conversation.conversation_summary = conversation_summary  # Will add this column
+            conversation.conversation_summary = conversation_summary
             db.session.commit()
+
+            # Try to auto-create lead if enough data is available
+            lead_info = self._try_create_lead(conversation, context_memory, session_id)
 
             return {
                 "response": bot_response + (f"\n\n{follow_up}" if follow_up else ""),
@@ -136,6 +139,8 @@ class MessageHandler:
                 "suggestions": suggestions,
                 "typing_indicator": True,  # Signal to frontend
                 "summary": summarization_service.generate_short_summary(context_memory),
+                "lead_created": lead_info is not None,
+                "lead_info": lead_info,
             }
 
         except Exception as e:
@@ -159,7 +164,23 @@ class MessageHandler:
             }
 
     def _check_spam(self, session_id: str, message: str) -> Optional[str]:
-        """Check for spam patterns"""
+        """Check for spam patterns - skip rate limiting for important intents"""
+        # Skip rate limiting for booking and important business intents (also contact info)
+        important_keywords = [
+            "umów",
+            "spotkanie",
+            "konsultacj",
+            "rezerwacj",
+            "zapisa",
+            "wizyt",
+            "telefon",
+            "email",
+            "kontakt",
+        ]
+        if any(keyword in message.lower() for keyword in important_keywords):
+            print(f"[Rate Limiter] SKIPPED for important intent: {message[:30]}")
+            return None
+
         conversation_limiter.add_message(session_id, message)
         is_spam, reason = conversation_limiter.is_spam(session_id, message)
         if is_spam:
@@ -593,6 +614,130 @@ class MessageHandler:
             from src.routes.chatbot import calculate_lead_score
 
             return calculate_lead_score(context_memory, len(messages))
+
+    def _try_create_lead(
+        self, conversation: ChatConversation, context_memory: Dict, session_id: str
+    ) -> Optional[Dict]:
+        """
+        Try to auto-create lead if enough data is available
+        Returns: dict with lead info or None if no lead created
+        """
+        try:
+            print(
+                f"[Lead Creation] Checking... context: name={context_memory.get('name')}, email={context_memory.get('email')}, phone={context_memory.get('phone')}"
+            )
+
+            # Check if lead already exists
+            existing_lead = Lead.query.filter_by(session_id=session_id).first()
+            if existing_lead:
+                print(f"[Lead Creation] Lead already exists: {existing_lead.id}")
+                return None
+
+            # Require name + (email OR phone)
+            has_contact = context_memory.get("name") and (
+                context_memory.get("email") or context_memory.get("phone")
+            )
+            if not has_contact:
+                print(f"[Lead Creation] Insufficient data - skipping lead creation")
+                return None
+
+            print("[Lead Creation] Creating lead from conversation data...")
+
+            # Calculate lead score
+            messages = ChatMessage.query.filter_by(conversation_id=conversation.id).all()
+            lead_score = self._calculate_lead_score_ml(context_memory, conversation, messages)
+
+            # Generate conversation summary
+            from src.routes.chatbot import generate_conversation_summary
+
+            conv_summary = generate_conversation_summary(messages, context_memory)
+
+            # Create lead
+            lead = Lead(
+                session_id=session_id,
+                name=context_memory.get("name", "Unknown"),
+                email=context_memory.get("email"),
+                phone=context_memory.get("phone"),
+                location=context_memory.get("city"),
+                property_size=context_memory.get("square_meters"),
+                interested_package=context_memory.get("package"),
+                source="chatbot",
+                status="new",
+                lead_score=lead_score,
+                conversation_summary=conv_summary,
+                data_confirmed=False,
+                last_interaction=datetime.now(timezone.utc),
+            )
+
+            db.session.add(lead)
+            db.session.flush()
+            print(f"[Lead Creation] Lead created: {lead.id} (score: {lead_score})")
+
+            # Try to sync with Monday.com
+            try:
+                monday_api_key = os.getenv("MONDAY_API_KEY")
+                if monday_api_key:
+                    from src.integrations.monday_client import MondayClient
+                    from src.routes.chatbot import suggest_next_best_action
+
+                    next_action = suggest_next_best_action(context_memory, lead_score)
+
+                    # Check for competitive mentions
+                    competitor_intel = (
+                        CompetitiveIntel.query.filter_by(session_id=session_id)
+                        .order_by(CompetitiveIntel.created_at.desc())
+                        .first()
+                    )
+                    competitor_name = competitor_intel.competitor_name if competitor_intel else None
+
+                    monday_client = MondayClient(api_key=monday_api_key)
+                    monday_item_id = monday_client.create_lead_item(
+                        {
+                            "name": lead.name,
+                            "email": lead.email,
+                            "phone": lead.phone,
+                            "message": f"Lead Score: {lead_score}/100 | {conv_summary}",
+                            "property_type": "Mieszkanie",
+                            "budget": context_memory.get("square_meters", ""),
+                            "lead_score": lead_score,
+                            "competitor_mentioned": competitor_name,
+                            "next_action": next_action,
+                        }
+                    )
+
+                    if monday_item_id:
+                        lead.monday_item_id = monday_item_id
+                        print(f"[Monday] Lead synced: {monday_item_id} (score: {lead_score})")
+
+                        # Send Sentry alert for high-priority leads
+                        if lead_score >= 70:
+                            try:
+                                import sentry_sdk
+
+                                sentry_sdk.capture_message(
+                                    f"🔥 HIGH-PRIORITY LEAD from chatbot: {lead.name}, score: {lead_score}"
+                                )
+                            except ImportError:
+                                pass
+                    else:
+                        print("[Monday] Failed to create lead item")
+
+            except Exception as monday_error:
+                print(f"[Monday Sync] Error: {monday_error}")
+                # Don't fail lead creation if Monday sync fails
+
+            db.session.commit()
+
+            return {
+                "lead_id": lead.id,
+                "lead_score": lead_score,
+                "monday_item_id": lead.monday_item_id,
+            }
+
+        except Exception as e:
+            print(f"[Lead Creation] Error: {e}")
+            db.session.rollback()
+            return None
 
 
 # Global instance

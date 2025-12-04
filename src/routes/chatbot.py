@@ -1064,21 +1064,36 @@ def chat():
         session_id = data.get("session_id", "default")
 
         # Rate limiting check (manual - decorator doesn't work here)
+        # Skip rate limiting for booking and critical intents (also contact info at end of conversation)
+        important_keywords = [
+            "umów",
+            "spotkanie",
+            "konsultacj",
+            "rezerwacj",
+            "zapisa",
+            "wizyt",
+            "telefon",
+            "email",
+            "kontakt",
+        ]
+        skip_rate_limit = any(keyword in user_message.lower() for keyword in important_keywords)
+
         from src.services.rate_limiter import rate_limiter
 
-        allowed, retry_after = rate_limiter.check_rate_limit(
-            session_id, "session", max_requests=10, window_seconds=60
-        )
-        if not allowed:
-            return (
-                jsonify(
-                    {
-                        "error": "Rate limit exceeded. Please slow down.",
-                        "retry_after": retry_after,
-                    }
-                ),
-                429,
+        if not skip_rate_limit:
+            allowed, retry_after = rate_limiter.check_rate_limit(
+                session_id, "session", max_requests=10, window_seconds=60
             )
+            if not allowed:
+                return (
+                    jsonify(
+                        {
+                            "error": "Rate limit exceeded. Please slow down.",
+                            "retry_after": retry_after,
+                        }
+                    ),
+                    429,
+                )
 
         # NEW: Use refactored message handler with state machine
         result = message_handler.process_message(user_message, session_id)
@@ -1793,11 +1808,107 @@ def check_faq(message):
     ):
         return FAQ["zabudowy_stolarskie"]
 
-    # Lokalizacje
-    if any(
-        word in message_lower for word in ["gdzie", "lokalizacja", "obszar", "region", "miasto"]
+    # Lokalizacje (pytania i stwierdzenia) - wszystkie major cities w Polsce
+    cities_dict = {
+        # Województwo Wielkopolskie
+        "poznań": ["poznań", "poznaniu", "poznania"],
+        "leszno": ["leszno", "lesznie"],
+        "konin": ["konin", "koninie"],
+        "piła": ["piła", "pile"],
+        # Województwo Zachodniopomorskie
+        "szczecin": ["szczecin", "szczecinie", "szczecina"],
+        "świnoujście": ["świnoujście", "świnoujściu"],
+        "zielona góra": ["zielona góra", "zielonej góry"],
+        "gorzów": ["gorzów", "gorzowie"],
+        # Województwo Lubuskie
+        "gorzów wielkopolski": ["gorzów", "gorzowie"],
+        "żagań": ["żagań", "żaganiu"],
+        "zielona góra": ["zielona góra", "zielonej góry"],
+        # Województwo Dolnośląskie
+        "wrocław": ["wrocław", "wrocławiu", "wrocławia"],
+        "wałbrzych": ["wałbrzych", "wałbrzychu"],
+        "jelenia góra": ["jelenia góra", "jeleniej góry"],
+        "legnica": ["legnica", "legnicy"],
+        # Województwo Opolskie
+        "opole": ["opole", "opolu"],
+        "nysa": ["nysa", "nysie"],
+        # Województwo Kujawsko-Pomorskie
+        "bydgoszcz": ["bydgoszcz", "bydgoszczy"],
+        "toruń": ["toruń", "toruniu"],
+        "włocławek": ["włocławek", "włocławku"],
+        "grudziądz": ["grudziądz", "grudziądzu"],
+        # Województwo Łódzkie
+        "łódź": ["łódź", "łodzi"],
+        "kalisz": ["kalisz", "kaliszu"],
+        "sieradz": ["sieradz", "sieradzu"],
+        "piotrków trybunalski": ["piotrków", "piotrkowie"],
+        # Województwo Mazowieckie
+        "warszawa": ["warszawa", "warszawie", "warszawy", "warszawą"],
+        "radom": ["radom", "radomiu"],
+        "ostrołęka": ["ostrołęka"],
+        "siedlce": ["siedlce", "siedlcach"],
+        "radzymin": ["radzymin", "radzyminie"],
+        # Województwo Warmińsko-Mazurskie
+        "olsztyn": ["olsztyn", "olsztynie"],
+        "elbląg": ["elbląg", "elblągu"],
+        "białystok": ["białystok", "białymstoku"],
+        # Województwo Podlaskie
+        "białystok": ["białystok", "białymstoku"],
+        "łomża": ["łomża", "łomży"],
+        "suwałki": ["suwałki", "suwałkach"],
+        # Województwo Lubelskie
+        "lublin": ["lublin", "lublinie"],
+        "chełm": ["chełm", "chełmie"],
+        "biała podlaska": ["biała podlaska", "białej podlaskiej"],
+        "zamość": ["zamość", "zamościu"],
+        # Województwo Podkarpackie
+        "rzeszów": ["rzeszów", "rzeszowie"],
+        "krosno": ["krosno", "krosnach"],
+        "sanok": ["sanok", "sanoku"],
+        "mielec": ["mielec", "mielcu"],
+        # Województwo Świętokrzyskie
+        "kielce": ["kielce", "kielcach"],
+        "busko-zdrój": ["busko-zdrój", "busku-zdroju"],
+        # Województwo Łódzkie (Silesia region)
+        "częstochowa": ["częstochowa", "częstochowie"],
+        "radomsko": ["radomsko", "radomsku"],
+        # Województwo Śląskie
+        "katowice": ["katowice", "katowicach"],
+        "kraków": ["kraków", "krakowie", "krakowa"],
+        "szczecin": ["szczecin", "szczecinie"],
+        # Major Silesian cities
+        "gliwice": ["gliwice", "gliwicach"],
+        "zabrze": ["zabrze", "zabrzu"],
+        "bytom": ["bytom", "bytomiu"],
+        "ruda śląska": ["ruda śląska", "rudzie śląskiej"],
+        "myślowice": ["myślowice"],
+        "sosnowiec": ["sosnowiec", "sosnowcu"],
+        "dąbrowa górnicza": ["dąbrowa", "dabrowa gornicza"],
+        "chorzów": ["chorzów", "chorzowie"],
+        "tychy": ["tychy", "tychach"],
+        "tarnowskie góry": ["tarnowskie góry"],
+        # Pomeranian cities
+        "gdańsk": ["gdańsk", "gdańsku", "gdańskiej"],
+        "gdynia": ["gdynia", "gdyni"],
+        "sopot": ["sopot", "sopocie"],
+        "wejherowo": ["wejherowo", "wejherowie"],
+        "tczew": ["tczew", "tczewie"],
+    }
+
+    # Check if message mentions any city (including different cases)
+    mentioned_city = None
+    for city, variations in cities_dict.items():
+        if any(variant in message_lower for variant in variations):
+            mentioned_city = city.title()
+            break
+
+    if mentioned_city or any(
+        word in message_lower
+        for word in ["gdzie", "lokalizacja", "obszar", "region", "miasto", "mieszkam", "jestem z"]
     ):
-        return FAQ["gdzie_dzialamy"]
+        if not mentioned_city:
+            mentioned_city = "Polsce"
+        return f"✅ Super! {mentioned_city} to jeden z naszych głównych rynków. Świetnie tam pracujemy!\n\n🏠 Czy to mieszkanie czy dom? Ile metrów kwadratowych?"
 
     # Cennik dodatkowy
     if any(
@@ -1853,7 +1964,10 @@ def check_faq(message):
 
     # Pytania ogólne o pakiety - WŁĄCZONE dla lepszego UX
     # Teraz obsługujemy tylko ogólne pytania, konkretne trafiają do AI
-    if any(word in message_lower for word in ["jakie macie pakiety", "jakie pakiety", "co oferujesz", "jakie oferujesz"]):
+    if any(
+        word in message_lower
+        for word in ["jakie macie pakiety", "jakie pakiety", "co oferujesz", "jakie oferujesz"]
+    ):
         return (
             "📦 NASZE PAKIETY:\n\n"
             "1️⃣ **EXPRESS** - Szybkie, proste wykończenie\n"
