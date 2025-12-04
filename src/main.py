@@ -160,67 +160,26 @@ db.init_app(app)
 
 # Flag for auto-migration
 _auto_migration_done = False
-_auto_migration_attempted = False
-_migration_lock = False  # Prevent concurrent migrations
 
 
-# Initialize database and run auto-migration
-def _run_auto_migration():
-    global _auto_migration_done, _auto_migration_attempted, _migration_lock
-
-    # Prevent concurrent migrations
-    if _auto_migration_done or _auto_migration_attempted or _migration_lock:
-        return
-
-    _migration_lock = True
-    _auto_migration_attempted = True
-
-    try:
-        import sys
-
-        print("🔧 [AUTO-MIGRATION] Starting migration...", file=sys.stderr)
-        result = run_auto_migration(db)
-        print(f"✅ [AUTO-MIGRATION] Migration result: {result}", file=sys.stderr)
-        _auto_migration_done = True
-        return True
-    except Exception as e:
-        print(f"❌ [AUTO-MIGRATION] Migration failed: {e}", file=sys.stderr)
-        import traceback
-
-        traceback.print_exc()
-        return False
-    finally:
-        _migration_lock = False
-
-
-# Attempt migration immediately after db is configured (on app startup)
-# NOTE: Disabled in production as it can cause app startup hangs
-# print("🚀 [INIT] Attempting app context migration at startup...", file=sys.stderr)
-# try:
-#     with app.app_context():
-#         print("✨ [INIT] App context created at startup, running migration...", file=sys.stderr)
-#         _run_auto_migration()
-# except Exception as e:
-#     print(f"⚠️  [INIT] App context at startup failed: {e}", file=sys.stderr)
-#     # If app context not available at startup, MUST run on first request
-
-
-# CRITICAL FALLBACK: Run on EVERY request until migration succeeds
+# ONLY run migration on analytics/admin requests (not on startup)
 @app.before_request
-def trigger_auto_migration_on_request():
+def run_migration_on_critical_endpoint():
     global _auto_migration_done
-    if not _auto_migration_done:
+
+    # Only check on analytics and admin routes
+    if not _auto_migration_done and ("/api/analytics" in request.path or "/admin" in request.path):
         import sys
 
-        print(
-            f"🔄 [REQUEST] Checking migration status (done={_auto_migration_done})...",
-            file=sys.stderr,
-        )
-        success = _run_auto_migration()
-        if success:
-            print("✅ [REQUEST] Migration successful!", file=sys.stderr)
-        else:
-            print("❌ [REQUEST] Migration attempt failed", file=sys.stderr)
+        try:
+            print(f"🔄 [MIGRATION] Running on first {request.path} request...", file=sys.stderr)
+            if run_auto_migration(db):
+                _auto_migration_done = True
+                print("✅ [MIGRATION] Success!", file=sys.stderr)
+            else:
+                print("❌ [MIGRATION] Failed to migrate", file=sys.stderr)
+        except Exception as e:
+            print(f"❌ [MIGRATION] Error: {e}", file=sys.stderr)
 
 
 # Slow query logging (queries >100ms)
