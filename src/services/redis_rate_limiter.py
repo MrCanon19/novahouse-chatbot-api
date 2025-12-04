@@ -19,6 +19,28 @@ class RedisRateLimiter:
     def __init__(self, redis_client):
         self.redis = redis_client
 
+    def check_rate_limit(
+        self,
+        identifier: str,
+        limit_type: str = "session",
+        max_requests: int = 10,
+        window_seconds: int = 60,
+    ) -> tuple[bool, int | None]:
+        """
+        Compatibility method for RateLimiter interface
+
+        Returns:
+            (is_allowed, retry_after_seconds)
+        """
+        key = f"rate_limit:{limit_type}:{identifier}"
+        allowed, info = self.is_allowed(key, max_requests, window_seconds)
+
+        if not allowed:
+            retry_after = info["reset"] - int(time.time())
+            return False, retry_after
+
+        return True, None
+
     def is_allowed(self, key: str, limit: int, window: int) -> tuple[bool, dict]:
         """
         Check if request is allowed using sliding window algorithm

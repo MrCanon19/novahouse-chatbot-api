@@ -13,6 +13,8 @@ from whoosh.fields import DATETIME, ID, KEYWORD, TEXT, Schema
 from whoosh.index import create_in, exists_in, open_dir
 from whoosh.qparser import FuzzyTermPlugin, MultifieldParser
 
+from src.services.slow_query_logger import log_slow_query
+
 # Search index directory (use /tmp in App Engine - read-only filesystem)
 INDEX_DIR = (
     "/tmp/search_index"
@@ -119,6 +121,7 @@ class AdvancedSearchService:
         writer.commit()
         print(f"✅ Deleted: {doc_id}")
 
+    @log_slow_query(threshold_ms=300, query_type="search")
     def search(
         self,
         query_str: str,

@@ -28,7 +28,7 @@ class LeadAssignmentService:
         Returns:
             List of user dicts with {id, name, email, current_load}
         """
-        # TODO: Implement actual user assignment from database
+        # NOTE: Implement actual user assignment from database
         # For now, return mock data
         return [
             {

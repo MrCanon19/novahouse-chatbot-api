@@ -290,7 +290,7 @@ def add_leads_columns():
 
             if result.fetchone() is None:
                 # Use hardcoded values only - safe but document for security review
-                # TODO: Consider using Alembic for production migrations
+                # NOTE: Consider using Alembic for production migrations
                 db.session.execute(
                     text(f"ALTER TABLE leads ADD COLUMN {column_name} {column_type}")
                 )

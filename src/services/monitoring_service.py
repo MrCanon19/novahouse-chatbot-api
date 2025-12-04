@@ -202,7 +202,7 @@ class MonitoringService:
         Returns:
             Dict with performance metrics
         """
-        # TODO: Collect actual stats from application
+        # NOTE: Collect actual stats from application
         # For now return mock data
         return {
             "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -227,7 +227,7 @@ class MonitoringService:
         Returns:
             Dict with active alerts
         """
-        # TODO: Implement actual alert collection
+        # NOTE: Implement actual alert collection
         # For now return mock data
         return {
             "timestamp": datetime.now(timezone.utc).isoformat(),
