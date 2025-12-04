@@ -160,24 +160,38 @@ db.init_app(app)
 
 # Flag for auto-migration
 _auto_migration_done = False
+_auto_migration_attempted = False
 
 
-# Initialize database and run auto-migration after app context is created
+# Initialize database and run auto-migration
 def _run_auto_migration():
-    global _auto_migration_done
-    if not _auto_migration_done:
-        try:
-            run_auto_migration(db)
-        except Exception:
-            pass  # Fail silently
-        finally:
-            _auto_migration_done = True
+    global _auto_migration_done, _auto_migration_attempted
+    if _auto_migration_done or _auto_migration_attempted:
+        return
+
+    _auto_migration_attempted = True
+    try:
+        run_auto_migration(db)
+        _auto_migration_done = True
+    except Exception:
+        pass  # Fail silently
 
 
-# Run migration when app context is pushed for the first time
+# Attempt migration immediately after db is configured
+# In production (App Engine), app context will be available
+try:
+    with app.app_context():
+        _run_auto_migration()
+except Exception:
+    # If app context not available yet, will run on first request
+    pass
+
+
+# Fallback: Run on first HTTP request
 @app.before_request
-def trigger_auto_migration():
-    _run_auto_migration()
+def trigger_auto_migration_on_request():
+    if not _auto_migration_done:
+        _run_auto_migration()
 
 
 # Slow query logging (queries >100ms)
