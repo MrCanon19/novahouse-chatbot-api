@@ -264,7 +264,7 @@
 ---
 
 ## Wsparcie techniczne
-- **GitHub:** https://github.com/MrCanon19/novahouse-chatbot-api
+- **Repository:** MrCanon19/novahouse-chatbot-api (private)
 - **Ostatni commit:** Optimize CI/CD: Increase timeouts + improve pip cache (351329c), 04.12.2025
 - **Testy:** 76/76 passing ✅, coverage 30.38%, czas: 10.95s
 - **CI/CD:** GitHub Actions (Python 3.12, actions v4/v5, pip cache enabled)
