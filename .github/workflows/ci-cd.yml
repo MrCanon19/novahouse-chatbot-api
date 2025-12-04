@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 env:
-  PYTHON_VERSION: "3.13"
+  PYTHON_VERSION: "3.12"
 
 jobs:
   test:
@@ -18,12 +18,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: "pip"
+        continue-on-error: true
       - name: Cache pip packages
         uses: actions/cache@v3
         with:
@@ -47,12 +48,13 @@ jobs:
     if: github.event_name == 'workflow_dispatch'
     continue-on-error: true
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: "pip"
+        continue-on-error: true
       - name: Cache pip packages
         uses: actions/cache@v3
         with:
@@ -75,11 +77,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+        continue-on-error: true
       - name: Install linters
         run: |
           python -m pip install --upgrade pip
@@ -98,7 +101,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
@@ -133,13 +136,14 @@ jobs:
             SHOULD_DEPLOY=false
           fi
           echo "should_deploy=${SHOULD_DEPLOY}" >> "$GITHUB_OUTPUT"
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
         if: steps.deploy_check.outputs.should_deploy == 'true'
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5
         if: steps.deploy_check.outputs.should_deploy == 'true'
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+        continue-on-error: true
       - name: Install gcloud CLI
         if: steps.deploy_check.outputs.should_deploy == 'true'
         run: |
