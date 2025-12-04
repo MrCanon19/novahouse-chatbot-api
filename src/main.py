@@ -158,6 +158,22 @@ if db_url.startswith("postgresql://"):
     }
 db.init_app(app)
 
+
+# Run automatic database migration on startup
+@app.before_request
+def run_auto_migration_once():
+    """Run migration only once per app instance"""
+    if not hasattr(app, "_migration_done"):
+        from src.services.auto_migration import run_auto_migration
+
+        try:
+            run_auto_migration(db)
+            app._migration_done = True
+        except Exception as e:
+            logger.error(f"Auto-migration failed: {e}")
+            app._migration_done = True  # Still mark as done to avoid infinite retries
+
+
 # Slow query logging (queries >100ms)
 import logging
 import time
