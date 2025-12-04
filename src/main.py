@@ -60,8 +60,7 @@ from src.models.chatbot import db
 
 # Error monitoring: GCP Error Reporting działa AUTOMATYCZNIE w App Engine!
 # Logi błędów: https://console.cloud.google.com/errors?project=glass-core-467907-e9
-
-app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), "static"))
+# NOTE: app already initialized above, don't create it again!
 
 
 # Security headers (HSTS, clickjacking, MIME sniffing, XSS)
