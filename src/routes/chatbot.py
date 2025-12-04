@@ -1851,14 +1851,19 @@ def check_faq(message):
     if "luxury" in message_lower or "luksus" in message_lower:
         return get_package_description("luxury")
 
-    # Pytania ogólne o pakiety - WYŁĄCZONE, niech AI odpowie precyzyjnie
-    # Problem: FAQ zwracał wszystkie pakiety nawet gdy pytanie było o "najtańsze pakiety"
-    # Teraz AI sam odpowie na podstawie instrukcji w system prompt
-    # if any(
-    #     word in message_lower
-    #     for word in ["pakiety", "oferta", "jakie macie", "co oferujesz", "co mają"]
-    # ):
-    #     return get_all_packages_summary() + "\n\nO który pakiet chciałbyś dowiedzieć się więcej?"
+    # Pytania ogólne o pakiety - WŁĄCZONE dla lepszego UX
+    # Teraz obsługujemy tylko ogólne pytania, konkretne trafiają do AI
+    if any(word in message_lower for word in ["jakie macie pakiety", "jakie pakiety", "co oferujesz", "jakie oferujesz"]):
+        return (
+            "📦 NASZE PAKIETY:\n\n"
+            "1️⃣ **EXPRESS** - Szybkie, proste wykończenie\n"
+            "2️⃣ **COMFORT** - Standardowe, najchętniej wybierane\n"
+            "3️⃣ **PREMIUM** - Podniesiona jakość i materiały\n"
+            "4️⃣ **LUXURY** - Luksusowe rozwiązania i design\n"
+            "5️⃣ **INDYWIDUALNY** - Projekt dostosowany do Twoich potrzeb\n\n"
+            "💡 Każdy pakiet można dostosować do Twojego budżetu i preferencji.\n\n"
+            "O który pakiet chciałbyś dowiedzieć się więcej?"
+        )
 
     # Powitania
     greetings = ["cześć", "dzień dobry", "witam", "hej", "hello", "siema", "elo", "co tam"]
