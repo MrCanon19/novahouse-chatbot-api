@@ -14,6 +14,7 @@ def run_auto_migration(db):
     """
     Run automatic migration to add missing columns to leads table
     Called on app startup - safe to run multiple times (uses IF NOT EXISTS)
+    Uses a single transaction for all migrations
     """
     try:
         logger.info("🔄 Starting automatic database migration...")
@@ -60,28 +61,32 @@ def run_auto_migration(db):
         ]
 
         added_count = 0
-        exists_count = 0
+        skipped_count = 0
 
+        # Run all migrations in a single transaction
         for sql, column_name in migrations:
             try:
+                logger.info(f"  ➜ Adding column {column_name}...")
                 db.session.execute(text(sql))
-                db.session.commit()
                 added_count += 1
-                logger.info(f"✅ Column {column_name} added successfully")
+                logger.info(f"  ✅ {column_name} ready")
             except Exception as e:
-                db.session.rollback()
                 error_str = str(e).lower()
-
                 if "already exists" in error_str or "duplicate column" in error_str:
-                    exists_count += 1
-                    logger.info(f"⏭️  Column {column_name} already exists")
+                    skipped_count += 1
+                    logger.info(f"  ⏭️  {column_name} already exists")
                 else:
-                    logger.warning(f"⚠️  Error adding {column_name}: {str(e)[:100]}")
+                    logger.warning(f"  ⚠️  Error with {column_name}: {str(e)[:100]}")
 
-        logger.info(f"✅ Migration complete: {added_count} added, {exists_count} already exist")
+        # Single commit at the end
+        db.session.commit()
+        logger.info(
+            f"✅ Migration complete: {added_count} columns processed, {skipped_count} already exist"
+        )
         return True
 
     except Exception as e:
+        db.session.rollback()
         logger.error(f"❌ Auto-migration failed: {str(e)}")
         # Don't crash the app, just log the error
         return False
