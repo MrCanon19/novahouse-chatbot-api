@@ -158,13 +158,21 @@ if db_url.startswith("postgresql://"):
     }
 db.init_app(app)
 
-# Run automatic database migration on app initialization (not on request)
-with app.app_context():
-    try:
-        run_auto_migration(db)
-    except Exception:
-        # Fail silently - app should continue even if migration fails
-        pass
+# Flag for auto-migration
+_auto_migration_done = False
+
+
+# Run automatic database migration on first request
+@app.before_request
+def run_auto_migration_on_first_request():
+    global _auto_migration_done
+    if not _auto_migration_done:
+        try:
+            run_auto_migration(db)
+        except Exception:
+            pass  # Fail silently
+        finally:
+            _auto_migration_done = True
 
 
 # Slow query logging (queries >100ms)
