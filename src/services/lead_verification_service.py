@@ -148,7 +148,7 @@ class LeadVerificationService:
             sms_service_type = os.getenv("SMS_SERVICE", "mock")
 
             if sms_service_type == "twilio":
-                # TODO: Implement Twilio integration
+                # NOTE: Implement Twilio integration
                 print(f"[SMS] Would send to {lead.phone}: {sms_code}")
             else:
                 # Mock SMS

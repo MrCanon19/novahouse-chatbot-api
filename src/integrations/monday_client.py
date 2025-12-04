@@ -9,6 +9,8 @@ from typing import Dict, Optional
 
 import requests
 
+from src.services.slow_query_logger import log_slow_query
+
 
 class MondayClient:
     """Client for Monday.com GraphQL API"""
@@ -25,6 +27,7 @@ class MondayClient:
         if not self.board_id:
             print("ALERT: MONDAY_BOARD_ID not configured! Sprawdź sekret w repozytorium GitHub.")
 
+    @log_slow_query(threshold_ms=500, query_type="monday")
     def _make_request(self, query: str, variables: Optional[Dict] = None) -> Dict:
         """Make a GraphQL request to Monday.com API"""
 

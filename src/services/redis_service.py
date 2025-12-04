@@ -6,11 +6,14 @@ Replaces in-memory SimpleCache
 """
 
 import json
+import logging
 import os
 from functools import wraps
 from typing import Any, Optional
 
 import redis
+
+logger = logging.getLogger(__name__)
 
 
 class RedisCache:

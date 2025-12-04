@@ -77,8 +77,20 @@ class RateLimiter:
             self.ip_limits.clear()
 
 
-# Global rate limiter instance
-rate_limiter = RateLimiter()
+# Global rate limiter instance with Redis fallback
+try:
+    from src.services.redis_rate_limiter import RedisRateLimiter
+    from src.services.redis_service import redis_cache
+
+    if redis_cache.enabled:
+        # Use Redis-based rate limiter for production (multi-instance safe)
+        rate_limiter = RedisRateLimiter(redis_cache)
+    else:
+        # Fallback to in-memory for development
+        rate_limiter = RateLimiter()
+except Exception:
+    # Fallback if Redis unavailable
+    rate_limiter = RateLimiter()
 
 
 def rate_limit(
