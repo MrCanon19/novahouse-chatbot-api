@@ -1,10 +1,10 @@
 # Status projektu NovaHouse Chatbot API
 
-**Data aktualizacji:** 4 grudnia 2025, 19:45  
-**Wersja:** 2.5.5 "Clean Architecture - Sentry Removal"  
+**Data aktualizacji:** 4 grudnia 2025, 20:15  
+**Wersja:** 2.5.6 "CI/CD Optimization"  
 **Status:** 🟢 Production-ready - wszystkie systemy działają  
 **Deployment:** ✅ GCP App Engine (v20251204t192630) - wszystkie 8 endpointów OK  
-**CI/CD:** ✅ GitHub Actions pipeline simplified & stabilized  
+**CI/CD:** ⚡ GitHub Actions pipeline optimized with cache & extended timeouts  
 **Monitoring:** GCP Error Reporting (natywny dla App Engine)
 
 ### 🔧 Ostatnie naprawy produkcji (4 grudnia 2025)
@@ -28,23 +28,40 @@
 - ✅ **Testy:** 76/76 passing ✅ (coverage 30.38%)
 - 🟢 **Powód:** Uproszczenie architektury, GCP Error Reporting wystarczający dla App Engine
 
+#### 3. CI/CD Pipeline Optimization (20:15)
+- ⚡ **Problem:** Pipeline timeout po usunięciu Sentry (commits 377a4c8, 6b47fd4, e1bc0f3 failed)
+- ✅ **Rozwiązanie 1:** Dodano pip cache z `cache-dependency-path` (commit e1bc0f3)
+- ✅ **Rozwiązanie 2:** Zwiększone timeouty + optymalizacja instalacji (commit 351329c)
+  - test: 15→20 min
+  - lint: 5→10 min
+  - `pip install --no-deps` (szybka instalacja bez sprawdzania zależności) + fallback
+- ✅ **Testy:** 76/76 passing lokalnie ✅ (10.95s, coverage 30.38%)
+- 🟢 **Status:** Pipeline zoptymalizowany, cache aktywny, timeouty bezpieczne
+
 ---
 
-## 🔄 CI/CD Pipeline (nowe!)
+## 🔄 CI/CD Pipeline
 
 ### Status
 - **Python version:** 3.12 (stabilne wsparcie na GitHub Actions)
 - **Actions:** v4/v5 (aktualne)
-- **Pipeline:** Simplified & stabilized
-- **Testy lokalnie:** 76/76 passing ✅
-- **Coverage:** 30.33%
+- **Pipeline:** ⚡ Optimized with pip cache & extended timeouts
+- **Testy lokalnie:** 76/76 passing ✅ (10.95s)
+- **Coverage:** 30.38%
+- **Cache:** ✅ pip cache enabled (`cache-dependency-path: requirements.txt`)
 
 ### Kroki pipeline'u
-1. ✅ **Unit Tests** - pytest z coverage
-2. ✅ **Integration Tests** - na workflow_dispatch (opcjonalnie)
-3. ✅ **Linting** - flake8 + black
+1. ✅ **Unit Tests** - pytest z coverage (timeout: 20 min)
+2. ✅ **Integration Tests** - na workflow_dispatch (timeout: 20 min)
+3. ✅ **Linting** - flake8 + black (timeout: 10 min)
 4. ✅ **Security Scan** - Trivy vulnerability scanner
 5. 🚀 **Deploy** - GCP App Engine (wymaga sekrety)
+
+### Optymalizacje CI/CD
+- **pip cache:** GitHub Actions cache'uje zależności między buildami
+- **--no-deps install:** Szybsza instalacja bez sprawdzania sub-dependencies + fallback
+- **Extended timeouts:** Bezpieczne limity czasowe dla wszystkich jobów
+- **Pre-commit hooks:** black, isort, autoflake, yaml validation lokalnie
 
 ### Deployment
 - **Status:** Graceful fallback (deployment skipped jeśli brak sekrety)
@@ -139,13 +156,14 @@
 - **Cold start optimization:** <5s (background threading)
 - **Code quality:** TODO → NOTE conversion
 
-### 🏗️ Architecture Cleanup (v2.5.4-2.5.5)
+### 🏗️ Architecture Cleanup (v2.5.4-2.5.6)
 - **GCP App Engine Fix:** Dodano brakujący entrypoint, poprawiono env vars
 - **Sentry Removal:** Całkowite usunięcie Sentry SDK (commit 377a4c8)
 - **Monitoring:** Przejście na natywny GCP Error Reporting
 - **Logging:** Unifikacja do print → GCP Logs (stdout)
 - **Dependencies:** Usunięcie `sentry-sdk[flask]` z wszystkich requirements
-- **Tests:** 76/76 passing ✅ (coverage 30.38%)
+- **CI/CD Optimization:** pip cache + extended timeouts (commits e1bc0f3, 351329c)
+- **Tests:** 76/76 passing ✅ (coverage 30.38%, czas: 10.95s lokalnie)
 
 ---
 
@@ -229,33 +247,37 @@
 ---
 
 ## Stack technologiczny
-- Backend: Python 3.13, Flask 3.1, SQLAlchemy 2.0
+- Backend: Python 3.13 (local), Python 3.11 (GCP App Engine), Flask 3.1, SQLAlchemy 2.0
 - Frontend: HTML/CSS/JavaScript
 - Real-time: Socket.IO, WebSockets
 - Cache: Redis
 - Search: Whoosh
 - Storage: Google Cloud Storage
 - Notifications: Email (SMTP), SMS (Twilio)
-- Hosting: Google Cloud App Engine
+- Hosting: Google Cloud App Engine (instance class F2)
 - Database: PostgreSQL (Cloud SQL)
 - Version Control: GitHub (MrCanon19/novahouse-chatbot-api)
+- AI: OpenAI GPT (gpt-4o-mini, gpt-4-turbo)
+- Monitoring: GCP Error Reporting, GCP Logs
+- Server: gunicorn 23.0.0 (local), 22.0.0 (GAE)
 
 ---
 
 ## Wsparcie techniczne
 - **GitHub:** https://github.com/MrCanon19/novahouse-chatbot-api
-- **Ostatni commit:** Remove Sentry completely (377a4c8), 04.12.2025
-- **Testy:** 76/76 passing ✅, coverage 30.38%
-- **CI/CD:** GitHub Actions (Python 3.12, actions v4/v5)
-- **Dokumentacja:** docs/CI_CD_SETUP.md
+- **Ostatni commit:** Optimize CI/CD: Increase timeouts + improve pip cache (351329c), 04.12.2025
+- **Testy:** 76/76 passing ✅, coverage 30.38%, czas: 10.95s
+- **CI/CD:** GitHub Actions (Python 3.12, actions v4/v5, pip cache enabled)
+- **Dokumentacja:** docs/CI_CD_SETUP.md, docs/GCP_ERROR_REPORTING_GUIDE.md
+- **Pre-commit hooks:** black, isort, autoflake, yaml validation
 - Automatyczna synchronizacja: iCloud → GitHub (co godzinę)
 - Backup: `~/Projects/manus/novahouse-chatbot-api/backups/icloud-backup/`
 
 ---
 
-**Wygenerowano:** 4 grudnia 2025, 19:45  
+**Wygenerowano:** 4 grudnia 2025, 20:15  
 **Status:** 🟢 Production-ready - wszystkie systemy działają  
-**Wersja:** 2.5.5 "Clean Architecture - Sentry Removal"
+**Wersja:** 2.5.6 "CI/CD Optimization"
 
 ---
 
