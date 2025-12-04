@@ -3,12 +3,7 @@ from datetime import datetime, timedelta, timezone
 from flask import Blueprint, jsonify, request
 from sqlalchemy import func
 
-from src.models.analytics import (
-    ChatAnalytics,
-    IntentAnalytics,
-    PerformanceMetrics,
-    UserEngagement,
-)
+from src.models.analytics import ChatAnalytics, IntentAnalytics, PerformanceMetrics, UserEngagement
 from src.models.chatbot import Conversation, Lead, db
 
 analytics_bp = Blueprint("analytics", __name__)
@@ -614,3 +609,72 @@ def get_user_journey(session_id):
 
     except Exception as e:
         return jsonify({"status": "error", "error": str(e)}), 500
+
+
+# ===== ADVANCED ANALYTICS ENDPOINTS (v2.5) =====
+
+
+@analytics_bp.route("/v2/funnel", methods=["GET"])
+def get_funnel_v2():
+    """Get conversion funnel analysis (v2)"""
+    try:
+        from src.services.advanced_analytics import advanced_analytics
+
+        result = advanced_analytics.get_conversion_funnel()
+        return jsonify(result), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@analytics_bp.route("/v2/trends", methods=["GET"])
+def get_trends_v2():
+    """Get weekly trends (v2)"""
+    try:
+        from src.services.advanced_analytics import advanced_analytics
+
+        weeks = request.args.get("weeks", 4, type=int)
+        result = advanced_analytics.get_weekly_trends(weeks=weeks)
+        return jsonify(result), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@analytics_bp.route("/v2/intents", methods=["GET"])
+def get_intents_v2():
+    """Get intent distribution analysis (v2)"""
+    try:
+        from src.services.advanced_analytics import advanced_analytics
+
+        result = advanced_analytics.get_intent_distribution()
+        return jsonify(result), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@analytics_bp.route("/v2/export/csv", methods=["GET"])
+def export_csv_v2():
+    """Export analytics data to CSV (v2)"""
+    try:
+        from flask import make_response
+
+        from src.services.advanced_analytics import advanced_analytics
+
+        data_type = request.args.get("type", "leads")
+        filters = {
+            "status": request.args.get("status"),
+            "min_score": request.args.get("min_score", type=int),
+        }
+
+        csv_data = advanced_analytics.export_to_csv(data_type, filters)
+
+        response = make_response(csv_data)
+        response.headers["Content-Type"] = "text/csv"
+        response.headers["Content-Disposition"] = f"attachment; filename={data_type}_export.csv"
+
+        return response
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
