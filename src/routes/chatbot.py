@@ -85,21 +85,407 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
             db.session.add(conversation)
             db.session.commit()
 
-        # Load context
-        context_memory = json.loads(conversation.context_data or "{}")
+            # Load context
+            context_memory = json.loads(conversation.context_data or "{}")
 
-        # Extract and update context from user message
-        context_memory = extract_context(user_message, context_memory)
-        conversation.context_data = json.dumps(context_memory)
+            # Extract and update context from user message
+            context_memory = extract_context(user_message, context_memory)
+            conversation.context_data = json.dumps(context_memory)
 
-        # Zapisz wiadomość użytkownika
-        user_msg = ChatMessage(
-            conversation_id=conversation.id,
-            message=user_message,
-            sender="user",
-            timestamp=datetime.now(timezone.utc),
-        )
-        db.session.add(user_msg)
+            # Zapisz wiadomość użytkownika
+            user_msg = ChatMessage(
+                conversation_id=conversation.id,
+                message=user_message,
+                sender="user",
+                timestamp=datetime.now(timezone.utc),
+            )
+            db.session.add(user_msg)
+
+            # Detect if the current message is an introduction (to prioritize GPT routing)
+            intro_keywords = ["jestem", "nazywam się", "mam na imię", "to ja", "cześć jestem"]
+            is_introduction = any(k in user_message.lower() for k in intro_keywords)
+
+            # 1. Check if user wants to book a meeting
+            bot_response = check_booking_intent(user_message, context_memory)
+
+            # 2. Check learned FAQs (higher priority - learned from real users)
+            if not bot_response:
+                bot_response = check_learned_faq(user_message)
+
+            # 3. Then check standard FAQ (skip if this is a self-introduction)
+            if not bot_response and not is_introduction:
+                bot_response = check_faq(user_message)
+
+            # 4. Jeśli nie znaleziono w FAQ, ZAWSZE użyj AI (OpenAI GPT) - PRIORYTET!
+            if not bot_response:
+                client = ensure_openai_client()
+                if client:
+                    try:
+                        # Pobierz historię konwersacji
+                        history = (
+                            ChatMessage.query.filter_by(conversation_id=conversation.id)
+                            .order_by(ChatMessage.timestamp.desc())
+                            .limit(10)
+                            .all()
+                        )
+
+                        context = "\n".join(
+                            [
+                                f"{'User' if msg.sender == 'user' else 'Bot'}: {msg.message}"
+                                for msg in reversed(history[:-1])  # Exclude current message
+                            ]
+                        )
+
+                        # Add memory context with proper name declension
+                        memory_prompt = ""
+                        if context_memory:
+                            from src.utils.polish_declension import PolishDeclension
+
+                            memory_items = []
+                            if context_memory.get("name"):
+                                name = context_memory["name"]
+                                declined_name = PolishDeclension.decline_full_name(name)
+                                is_polish = PolishDeclension.is_polish_name(name.split()[0])
+
+                                # Add both forms for GPT reference
+                                memory_items.append(
+                                    f"Imię: {name} (wołacz: {declined_name}, polskie: {is_polish})"
+                                )
+                            if context_memory.get("city"):
+                                memory_items.append(f"Miasto: {context_memory['city']}")
+                            if context_memory.get("square_meters"):
+                                memory_items.append(f"Metraż: {context_memory['square_meters']}m²")
+                            if context_memory.get("package"):
+                                memory_items.append(
+                                    f"Interesujący pakiet: {context_memory['package']}"
+                                )
+                            if memory_items:
+                                memory_prompt = "\n\nZapamiętane info o kliencie:\n" + "\n".join(
+                                    memory_items
+                                )
+
+                        print(f"[OpenAI GPT] Przetwarzanie: {user_message[:50]}...")
+                        messages = [
+                            {"role": "system", "content": SYSTEM_PROMPT + memory_prompt},
+                            {
+                                "role": "user",
+                                "content": f"Context:\n{context}\n\nUser: {user_message}",
+                            },
+                        ]
+                        response = client.chat.completions.create(
+                            model="gpt-4o",  # Better for Polish grammar & declension
+                            messages=messages,
+                            max_tokens=500,
+                            temperature=0.7,
+                        )
+                        bot_response = response.choices[0].message.content
+                        print(
+                            f"[OpenAI GPT] Response: {bot_response[:100] if bot_response else 'EMPTY'}..."
+                        )
+
+                    except Exception as e:
+                        print(f"[GPT ERROR] {type(e).__name__}: {e}")
+                        # Fallback tylko przy błędzie GPT
+                        bot_response = get_default_response(user_message)
+                else:
+                    print("[WARNING] OpenAI nie skonfigurowany - używam fallback")
+                    bot_response = get_default_response(user_message)
+
+            # Jeśli NADAL brak odpowiedzi (nie powinno się zdarzyć)
+            if not bot_response:
+                print("[CRITICAL FALLBACK] Używam awaryjnej odpowiedzi")
+                bot_response = get_default_response(user_message)
+
+            # Track A/B test response (if user responded to follow-up question)
+            if conversation.followup_variant and len(user_message) > 3:
+                track_ab_test_response(conversation)
+
+            # Check if we just collected enough data to ask for confirmation
+            should_confirm = should_ask_for_confirmation(context_memory, conversation)
+            print(
+                f"[CONFIRMATION CHECK] should_confirm={should_confirm}, context={context_memory}, awaiting={conversation.awaiting_confirmation}"
+            )
+            if should_confirm:
+                conversation.awaiting_confirmation = True
+                confirmation_msg = format_data_confirmation_message(context_memory)
+                bot_response = f"{bot_response}\n\n{confirmation_msg}"
+                print("[CONFIRMATION] Added confirmation message to response")
+
+            # Zapisz odpowiedź bota
+            bot_msg = ChatMessage(
+                conversation_id=conversation.id,
+                message=bot_response,
+                sender="bot",
+                timestamp=datetime.now(timezone.utc),
+            )
+            db.session.add(bot_msg)
+
+            # Log unknown/unclear questions for FAQ learning
+            try:
+                from src.models.faq_learning import UnknownQuestion
+
+                # Check if response is generic fallback (potential unknown question)
+                is_generic = any(
+                    phrase in bot_response.lower()
+                    for phrase in [
+                        "jak mogę ci pomóc",
+                        "przepraszam",
+                        "spróbuj ponownie",
+                        "nie jestem pewien",
+                        "nie rozumiem",
+                    ]
+                )
+
+                # Log if generic response and not FAQ
+                if is_generic and not check_faq(user_message):
+                    unknown = UnknownQuestion(
+                        session_id=session_id,
+                        question=user_message,
+                        bot_response=bot_response,
+                        status="pending",
+                    )
+                    db.session.add(unknown)
+            except Exception as e:
+                print(f"[FAQ Learning] Failed to log: {e}")
+                # Don't fail the main flow
+
+            # Check if user is confirming data
+            confirmation_intent = check_data_confirmation_intent(user_message)
+            existing_lead = Lead.query.filter_by(session_id=session_id).first()
+
+            # Check if we have enough data to create lead
+            has_enough_data_for_lead = context_memory.get("name") and (
+                context_memory.get("email") or context_memory.get("phone")
+            )
+
+            if confirmation_intent == "confirm" and has_enough_data_for_lead and not existing_lead:
+                # User confirmed - create lead now
+                try:
+                    if not existing_lead:
+                        from src.integrations.monday_client import MondayClient
+
+                        # Get message count for lead scoring
+                        message_count = ChatMessage.query.filter_by(
+                            conversation_id=conversation.id
+                        ).count()
+                        lead_score = calculate_lead_score(context_memory, message_count)
+
+                        # Generate conversation summary
+                        all_messages = (
+                            ChatMessage.query.filter_by(conversation_id=conversation.id)
+                            .order_by(ChatMessage.timestamp.asc())
+                            .all()
+                        )
+                        conv_summary = generate_conversation_summary(all_messages, context_memory)
+
+                        # Create lead
+                        lead = Lead(
+                            session_id=session_id,
+                            name=context_memory.get("name", "Unknown"),
+                            email=context_memory.get("email"),
+                            phone=context_memory.get("phone"),
+                            location=context_memory.get("city"),
+                            property_size=context_memory.get("square_meters"),
+                            interested_package=context_memory.get("package"),
+                            source="chatbot",
+                            status="qualified",  # User confirmed data
+                            lead_score=lead_score,
+                            conversation_summary=conv_summary,
+                            data_confirmed=True,
+                            last_interaction=datetime.now(timezone.utc),
+                        )
+
+                        db.session.add(lead)
+                        db.session.flush()
+
+                        # Generate next action recommendation
+                        next_action = suggest_next_best_action(context_memory, lead_score)
+                        lead.notes = f"Next Action: {next_action}"
+
+                        # Check for competitive mentions
+                        competitor_intel = (
+                            CompetitiveIntel.query.filter_by(session_id=session_id)
+                            .order_by(CompetitiveIntel.created_at.desc())
+                            .first()
+                        )
+                        competitor_name = (
+                            competitor_intel.competitor_name if competitor_intel else None
+                        )
+
+                        # Sync with Monday.com
+                        monday = MondayClient(api_key=MONDAY_API_KEY)
+                        monday_item_id = monday.create_lead_item(
+                            {
+                                "name": lead.name,
+                                "email": lead.email,
+                                "phone": lead.phone,
+                                "message": f"Lead Score: {lead_score}/100 | {conv_summary} | Action: {next_action}",
+                                "property_type": "Mieszkanie",
+                                "budget": context_memory.get("square_meters", ""),
+                                "lead_score": lead_score,
+                                "competitor_mentioned": competitor_name,
+                                "next_action": next_action,
+                            }
+                        )
+
+                        if monday_item_id:
+                            lead.monday_item_id = monday_item_id
+                            print(
+                                f"[Monday] Confirmed lead created: {monday_item_id} (score: {lead_score})"
+                            )
+                            # Logowanie zdarzenia API (lead utworzony)
+                            try:
+                                import sentry_sdk
+
+                                sentry_sdk.capture_message(
+                                    f"Lead created in Monday.com: {lead.name}, score: {lead_score}"
+                                )
+                            except ImportError:
+                                pass
+
+                        # Alert dla leadów o wysokim priorytecie
+                        if lead_score >= 70:
+                            try:
+                                import sentry_sdk
+
+                                from src.services.email_service import email_service
+
+                                email_service.send_email(
+                                    to_email=os.getenv("ADMIN_EMAIL", "admin@novahouse.pl"),
+                                    subject=f"🔥 HIGH PRIORITY LEAD - Score: {lead_score}/100",
+                                    html_content=f"""
+                                    <h2>New High-Priority Lead!</h2>
+                                    <p><strong>Name:</strong> {lead.name}</p>
+                                    <p><strong>Email:</strong> {lead.email}</p>
+                                    <p><strong>Score:</strong> {lead_score}</p>
+                                    <p><strong>Monday.com ID:</strong> {monday_item_id}</p>
+                                    """,
+                                )
+                                sentry_sdk.capture_message(
+                                    f"ALERT: High-priority lead: {lead.name}, score: {lead_score}"
+                                )
+                            except ImportError:
+                                pass
+
+                        # Clear awaiting flag
+                        conversation.awaiting_confirmation = False
+
+                        # Add confirmation message to bot response
+                        bot_response = (
+                            f"✅ Dziękuję za potwierdzenie! Twoje dane zostały zapisane.\n\n"
+                            f"Nasz zespół skontaktuje się z Tobą wkrótce.\n\n"
+                            f"{bot_response}"
+                        )
+
+                except Exception as e:
+                    print(f"[Confirmed Lead] Error: {e}")
+
+            elif confirmation_intent == "edit":
+                # User wants to edit - clear awaiting flag
+                conversation.awaiting_confirmation = False
+                bot_response = (
+                    "Oczywiście! Popraw dane które chcesz zmienić, a ja je zaktualizuję. 📝"
+                )
+
+            # Fallback: Auto-create lead if enough data (no confirmation asked)
+            elif not conversation.awaiting_confirmation and not existing_lead:
+                try:
+                    has_contact_data = (
+                        context_memory.get("name")
+                        and context_memory.get("email")
+                        or context_memory.get("phone")
+                    )
+
+                    if has_contact_data:
+                        from src.integrations.monday_client import MondayClient
+
+                        message_count = ChatMessage.query.filter_by(
+                            conversation_id=conversation.id
+                        ).count()
+                        lead_score = calculate_lead_score(context_memory, message_count)
+
+                        all_messages = (
+                            ChatMessage.query.filter_by(conversation_id=conversation.id)
+                            .order_by(ChatMessage.timestamp.asc())
+                            .all()
+                        )
+                        conv_summary = generate_conversation_summary(all_messages, context_memory)
+
+                        lead = Lead(
+                            session_id=session_id,
+                            name=context_memory.get("name", "Unknown"),
+                            email=context_memory.get("email"),
+                            phone=context_memory.get("phone"),
+                            location=context_memory.get("city"),
+                            property_size=context_memory.get("square_meters"),
+                            interested_package=context_memory.get("package"),
+                            source="chatbot",
+                            status="new",
+                            lead_score=lead_score,
+                            conversation_summary=conv_summary,
+                            data_confirmed=False,
+                            last_interaction=datetime.now(timezone.utc),
+                        )
+
+                        db.session.add(lead)
+                        db.session.flush()
+
+                        # Check for competitive mentions
+                        competitor_intel = (
+                            CompetitiveIntel.query.filter_by(session_id=session_id)
+                            .order_by(CompetitiveIntel.created_at.desc())
+                            .first()
+                        )
+                        competitor_name = (
+                            competitor_intel.competitor_name if competitor_intel else None
+                        )
+                        next_action = suggest_next_best_action(context_memory, lead_score)
+
+                        monday = MondayClient(api_key=MONDAY_API_KEY)
+                        monday_item_id = monday.create_lead_item(
+                            {
+                                "name": lead.name,
+                                "email": lead.email,
+                                "phone": lead.phone,
+                                "message": f"Lead Score: {lead_score}/100 | {conv_summary}",
+                                "property_type": "Mieszkanie",
+                                "budget": context_memory.get("square_meters", ""),
+                                "lead_score": lead_score,
+                                "competitor_mentioned": competitor_name,
+                                "next_action": next_action,
+                            }
+                        )
+
+                        if monday_item_id:
+                            lead.monday_item_id = monday_item_id
+                            print(
+                                f"[Monday] Auto-lead created: {monday_item_id} (score: {lead_score})"
+                            )
+
+                except Exception as e:
+                    print(f"[Auto Lead] Error: {e}")
+
+            db.session.commit()
+
+            # Check for competitive intelligence
+            detect_competitive_intelligence(user_message, session_id, context_memory)
+
+            # Generate intelligent follow-up question (with A/B testing)
+            follow_up = generate_follow_up_question(
+                context_memory, user_message, bot_response, conversation
+            )
+            if follow_up:
+                bot_response = f"{bot_response}\n\n{follow_up}"
+
+            return {
+                "response": bot_response,
+                "session_id": session_id,
+                "conversation_id": conversation.id,
+            }
+
+        # Detect if the current message is an introduction (to prioritize GPT routing)
+        intro_keywords = ["jestem", "nazywam się", "mam na imię", "to ja", "cześć jestem"]
+        is_introduction = any(k in user_message.lower() for k in intro_keywords)
 
         # 1. Check if user wants to book a meeting
         bot_response = check_booking_intent(user_message, context_memory)
@@ -108,8 +494,8 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
         if not bot_response:
             bot_response = check_learned_faq(user_message)
 
-        # 3. Then check standard FAQ
-        if not bot_response:
+        # 3. Then check standard FAQ (skip if this is a self-introduction)
+        if not bot_response and not is_introduction:
             bot_response = check_faq(user_message)
 
         # 4. Jeśli nie znaleziono w FAQ, ZAWSZE użyj AI (OpenAI GPT) - PRIORYTET!
@@ -132,12 +518,25 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                         ]
                     )
 
-                    # Add memory context
+                    # Add memory context with proper name declension
                     memory_prompt = ""
                     if context_memory:
+                        from src.utils.polish_declension import PolishDeclension
+
                         memory_items = []
                         if context_memory.get("name"):
-                            memory_items.append(f"Imię: {context_memory['name']}")
+                            name = context_memory["name"]
+                            parts = name.split()
+                            first = parts[0]
+                            # Remaining parts of the name are not used here
+                            # Try to infer gender from first name (simple heuristic)
+                            gender = "female" if first.endswith("a") else "male"
+                            cases = PolishDeclension.decline_full_name_cases(name, gender)
+                            is_polish = PolishDeclension.is_polish_name(first)
+
+                            memory_items.append(
+                                f"Imię i nazwisko: {name} | formy: wołacz: {cases.get('voc')}, dopełniacz: {cases.get('gen')}, celownik: {cases.get('dat')}, narzędnik: {cases.get('inst')} (polskie: {is_polish})"
+                            )
                         if context_memory.get("city"):
                             memory_items.append(f"Miasto: {context_memory['city']}")
                         if context_memory.get("square_meters"):
@@ -155,7 +554,7 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                         {"role": "user", "content": f"Context:\n{context}\n\nUser: {user_message}"},
                     ]
                     response = client.chat.completions.create(
-                        model="gpt-4o-mini",  # Zoptymalizowany model
+                        model="gpt-4o",  # Better for Polish grammar & declension
                         messages=messages,
                         max_tokens=500,
                         temperature=0.7,
@@ -181,6 +580,17 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
         # Track A/B test response (if user responded to follow-up question)
         if conversation.followup_variant and len(user_message) > 3:
             track_ab_test_response(conversation)
+
+        # Check if we just collected enough data to ask for confirmation
+        should_confirm = should_ask_for_confirmation(context_memory, conversation)
+        print(
+            f"[CONFIRMATION CHECK] should_confirm={should_confirm}, context={context_memory}, awaiting={conversation.awaiting_confirmation}"
+        )
+        if should_confirm:
+            conversation.awaiting_confirmation = True
+            confirmation_msg = format_data_confirmation_message(context_memory)
+            bot_response = f"{bot_response}\n\n{confirmation_msg}"
+            print("[CONFIRMATION] Added confirmation message to response")
 
         # Zapisz odpowiedź bota
         bot_msg = ChatMessage(
@@ -224,7 +634,12 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
         confirmation_intent = check_data_confirmation_intent(user_message)
         existing_lead = Lead.query.filter_by(session_id=session_id).first()
 
-        if confirmation_intent == "confirm" and conversation.awaiting_confirmation:
+        # Check if we have enough data to create lead
+        has_enough_data_for_lead = context_memory.get("name") and (
+            context_memory.get("email") or context_memory.get("phone")
+        )
+
+        if confirmation_intent == "confirm" and has_enough_data_for_lead and not existing_lead:
             # User confirmed - create lead now
             try:
                 if not existing_lead:
@@ -348,13 +763,6 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
             # User wants to edit - clear awaiting flag
             conversation.awaiting_confirmation = False
             bot_response = "Oczywiście! Popraw dane które chcesz zmienić, a ja je zaktualizuję. 📝"
-
-        # Check if we should ask for data confirmation
-        elif should_ask_for_confirmation(context_memory, conversation):
-            conversation.awaiting_confirmation = True
-            confirmation_msg = format_data_confirmation_message(context_memory)
-            # Append confirmation request to bot response
-            bot_response = f"{bot_response}\n\n{confirmation_msg}"
 
         # Fallback: Auto-create lead if enough data (no confirmation asked)
         elif not conversation.awaiting_confirmation and not existing_lead:
@@ -520,59 +928,120 @@ SYSTEM_PROMPT = f"""Jesteś asystentem NovaHouse — firmy wykańczającej miesz
 • {COMPANY_STATS['warranty_years']} lata gwarancji
 
 💰 PAKIETY (ceny/m²):
-1. Express - 999 zł (6-8 tyg, Basic)
-2. Express Plus - 1199 zł (6-8 tyg, Standard)
-3. Comfort - 1499 zł (8-12 tyg, Premium)
-4. Premium - 1999 zł (10-16 tyg, Luxury)
-5. Indywidualny - 1700-5000 zł (full custom)
+1. Express - 999 zł/m² (6-8 tyg, Basic)
+2. Express Plus - 1199 zł/m² (6-8 tyg, Standard)
+3. Comfort - 1499 zł/m² (8-12 tyg, Premium)
+4. Premium - 1999 zł/m² (10-16 tyg, Luxury)
+5. Indywidualny - 1700-5000 zł/m² (full custom)
+
+📊 RÓŻNICE MIĘDZY PAKIETAMI:
+• Express (999 zł/m²): Podstawowy standard, dobre materiały z katalogu, szybka realizacja 6-8 tyg
+• Express Plus (1199 zł/m²): Rozszerzony wybór materiałów, więcej opcji personalizacji
+• Comfort (1499 zł/m²): Wyższy standard, lepsze materiały (drewno, kamień), 8-12 tyg
+• Premium (1999 zł/m²): Najwyższa jakość, luksusowe materiały, pełna personalizacja, 10-16 tyg
+• Indywidualny: Projekt od zera, nieograniczone możliwości, czas 14-20 tyg
 
 📦 CO ZAWIERA KAŻDY PAKIET:
-• Projekt + moodboard + konsultacje z projektantem
-• Materiały budowlane (farby, kleje, fugi)
-• Materiały wykończeniowe (podłogi, drzwi, płytki, armatura)
-• Prace: malowanie, montaż podłóg/drzwi, łazienka kompleksowo
-• Koordynacja dostaw i ekip
+• Projekt 3D + moodboard + konsultacje z projektantem
+• Materiały budowlane WLICZONE (farby, kleje, fugi, hydroizolacja)
+• Materiały wykończeniowe WLICZONE (podłogi, listwy, płytki, drzwi, klamki, armatura, ceramika)
+• Wszystkie prace: malowanie, gładzie, montaż podłóg/drzwi/listew, kompletny montaż łazienki
+• Koordynacja dostaw i ekip budowlanych
 • Sprzątanie końcowe
-• 36 miesięcy gwarancji
-• 15% rabat na wszystkie materiały
+• 36 miesięcy (3 lata) gwarancji na wykonane prace
+• 15% rabatu na wszystkie materiały
+
+⏰ CZASY REALIZACJI (DOKŁADNIE):
+• Express/Express Plus: 6-8 tygodni (1,5-2 miesiące)
+• Comfort: 8-12 tygodni (2-3 miesiące)
+• Premium: 10-16 tygodni (2,5-4 miesiące)
+• Indywidualny: 14-20 tygodni (3,5-5 miesięcy)
 
 🎯 JAK ODPOWIADAĆ:
-1. KONKRETNIE - nie "🤔 Nie jestem pewien" - zawsze podaj informację!
-2. ZWIĘŹLE - max 2-3 zdania, potem pytanie
-3. CIEPŁO - "na ty", empatycznie, bez sztywności
-4. PO POLSKU - zawsze w języku polskim
+1. KONKRETNIE - zawsze podawaj liczby, ceny, czasy!
+2. AUTOMATYCZNIE PRZELICZAJ - jeśli znasz metraż, przelicz cenę (np. 70m² × 1499 zł/m² = ~105 tys zł)
+3. ZWIĘŹLE - 2-4 zdania, potem pytanie
+4. CIEPŁO - "na ty", empatycznie
+5. PO POLSKU - zawsze
 
 ❗ ZASADY ODPOWIEDZI:
-• "ile kosztuje" → podaj cenę konkretnego pakietu (np. "Express 999 zł/m², Express Plus 1199 zł/m²")
-• "jak długo" → podaj dokładny czas (np. "Express 6-8 tygodni, Comfort 8-12 tygodni")
-• "co zawiera" → wymień konkretne elementy (patrz wyżej)
-• "jakie pakiety" → wymień tylko te o które pytano (np. najtańsze = Express i Express Plus)
-• "powierzchnia" → zapytaj "Jaki metraż mieszkania?" i zapisz w kontekście
-• "lokalizacja" → sprawdź czy jest w: Trójmiasto/Warszawa/Wrocław
+• "jakie pakiety" → wymień WSZYSTKIE 5 pakietów z cenami
+• "ile kosztuje" + metraż → ZAWSZE przelicz automatycznie (metraż × cena/m²)
+• "czym różni się X od Y" → podaj KONKRETNE różnice (materiały, czas, standard) z frazą "różni się"
+• "jak długo" → ZAWSZE podaj czas w tygodniach I miesiącach (np. "8-12 tygodni (2-3 miesiące)")
+• "co zawiera" → wymień 5-7 najważniejszych elementów + podaj że materiały są WLICZONE w cenę
+• "materiały w cenie" / "czy materiały wliczone" → ZAWSZE użyj słowa "WLICZONE w cenę pakietu" lub "wszystkie materiały są WLICZONE"
+• "wizualizacja/3D" → "Tak! KAŻDY pakiet (Express, Express Plus, Comfort, Premium, Indywidualny) zawiera projekt 3D"
+• "gwarancja" → "36 miesięcy (3 lata) gwarancji na wykonane prace"
+• miasto w pytaniu → zapamiętaj i użyj w kolejnych odpowiedziach
+• metraż w pytaniu → zapamiętaj i automatycznie przeliczaj ceny
+• imię i nazwisko → zapamiętaj PEŁNE (np. "Jan Kowalski" → używaj imienia I nazwiska w odpowiedziach)
+
+🇵🇱 ODMIANA IMION (POLSKA GRAMATYKA):
+• Wołacz przy powitaniu: "Cześć Janie Kowalski!" / "Witaj Mario Nowak!"
+• Dopełniacz przy zwrotach: "Dziękuję, Jana Kowalskiego!"
+• Imiona polskie: ZAWSZE odmieniaj (Jan→Janie, Maria→Mario, Anna→Anno)
+• Nazwiska polskie: odmieniaj według płci (Kowalski→Kowalskiego, Nowak bez odmiany dla kobiet)
+• Imiona obce (Alex, John, Michael): NIE odmieniaj lub odmieniaj tylko nazwisko
+• Przykłady poprawne:
+  ✓ "Cześć Anno Wiśniewska!" (wołacz kobiety)
+  ✓ "Super Janie Kowalski!" (wołacz mężczyzny)
+  ✓ "Dziękuję Mario Nowak!" (dopełniacz kobiety)
+  ✓ "Cześć Alex Smith!" (obce imię - bez odmiany)
+
+ 🔤 KIEDY STOSOWAĆ KTÓRĄ FORMĘ:
+ • Powitanie i bezpośredni zwrot do osoby → Wołacz (np. "Janie", "Mario")
+ • Pytanie/wyrażenie "dla kogo?" → Celownik (np. "dla Janowi Kowalskiemu")
+ • Pytanie/wyrażenie "z kim?" → Narzędnik (np. "z Janem Kowalskim")
+ • Wskazanie "kogo/czego?" → Dopełniacz (np. "Jana Kowalskiego")
+ • Jeśli imię obce → pozostaw w mianowniku (np. "Alex Smith")
 
 🚨 NIGDY NIE UŻYWAJ:
 × "🤔 Nie jestem pewien"
 × "Przepraszam, nie rozumiem"
 × "Spróbuj inaczej zapytać"
+× "Przykro mi" / "Przykro mi, że masz wątpliwości"
 
 ✅ ZAMIAST TEGO:
-✓ Podaj konkretną odpowiedź z dostępnych informacji
-✓ Jeśli brak szczegółu → powiedz "To ustalimy na konsultacji. Dzwonisz czy piszesz?"
-✓ Zawsze zakończ pytaniem lub CTA (call to action)
+✓ OD RAZU podaj konkretną odpowiedź z liczbami
+✓ Jeśli brak szczegółu → "To ustalimy na konsultacji. Piszesz czy dzwonisz?"
+✓ Zawsze zakończ pytaniem lub CTA
+✓ BEZ niepotrzebnych przeprosin - klient po prostu pyta!
 
 PRZYKŁADY:
-❓ "Ile kosztuje wykończenie 50m²?"
-✅ "Przy 50m² wyjdzie od ~50 tys (Express) do ~75 tys (Premium). Jaki standard Cię interesuje?"
+❓ "Ile kosztuje wykończenie 70m² w Warszawie?"
+✅ "Przy 70m² w Warszawie (działamy!) ceny:
+• Express: 70m² × 999 zł = ~70 tys zł
+• Comfort: 70m² × 1499 zł = ~105 tys zł
+• Premium: 70m² × 1999 zł = ~140 tys zł
+Jaki standard Cię kręci?"
 
-❓ "Co zawiera pakiet?"
-✅ "Komplet: projekt, materiały, prace (malowanie/podłogi/drzwi/łazienka), koordynacja, sprzątanie, 3 lata gwarancji. Pytasz o konkretny pakiet?"
+❓ "Czym różni się Premium od Express?"
+✅ "Premium (1999 zł/m²) vs Express (999 zł/m²):
+• Materiały: Premium = luksusowe (kamień, drewno), Express = dobre z katalogu
+• Personalizacja: Premium = pełna, Express = podstawowa
+• Czas: Premium 10-16 tyg, Express 6-8 tyg
+Jaki budżet planujesz?"
 
-❓ "Jakie macie pakiety?"
-✅ "4 pakiety: Express (999 zł/m²), Express Plus (1199), Comfort (1499), Premium (1999). Plus projekty indywidualne. Jaki budżet planujesz?"
+❓ "Jak długo trwa realizacja?"
+✅ "Czasy realizacji:
+• Express/Express Plus: 6-8 tygodni (1,5-2 miesiące)
+• Comfort: 8-12 tygodni (2-3 miesiące)
+• Premium: 10-16 tygodni (2,5-4 miesiące)
+Jaki pakiet Cię interesuje?"
 
-🎯 CEL: Pomóc klientowi wybrać pakiet → zebrać: metraż, lokalizację, email/telefon → umówić konsultację
+❓ "Czy robicie wizualizacje 3D?"
+✅ "Tak! Każdy pakiet (Express, Express Plus, Comfort, Premium, Indywidualny) zawiera projekt 3D + moodboard, żeby dokładnie zobaczyć jak będzie wyglądać mieszkanie przed rozpoczęciem prac. Chcesz poznać szczegóły któregoś pakietu?"
 
-ROZPOCZNIJ OD: Ciepłe powitanie + zapytaj o lokalizację i potrzeby."""
+🎯 CEL: Pomóc wybrać pakiet → zebrać: metraż, lokalizację, email/telefon → umówić konsultację
+
+ROZPOCZNIJ OD: Ciepłe powitanie używając PEŁNEGO imienia i nazwiska (jeśli klient się przedstawi) + zapytaj o lokalizację i metraż.
+
+📝 PAMIĘĆ KONTEKSTU:
+• Zapamiętaj imię I nazwisko (np. "Jan Kowalski" → używaj "Jan Kowalski" nie tylko "Jan")
+• Zapamiętaj miasto i używaj go w odpowiedziach
+• Zapamiętaj metraż i automatycznie przeliczaj ceny
+• Zapamiętaj pakiet który interesuje klienta"""
 
 
 @chatbot_bp.route("/chat", methods=["POST"])
@@ -712,13 +1181,13 @@ def should_ask_for_confirmation(context_memory, conversation):
         context_memory.get("email") or context_memory.get("phone")
     )
 
-    # Check if not already confirmed
-    not_confirmed = not conversation.awaiting_confirmation
+    # Check if not already asking (only ask once per conversation)
+    not_asked_yet = not conversation.awaiting_confirmation
 
     # Check if lead doesn't exist yet
     no_lead = not Lead.query.filter_by(session_id=conversation.session_id).first()
 
-    return has_data and not_confirmed and no_lead
+    return has_data and not_asked_yet and no_lead
 
 
 def format_data_confirmation_message(context_memory):
@@ -1136,23 +1605,38 @@ def extract_context(message, existing_context):
     """
     message_lower = message.lower()
 
-    # Extract name (after "jestem", "nazywam się", "mam na imię")
+    # Extract name (after "jestem", "nazywam się", "mam na imię", "to ja") - with optional surname
     name_patterns = [
-        r"jestem\s+([A-ZŚŻŹĆŃĄĘÓŁ][a-ząęółćżźśń]+)",
-        r"nazywam się\s+([A-ZŚŻŹĆŃĄĘÓŁ][a-ząęółćżźśń]+)",
-        r"mam na imię\s+([A-ZŚŻŹĆŃĄĘÓŁ][a-ząęółćżźśń]+)",
+        r"(?:jestem|nazywam się|mam na imię|to ja|cześć jestem)\s+([A-ZŚŻŹĆŃĄĘÓŁ][a-ząęółćżźśń]+(?:\s+[A-ZŚŻŹĆŃĄĘÓŁ][a-ząęółćżźśń]+)?)",
+        r"^([A-ZŚŻŹĆŃĄĘÓŁ][a-ząęółćżźśń]+\s+[A-ZŚŻŹĆŃĄĘÓŁ][a-ząęółćżźśń]+)$",  # Just "Jan Kowalski" without prefix
     ]
     for pattern in name_patterns:
         match = re.search(pattern, message, re.IGNORECASE)
         if match:
-            existing_context["name"] = match.group(1)
-            break
+            extracted_name = match.group(1).strip()
+            # Verify it's actually a name (at least 2 chars, starts with capital)
+            if len(extracted_name) >= 2 and extracted_name[0].isupper():
+                existing_context["name"] = extracted_name
+                break
 
     # Extract email
     email_pattern = r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b"
     email_match = re.search(email_pattern, message)
     if email_match:
         existing_context["email"] = email_match.group(0)
+
+    # Extract phone number (Polish formats)
+    phone_patterns = [
+        r"\+48\s?\d{3}\s?\d{3}\s?\d{3}",  # +48 123 456 789
+        r"\b48\d{9}\b",  # 48123456789
+        r"\b\d{3}\s?\d{3}\s?\d{3}\b",  # 123 456 789 or 123456789
+        r"\b\d{9}\b",  # 123456789
+    ]
+    for pattern in phone_patterns:
+        phone_match = re.search(pattern, message)
+        if phone_match:
+            existing_context["phone"] = phone_match.group(0)
+            break
 
     # Extract city
     cities = ["gdańsk", "warszawa", "wrocław", "sopot", "gdynia", "kraków", "poznań", "łódź"]
@@ -1378,7 +1862,13 @@ def check_faq(message):
 
     # Powitania
     greetings = ["cześć", "dzień dobry", "witam", "hej", "hello", "siema", "elo", "co tam"]
-    if any(greeting in message_lower for greeting in greetings):
+    introduction_keywords = ["jestem", "nazywam się", "mam na imię", "to ja"]
+
+    has_greeting = any(greeting in message_lower for greeting in greetings)
+    has_introduction = any(keyword in message_lower for keyword in introduction_keywords)
+
+    # Only return greeting if it's NOT an introduction
+    if has_greeting and not has_introduction:
         return f"Cześć! 👋 Jestem asystentem NovaHouse.\n\n📊 {COMPANY_STATS['completed_projects']} projektów | {COMPANY_STATS['satisfied_clients']} zadowolonych | {COMPANY_STATS['projects_before_deadline']} przed terminem\n\nPomagam w wyborze idealnego pakietu wykończeniowego. Z jakiego jesteś miasta i co planujesz — mieszkanie czy dom?"
 
     return None

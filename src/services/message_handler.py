@@ -139,17 +139,23 @@ class MessageHandler:
             }
 
         except Exception as e:
+            import logging
+            import traceback
+
+            logger = logging.getLogger(__name__)
+            logger.error(f"[MessageHandler] Critical error: {e}", exc_info=True)
             print(f"[MessageHandler] Error: {e}")
+            print(f"[MessageHandler] Traceback: {traceback.format_exc()}")
             db.session.rollback()
             try:
                 from src.utils.telegram_alert import send_telegram_alert
 
-                send_telegram_alert(f"Błąd produkcyjny: {str(e)}")
+                send_telegram_alert(f"Błąd produkcyjny w chatbocie: {str(e)[:200]}")
             except Exception as alert_exc:
                 print(f"[Telegram Alert] Failed: {alert_exc}")
             return {
-                "error": str(e),
-                "response": "Przepraszam, wystąpił problem. Spróbuj ponownie.",
+                "error": "internal_error",
+                "response": "Przepraszam, wystąpił problem techniczny. Możesz spróbować ponownie lub zadzwonić: +48 585 004 663",
             }
 
     def _check_spam(self, session_id: str, message: str) -> Optional[str]:
@@ -228,17 +234,39 @@ class MessageHandler:
         if sentiment_analysis and sentiment_analysis.get("should_escalate"):
             return self._handle_escalation(sentiment_analysis, conversation)
 
-        # Response hierarchy (NEW ORDER - GPT earlier)
+        # Response hierarchy (GPT FIRST for intelligent responses)
         bot_response = None
 
         # 1. Booking intent (highest priority)
         bot_response = check_booking_intent(user_message, context_memory)
 
-        # 2. Standard FAQ (fast, no API call)
+        # 2. OpenAI GPT (FIRST for price calculations, comparisons, intelligent responses)
+        # Skip FAQ for complex questions - let GPT handle them with context
+        if not bot_response:
+            user_lower = user_message.lower()
+            # Use GPT for: prices, calculations, comparisons, complex questions with context
+            use_gpt = any(
+                [
+                    "ile" in user_lower and ("kosztuje" in user_lower or "kosz" in user_lower),
+                    "czym różni" in user_lower or "różnica" in user_lower,
+                    "porównaj" in user_lower or "porówna" in user_lower,
+                    "comfort" in user_lower or "premium" in user_lower or "express" in user_lower,
+                    len(user_message.split()) > 8,  # Complex questions
+                    context_memory.get("square_meters")
+                    or context_memory.get("city"),  # Has context
+                ]
+            )
+
+            if use_gpt:
+                bot_response = self._get_gpt_response(
+                    user_message, conversation, context_memory, sentiment_analysis
+                )
+
+        # 3. Standard FAQ (for simple, factual questions without context)
         if not bot_response:
             bot_response = check_faq(user_message)
 
-        # 3. Check if message is unclear - offer clarification
+        # 4. Check if message is unclear - offer clarification
         if not bot_response and len(user_message.split()) <= 3:
             clarification = proactive_suggestions.get_smart_clarification(
                 user_message, context_memory
@@ -246,7 +274,7 @@ class MessageHandler:
             if clarification:
                 return clarification.get("message", ""), None
 
-        # 4. OpenAI GPT (early in hierarchy for better responses)
+        # 5. OpenAI GPT (fallback for everything else)
         if not bot_response:
             bot_response = self._get_gpt_response(
                 user_message, conversation, context_memory, sentiment_analysis
@@ -355,8 +383,15 @@ class MessageHandler:
             return bot_response
 
         except Exception as e:
+            import logging
+            import traceback
+
+            logger = logging.getLogger(__name__)
+            logger.error(f"[GPT] OpenAI API error: {e}", exc_info=True)
             print(f"[GPT] Error: {e}")
-            return None
+            print(f"[GPT] Traceback: {traceback.format_exc()}")
+            # Return fallback response instead of None
+            return "Dziękuję za wiadomość! Mam chwilowy problem techniczny. Możesz spróbować ponownie za chwilę lub od razu zadzwonić: +48 585 004 663. Chętnie odpowiem na wszystkie pytania!"
 
     def _build_memory_prompt(self, context_memory: Dict) -> str:
         """Build memory prompt for GPT"""
