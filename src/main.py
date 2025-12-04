@@ -258,6 +258,20 @@ from src.routes.migrations import migration_bp as migrations_bp
 app.register_blueprint(cron_bp, url_prefix="/api/cron")
 app.register_blueprint(migrations_bp, url_prefix="/api/migrations")
 
+# Register verification routes (v2.5)
+from src.routes.verification import verification_bp
+
+app.register_blueprint(verification_bp)
+
+# Register assignment routes (v2.5)
+from src.routes.assignment import assignment_bp
+
+app.register_blueprint(assignment_bp)
+
+# Register monitoring routes (v2.5)
+from src.routes.monitoring import monitoring_bp
+
+app.register_blueprint(monitoring_bp)
 # KROK 6: Tworzymy tabele w kontekście w pełni skonfigurowanej aplikacji.
 with app.app_context():
     try:
