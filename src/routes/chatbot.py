@@ -1809,7 +1809,6 @@ def check_faq(message):
         # Województwo Lubuskie
         "gorzów wielkopolski": ["gorzów", "gorzowie"],
         "żagań": ["żagań", "żaganiu"],
-        "zielona góra": ["zielona góra", "zielonej góry"],
         # Województwo Dolnośląskie
         "wrocław": ["wrocław", "wrocławiu", "wrocławia"],
         "wałbrzych": ["wałbrzych", "wałbrzychu"],
@@ -1839,7 +1838,6 @@ def check_faq(message):
         "elbląg": ["elbląg", "elblągu"],
         "białystok": ["białystok", "białymstoku"],
         # Województwo Podlaskie
-        "białystok": ["białystok", "białymstoku"],
         "łomża": ["łomża", "łomży"],
         "suwałki": ["suwałki", "suwałkach"],
         # Województwo Lubelskie
@@ -1861,7 +1859,6 @@ def check_faq(message):
         # Województwo Śląskie
         "katowice": ["katowice", "katowicach"],
         "kraków": ["kraków", "krakowie", "krakowa"],
-        "szczecin": ["szczecin", "szczecinie"],
         # Major Silesian cities
         "gliwice": ["gliwice", "gliwicach"],
         "zabrze": ["zabrze", "zabrzu"],
