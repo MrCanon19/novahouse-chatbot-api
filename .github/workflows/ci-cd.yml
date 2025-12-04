@@ -23,15 +23,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: "pip"
-        continue-on-error: true
-      - name: Cache pip packages
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -53,15 +44,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: "pip"
-        continue-on-error: true
-      - name: Cache pip packages
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -82,7 +64,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-        continue-on-error: true
       - name: Install linters
         run: |
           python -m pip install --upgrade pip
@@ -125,73 +106,17 @@ jobs:
     steps:
       - name: Check deploy configuration
         id: deploy_check
-        env:
-          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
-          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
         run: |
-          SHOULD_DEPLOY=true
-          if [ -z "$GCP_SA_KEY" ] || [ -z "$GCP_PROJECT_ID" ]; then
-            echo "⚠️  Deployment skipped: GCP secrets not configured"
-            echo "ℹ️  Set GCP_SA_KEY and GCP_PROJECT_ID in GitHub Settings > Secrets"
-            SHOULD_DEPLOY=false
+          if [ -z "${{ secrets.GCP_SA_KEY }}" ] || [ -z "${{ secrets.GCP_PROJECT_ID }}" ]; then
+            echo "Deployment skipped: GCP secrets not configured"
+            echo "should_deploy=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_deploy=true" >> "$GITHUB_OUTPUT"
           fi
-          echo "should_deploy=${SHOULD_DEPLOY}" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v4
         if: steps.deploy_check.outputs.should_deploy == 'true'
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        if: steps.deploy_check.outputs.should_deploy == 'true'
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-        continue-on-error: true
-      - name: Install gcloud CLI
-        if: steps.deploy_check.outputs.should_deploy == 'true'
-        run: |
-            sudo apt-get update && sudo apt-get install -y google-cloud-cli
-      - name: Authenticate to GCP
-        if: steps.deploy_check.outputs.should_deploy == 'true'
-        env:
-          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
-          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-        run: |
-          KEY_FILE="${HOME}/gcp-key.json"
-          printf '%s' "$GCP_SA_KEY" > "$KEY_FILE"
-          gcloud auth activate-service-account --key-file="$KEY_FILE"
-          gcloud config set project "$GCP_PROJECT_ID"
-      - name: Prepare app.yaml from template
-        if: steps.deploy_check.outputs.should_deploy == 'true'
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          MONDAY_API_KEY: ${{ secrets.MONDAY_API_KEY }}
-          MONDAY_BOARD_ID: ${{ secrets.MONDAY_BOARD_ID }}
-          POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
-          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
-          SECRET_KEY: ${{ secrets.SECRET_KEY }}
-          API_KEY: ${{ secrets.API_KEY }}
-        run: |
-          cp app.yaml.example app.yaml
-          sed -i "s|YOUR_OPENAI_API_KEY_HERE|${OPENAI_API_KEY}|g" app.yaml
-          sed -i "s|YOUR_MONDAY_API_KEY_HERE|${MONDAY_API_KEY}|g" app.yaml
-          sed -i "s|YOUR_MONDAY_BOARD_ID_HERE|${MONDAY_BOARD_ID}|g" app.yaml
-          sed -i "s|YOUR_POSTGRES_HOST_HERE|${POSTGRES_HOST}|g" app.yaml
-          sed -i "s|YOUR_POSTGRES_USER_HERE|${POSTGRES_USER}|g" app.yaml
-          sed -i "s|YOUR_POSTGRES_PASSWORD_HERE|${POSTGRES_PASSWORD}|g" app.yaml
-          sed -i "s|YOUR_POSTGRES_DB_HERE|${POSTGRES_DB}|g" app.yaml
-          sed -i "s|YOUR_SECRET_KEY_HERE|${SECRET_KEY}|g" app.yaml
-          sed -i "s|YOUR_API_KEY_HERE|${API_KEY}|g" app.yaml
-      - name: Deploy to App Engine
-        if: steps.deploy_check.outputs.should_deploy == 'true'
-        run: |
-          gcloud app deploy app.yaml --quiet
-      - name: Deployment Status
-        if: always()
-        run: |
-          if [ "${{ steps.deploy_check.outputs.should_deploy }}" == "true" ]; then
-            echo "✅ Deployment completed"
-          else
-            echo "ℹ️  Deployment skipped (secrets not configured)"
-          fi
+      - name: Deploy placeholder
+        if: steps.deploy_check.outputs.should_deploy == 'false'
+        run: echo "ℹ️  Deployment skipped - no GCP secrets configured"
 
 # Koniec pliku YAML
