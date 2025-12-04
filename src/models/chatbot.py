@@ -108,6 +108,19 @@ class Lead(db.Model):
     conversation_summary = db.Column(db.Text)  # AI-generated summary
     data_confirmed = db.Column(db.Boolean, default=False)  # User confirmed data
     last_interaction = db.Column(db.DateTime)  # For follow-up timing
+    # Email verification fields
+    email_verified = db.Column(db.Boolean, default=False)  # Email verified flag
+    email_verification_token = db.Column(db.String(128))  # Email verification token
+    email_verified_at = db.Column(db.DateTime)  # When email was verified
+    # Phone verification fields
+    phone_verified = db.Column(db.Boolean, default=False)  # Phone verified flag
+    phone_verification_code = db.Column(db.String(6))  # 6-digit SMS code
+    phone_verified_at = db.Column(db.DateTime)  # When phone was verified
+    # Lead assignment fields
+    assigned_to_user_id = db.Column(db.String(100))  # Sales person ID
+    assigned_at = db.Column(db.DateTime)  # When assigned
+    first_contact_at = db.Column(db.DateTime)  # First contact timestamp
+    expected_contact_by = db.Column(db.DateTime)  # SLA deadline
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(
         db.DateTime,
