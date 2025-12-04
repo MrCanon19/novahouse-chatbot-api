@@ -56,7 +56,6 @@ from flask_cors import CORS
 from sqlalchemy import event, text
 
 from src.models.chatbot import db
-from src.services.auto_migration import run_auto_migration
 
 # Error monitoring: GCP Error Reporting działa AUTOMATYCZNIE w App Engine!
 # Logi błędów: https://console.cloud.google.com/errors?project=glass-core-467907-e9
@@ -158,28 +157,17 @@ if db_url.startswith("postgresql://"):
     }
 db.init_app(app)
 
-# Flag for auto-migration
+# Flag for auto-migration - DISABLED (causes database locks on PostgreSQL)
 _auto_migration_done = False
 
+# NOTE: Auto-migration disabled due to table locking issues
+# Use manual migration endpoint instead:
+# GET /admin/migrate-database?secret=NOVAHOUSE_MIGRATION_2025_SECURE
 
-# ONLY run migration on analytics/admin requests (not on startup)
-@app.before_request
-def run_migration_on_critical_endpoint():
-    global _auto_migration_done
-
-    # Only check on analytics and admin routes
-    if not _auto_migration_done and ("/api/analytics" in request.path or "/admin" in request.path):
-        import sys
-
-        try:
-            print(f"🔄 [MIGRATION] Running on first {request.path} request...", file=sys.stderr)
-            if run_auto_migration(db):
-                _auto_migration_done = True
-                print("✅ [MIGRATION] Success!", file=sys.stderr)
-            else:
-                print("❌ [MIGRATION] Failed to migrate", file=sys.stderr)
-        except Exception as e:
-            print(f"❌ [MIGRATION] Error: {e}", file=sys.stderr)
+# DISABLED - causing app hangs
+# @app.before_request
+# def run_migration_on_critical_endpoint():
+#     ...
 
 
 # Slow query logging (queries >100ms)
