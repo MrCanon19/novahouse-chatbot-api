@@ -28,9 +28,10 @@ class RedisCache:
             # Test connection
             self.redis_client.ping()
             self.enabled = True
-            print(f"✅ Redis connected: {redis_url}")
-        except Exception:
+            logger.info(f"Redis connected successfully: {redis_url}")
+        except Exception as e:
             # Redis wyłączony w dev - używamy in-memory cache
+            logger.warning(f"Redis connection failed, using in-memory fallback: {e}")
             self.enabled = False
             self._fallback_cache = {}
 
@@ -46,10 +47,10 @@ class RedisCache:
                 # Fallback to in-memory
                 return self._fallback_cache.get(key)
         except (json.JSONDecodeError, TypeError) as e:
-            print(f"Redis GET decode error: {e}")
+            logger.error(f"Redis GET decode error: {e}")
             return None
         except Exception as e:
-            print(f"Redis GET error: {e}")
+            logger.error(f"Redis GET error: {e}")
             return None
 
     def set(self, key: str, value: Any, ttl: int = 300):
