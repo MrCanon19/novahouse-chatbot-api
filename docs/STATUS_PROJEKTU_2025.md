@@ -1,19 +1,32 @@
 # Status projektu NovaHouse Chatbot API
 
-**Data aktualizacji:** 4 grudnia 2025, 19:26  
-**Wersja:** 2.5.4 "Emergency Fix - GCP App Engine Boot"  
+**Data aktualizacji:** 4 grudnia 2025, 19:45  
+**Wersja:** 2.5.5 "Clean Architecture - Sentry Removal"  
 **Status:** 🟢 Production-ready - wszystkie systemy działają  
 **Deployment:** ✅ GCP App Engine (v20251204t192630) - wszystkie 8 endpointów OK  
 **CI/CD:** ✅ GitHub Actions pipeline simplified & stabilized  
 **Monitoring:** GCP Error Reporting (natywny dla App Engine)
 
-### 🔧 Ostatnia naprawa produkcji (4 grudnia 2025)
+### 🔧 Ostatnie naprawy produkcji (4 grudnia 2025)
+
+#### 1. Emergency Fix - GCP App Engine Boot (19:26)
 - ✅ **Problem:** Worker failed to boot na GCP App Engine (wersja 20251204t165805)
 - ✅ **Przyczyna 1:** Brakujący `entrypoint` w `app.yaml` - gunicorn nie wiedział jak uruchomić app
 - ✅ **Przyczyna 2:** Zmienna `API_KEY` zamiast `ADMIN_API_KEY` (wymagana przez kod)
 - ✅ **Rozwiązanie:** Dodano `entrypoint: gunicorn -c config/gunicorn.conf.py main:app`, zmieniono nazwę zmiennej
 - ✅ **Deployment:** Wersja 20251204t192630 - wszystkie endpointy zwracają 200 OK
 - 🟢 **Weryfikacja:** 8/8 endpointów działających (chatbot, dashboard, admin, docs, health, widget, qualification, RODO)
+
+#### 2. Sentry Removal - Clean Architecture (19:45)
+- 🔥 **Usunięto:** Całkowite usunięcie Sentry SDK z projektu (commit 377a4c8)
+- ✅ **Zamieniono na:** GCP Error Reporting (natywny) + print logging do GCP Logs
+- ✅ **Usunięto z kodu:**
+  - Endpoint `/sentry-test`
+  - Wszystkie `import sentry_sdk` i `sentry_sdk.capture_message()`
+  - Sekcja "Błędy (Sentry)" z admin dashboard
+- ✅ **Usunięto dependency:** `sentry-sdk[flask]` z requirements.txt, requirements-gae.txt, pyproject.toml
+- ✅ **Testy:** 76/76 passing ✅ (coverage 30.38%)
+- 🟢 **Powód:** Uproszczenie architektury, GCP Error Reporting wystarczający dla App Engine
 
 ---
 
@@ -118,13 +131,21 @@
 - Secret management (app.yaml → backups/secrets/)
 - SQL injection protection (documented)
 - Silent exception logging (redis, leads, main)
-- Dependency updates (sentry-sdk 2.47.0)
+- Dependency security updates
 
 ### ⚡ Production Optimizations (v2.5.3)
 - **Redis rate limiter:** multi-instance safe
 - **Slow query logging:** automatic performance tracking
 - **Cold start optimization:** <5s (background threading)
 - **Code quality:** TODO → NOTE conversion
+
+### 🏗️ Architecture Cleanup (v2.5.4-2.5.5)
+- **GCP App Engine Fix:** Dodano brakujący entrypoint, poprawiono env vars
+- **Sentry Removal:** Całkowite usunięcie Sentry SDK (commit 377a4c8)
+- **Monitoring:** Przejście na natywny GCP Error Reporting
+- **Logging:** Unifikacja do print → GCP Logs (stdout)
+- **Dependencies:** Usunięcie `sentry-sdk[flask]` z wszystkich requirements
+- **Tests:** 76/76 passing ✅ (coverage 30.38%)
 
 ---
 
@@ -223,8 +244,8 @@
 
 ## Wsparcie techniczne
 - **GitHub:** https://github.com/MrCanon19/novahouse-chatbot-api
-- **Ostatni commit:** Simplify CI/CD pipeline (8eae7e9), 04.12.2025
-- **Testy:** 76/76 passing ✅, coverage 30.33%
+- **Ostatni commit:** Remove Sentry completely (377a4c8), 04.12.2025
+- **Testy:** 76/76 passing ✅, coverage 30.38%
 - **CI/CD:** GitHub Actions (Python 3.12, actions v4/v5)
 - **Dokumentacja:** docs/CI_CD_SETUP.md
 - Automatyczna synchronizacja: iCloud → GitHub (co godzinę)
@@ -232,9 +253,9 @@
 
 ---
 
-**Wygenerowano:** 4 grudnia 2025, 20:00  
+**Wygenerowano:** 4 grudnia 2025, 19:45  
 **Status:** 🟢 Production-ready - wszystkie systemy działają  
-**Wersja:** 2.5.3 "Enterprise Ready"
+**Wersja:** 2.5.5 "Clean Architecture - Sentry Removal"
 
 ---
 
@@ -254,9 +275,12 @@
 - [x] **Advanced analytics** (funnel, trends, CSV)
 - [x] **Security hardened** (secrets, SQL injection, exceptions)
 - [x] **Production monitoring** (slow queries, rate limiting)
+- [x] **GCP App Engine** (boot fix, entrypoint configured)
+- [x] **Clean architecture** (Sentry removed, GCP Error Reporting only)
 
 ---
 
-**Wygenerowano:** 4 grudnia 2025  
+**Wygenerowano:** 4 grudnia 2025, 19:45  
 **Status:** 🟢 Production-ready - wszystkie systemy działają  
-**Wersja:** 2.5.3 "Enterprise Ready"
+**Wersja:** 2.5.5 "Clean Architecture - Sentry Removal"  
+**Ostatni commit:** 377a4c8 - Remove Sentry completely
