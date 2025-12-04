@@ -277,32 +277,32 @@ with app.app_context():
     try:
         db.create_all()
     except Exception as e:
-        print(f"⚠️ Database initialization skipped: {e}")
+        logger.warning(f"Database initialization skipped: {e}")
 
     # Initialize v2.3 services
     try:
         from src.services.redis_service import warm_redis_cache
 
         warm_redis_cache()
-        print("✅ Redis cache warmed")
+        logger.info("Redis cache warmed successfully")
     except Exception as e:
-        print(f"⚠️  Redis cache warming skipped: {e}")
+        logger.warning(f"Redis cache warming skipped: {e}")
 
     try:
         from src.services.search_service import search_service
 
         search_service.index_knowledge_base()
-        print("✅ Search index built")
+        logger.info("Search index built successfully")
     except Exception as e:
-        print(f"⚠️  Search indexing skipped: {e}")
+        logger.warning(f"Search indexing skipped: {e}")
 
     try:
         from src.services.backup_service import backup_service
 
         backup_service.schedule_automated_backup()
-        print("✅ Automated backup scheduled (daily at 3 AM)")
+        logger.info("Automated backup scheduled (daily at 3 AM)")
     except Exception as e:
-        print(f"⚠️  Backup scheduling skipped: {e}")
+        logger.warning(f"Backup scheduling skipped: {e}")
 
 # ═══════════════════════════════════════════════════════════════
 # GLOBAL ERROR HANDLERS
@@ -357,7 +357,8 @@ def deep_health_check():
 
         redis_cache.set("health_check", "ok", ttl=10)
         status["checks"]["redis"] = "ok" if redis_cache.get("health_check") == "ok" else "fallback"
-    except Exception:
+    except Exception as e:
+        logger.warning(f"Redis health check failed: {e}")
         status["checks"]["redis"] = "fallback (in-memory)"
 
     # Check Search index

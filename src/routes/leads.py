@@ -22,9 +22,9 @@ def create_lead():
         )
         if not allowed:
             return jsonify({"error": "Rate limit exceeded", "retry_after": retry_after}), 429
-    except Exception:
+    except Exception as e:
         # Fail open if limiter unavailable
-        pass
+        logger.warning(f"Rate limiter check failed, allowing request: {e}")
     data = request.get_json()
 
     if not data:

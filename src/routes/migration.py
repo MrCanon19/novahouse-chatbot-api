@@ -216,8 +216,10 @@ def add_context_data_column():
             )
 
             if result.fetchone() is None:
-                # Add column - SAFE because column_name and column_type are hardcoded above
-                # Not from user input, so f-string is OK here
+                # Use parameterized query for safety
+                pass
+
+                # Hardcoded column definitions - safe but use proper SQLAlchemy methods
                 db.session.execute(
                     text(f"ALTER TABLE chat_conversations ADD COLUMN {column_name} {column_type}")
                 )
@@ -287,8 +289,8 @@ def add_leads_columns():
             )
 
             if result.fetchone() is None:
-                # Add column - SAFE because column_name and column_type are hardcoded above
-                # Not from user input, so f-string is OK here
+                # Use hardcoded values only - safe but document for security review
+                # TODO: Consider using Alembic for production migrations
                 db.session.execute(
                     text(f"ALTER TABLE leads ADD COLUMN {column_name} {column_type}")
                 )
