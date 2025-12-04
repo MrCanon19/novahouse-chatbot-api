@@ -53,7 +53,7 @@ class ChatbotUser(HttpUser):
         queries = ["projekt", "cena", "realizacja", "technologia", "usługi"]
 
         self.client.get(
-            f"/api/knowledge/search",
+            "/api/knowledge/search",
             params={"query": random.choice(queries), "limit": 5},
         )
 
