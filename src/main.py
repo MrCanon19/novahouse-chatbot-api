@@ -249,6 +249,11 @@ from src.routes.migrations import migration_bp as migrations_bp
 app.register_blueprint(cron_bp, url_prefix="/api/cron")
 app.register_blueprint(migrations_bp, url_prefix="/api/migrations")
 
+# Register admin migration endpoint
+from src.routes.admin_migration import admin_migration_bp
+
+app.register_blueprint(admin_migration_bp, url_prefix="/admin")
+
 # Register verification routes (v2.5)
 from src.routes.verification import verification_bp
 
