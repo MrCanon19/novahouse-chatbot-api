@@ -215,14 +215,33 @@ class PolishDeclension:
                 base = s[: -len(suf)]
                 return base + forms[case]
 
-        # Consonant-ending masculine surnames (e.g., "Nowak", "Kowal")
-        if lower[-1] not in "aeiouyąęó":
+        # Check specific consonant-ending surnames BEFORE generic consonant fallback
+        # -czyk endings (e.g., "Paczyk", "Maczyk")
+        if lower.endswith("czyk"):
             if case == "gen":
-                return s + "a"  # Nowaka
+                return s + "a"  # Paczyka
             if case == "dat":
-                return s + "owi"  # Nowakowi
+                return s + "owi"  # Paczykowii
             if case == "inst":
-                return s + "em"  # Nowakiem
+                return s + "iem"  # Paczykiem
+
+        # -iak endings (e.g., "Nowiak", "Kowaliak")
+        if lower.endswith("iak"):
+            if case == "gen":
+                return s + "a"  # Nowiaka
+            if case == "dat":
+                return s + "owi"  # Nowiakowii
+            if case == "inst":
+                return s + "iem"  # Nowiakiem
+
+        # -uk endings (e.g., "Kowaluk", "Nowuk", "Bruduk")
+        if lower.endswith("uk"):
+            if case == "gen":
+                return s + "a"  # Kowaluka
+            if case == "dat":
+                return s + "owi"  # Kowalukowi
+            if case == "inst":
+                return s + "iem"  # Kowalukiem
 
         # Additional common masculine surname endings
         # -icz / -owicz (e.g., "Kowalewicz", "Nowakowicz")
@@ -234,14 +253,14 @@ class PolishDeclension:
             if case == "inst":
                 return s + "em"  # Kowalewiczem
 
-        # -uk (e.g., "Kowaluk", "Nowuk")
-        if lower.endswith("uk"):
+        # Consonant-ending masculine surnames (e.g., "Nowak", "Kowal")
+        if lower[-1] not in "aeiouyąęó":
             if case == "gen":
-                return s + "a"  # Kowaluka
+                return s + "a"  # Nowaka
             if case == "dat":
-                return s + "owi"  # Kowalukowi
+                return s + "owi"  # Nowakowi
             if case == "inst":
-                return s + "iem"  # Kowalukiem
+                return s + "em"  # Nowakiem
 
         # Vowel-ending fallback (rare)
         if case == "gen":
@@ -269,6 +288,18 @@ class PolishDeclension:
             if lower.endswith(suf):
                 base = s[: -len(suf)]
                 return base + forms[case]
+
+        # Extended feminine endings: -czyk → -czyk-owa (female form)
+        # e.g., "Paczyk" (male) → "Paczyková" (female) → decline to "Paczyková"
+        if lower.endswith("czyk") or lower.endswith("iak") or lower.endswith("uk"):
+            # For female form, these typically add -owa or stay unchanged with -a ending
+            # Most common: Paczyk (m) → Paczyk-owa (f), but often just Paczyk in modern Polish
+            if case == "gen":
+                return s + "a"  # Paczyka
+            if case == "dat":
+                return s + "owi"  # Paczykowii (or unchanged if using base form)
+            if case == "inst":
+                return s + "ą"  # Paczyką
 
         # Feminine surnames ending with -a (e.g., "Nowakowa" – seldom used, or first names used as surnames)
         if lower.endswith("a"):
@@ -383,9 +414,12 @@ class PolishDeclension:
             "ak",
             "ek",
             "ik",
+            "uk",
             "czyk",
+            "iak",
             "owicz",
             "ewicz",
+            "icz",
         ]
 
         name_lower = name.lower()
