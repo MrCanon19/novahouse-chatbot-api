@@ -411,23 +411,50 @@ class MessageHandler:
             logger.error(f"[GPT] OpenAI API error: {e}", exc_info=True)
             print(f"[GPT] Error: {e}")
             print(f"[GPT] Traceback: {traceback.format_exc()}")
-            # Return fallback response instead of None
-            return "Dziękuję za wiadomość! Mam chwilowy problem techniczny. Możesz spróbować ponownie za chwilę lub od razu zadzwonić: +48 585 004 663. Chętnie odpowiem na wszystkie pytania!"
+            # Return None to trigger FAQ/default fallback (not duplicate error message)
+            return None
 
     def _build_memory_prompt(self, context_memory: Dict) -> str:
-        """Build memory prompt for GPT"""
+        """Build comprehensive memory prompt for GPT"""
+        from src.routes.chatbot import recommend_package
+
         memory_items = []
+
         if context_memory.get("name"):
-            memory_items.append(f"Imię: {context_memory['name']}")
+            memory_items.append(f"📝 Imię: {context_memory['name']}")
         if context_memory.get("city"):
-            memory_items.append(f"Miasto: {context_memory['city']}")
+            memory_items.append(f"📍 Miasto: {context_memory['city']}")
         if context_memory.get("square_meters"):
-            memory_items.append(f"Metraż: {context_memory['square_meters']}m²")
+            memory_items.append(f"📐 Metraż: {context_memory['square_meters']}m²")
+        if context_memory.get("budget"):
+            budget = context_memory["budget"]
+            memory_items.append(f"💰 Budżet: ~{budget:,} zł")
+            # Calculate budget per m² if we have both
+            if context_memory.get("square_meters"):
+                try:
+                    sqm = int(context_memory["square_meters"])
+                    per_sqm = int(budget / sqm)
+                    memory_items.append(f"💵 Budżet/m²: ~{per_sqm:,} zł/m²")
+
+                    # Get package recommendation
+                    recommendation = recommend_package(budget, sqm)
+                    if recommendation:
+                        memory_items.append(f"⭐ REKOMENDACJA: {recommendation['reason']}")
+                except Exception as e:
+                    print(f"[Memory] Error calculating recommendation: {e}")
         if context_memory.get("package"):
-            memory_items.append(f"Pakiet: {context_memory['package']}")
+            memory_items.append(f"📦 Zainteresowany pakiet: {context_memory['package']}")
+        if context_memory.get("email"):
+            memory_items.append(f"✉️ Email: {context_memory['email']}")
+        if context_memory.get("phone"):
+            memory_items.append(f"📞 Telefon: {context_memory['phone']}")
 
         if memory_items:
-            return "\n\nZapamiętane info o kliencie:\n" + "\n".join(memory_items)
+            return (
+                "\n\n🧠 ZAPAMIĘTANY KONTEKST KLIENTA (UŻYJ W ODPOWIEDZI!):\n"
+                + "\n".join(memory_items)
+                + "\n\n⚠️ KRYTYCZNE: 1) Potwierdź te dane na początku odpowiedzi, 2) Przelicz ceny dla tego metrażu, 3) Użyj rekomendacji pakietu!"
+            )
         return ""
 
     def _handle_confirmation(
