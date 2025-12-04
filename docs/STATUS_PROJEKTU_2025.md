@@ -1,8 +1,32 @@
 # Status projektu NovaHouse Chatbot API
 
-**Data aktualizacji:** 4 grudnia 2025  
+**Data aktualizacji:** 4 grudnia 2025, 20:00  
 **Wersja:** 2.5.3 "Enterprise Ready"  
-**Status:** 🟢 Production-ready - wszystkie systemy działają
+**Status:** 🟢 Production-ready - wszystkie systemy działają  
+**CI/CD:** ✅ GitHub Actions pipeline simplified & stabilized
+
+---
+
+## 🔄 CI/CD Pipeline (nowe!)
+
+### Status
+- **Python version:** 3.12 (stabilne wsparcie na GitHub Actions)
+- **Actions:** v4/v5 (aktualne)
+- **Pipeline:** Simplified & stabilized
+- **Testy lokalnie:** 76/76 passing ✅
+- **Coverage:** 30.33%
+
+### Kroki pipeline'u
+1. ✅ **Unit Tests** - pytest z coverage
+2. ✅ **Integration Tests** - na workflow_dispatch (opcjonalnie)
+3. ✅ **Linting** - flake8 + black
+4. ✅ **Security Scan** - Trivy vulnerability scanner
+5. 🚀 **Deploy** - GCP App Engine (wymaga sekrety)
+
+### Deployment
+- **Status:** Graceful fallback (deployment skipped jeśli brak sekrety)
+- **Wymogi:** `GCP_SA_KEY` + `GCP_PROJECT_ID` (GitHub Secrets)
+- **Więcej:** `docs/CI_CD_SETUP.md`
 
 ---
 
@@ -187,11 +211,19 @@
 ---
 
 ## Wsparcie techniczne
-- GitHub: https://github.com/MrCanon19/novahouse-chatbot-api
-- **Ostatni commit:** Production readiness (v2.5.3), 04.12.2025
-- **Testy:** 76/76 passing, coverage 30.35%
+- **GitHub:** https://github.com/MrCanon19/novahouse-chatbot-api
+- **Ostatni commit:** Simplify CI/CD pipeline (8eae7e9), 04.12.2025
+- **Testy:** 76/76 passing ✅, coverage 30.33%
+- **CI/CD:** GitHub Actions (Python 3.12, actions v4/v5)
+- **Dokumentacja:** docs/CI_CD_SETUP.md
 - Automatyczna synchronizacja: iCloud → GitHub (co godzinę)
 - Backup: `~/Projects/manus/novahouse-chatbot-api/backups/icloud-backup/`
+
+---
+
+**Wygenerowano:** 4 grudnia 2025, 20:00  
+**Status:** 🟢 Production-ready - wszystkie systemy działają  
+**Wersja:** 2.5.3 "Enterprise Ready"
 
 ---
 
