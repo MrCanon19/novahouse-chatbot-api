@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timezone
 
 from flask import Blueprint, jsonify, request
@@ -6,6 +7,7 @@ from src.integrations.monday_client import MondayClient
 from src.models.chatbot import Lead, db
 from src.services.email_service import email_service
 
+logger = logging.getLogger(__name__)
 leads_bp = Blueprint("leads", __name__)
 
 
