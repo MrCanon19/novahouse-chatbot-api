@@ -1,9 +1,18 @@
 # Status projektu NovaHouse Chatbot API
 
-**Data aktualizacji:** 4 grudnia 2025, 20:00  
-**Wersja:** 2.5.3 "Enterprise Ready"  
+**Data aktualizacji:** 4 grudnia 2025, 19:26  
+**Wersja:** 2.5.4 "Emergency Fix - GCP App Engine Boot"  
 **Status:** 🟢 Production-ready - wszystkie systemy działają  
+**Deployment:** ✅ GCP App Engine (v20251204t192630) - wszystkie 8 endpointów OK  
 **CI/CD:** ✅ GitHub Actions pipeline simplified & stabilized
+
+### 🔧 Ostatnia naprawa produkcji (4 grudnia 2025)
+- ✅ **Problem:** Worker failed to boot na GCP App Engine (wersja 20251204t165805)
+- ✅ **Przyczyna 1:** Brakujący `entrypoint` w `app.yaml` - gunicorn nie wiedział jak uruchomić app
+- ✅ **Przyczyna 2:** Zmienna `API_KEY` zamiast `ADMIN_API_KEY` (wymagana przez kod)
+- ✅ **Rozwiązanie:** Dodano `entrypoint: gunicorn -c config/gunicorn.conf.py main:app`, zmieniono nazwę zmiennej
+- ✅ **Deployment:** Wersja 20251204t192630 - wszystkie endpointy zwracają 200 OK
+- 🟢 **Weryfikacja:** 8/8 endpointów działających (chatbot, dashboard, admin, docs, health, widget, qualification, RODO)
 
 ---
 
