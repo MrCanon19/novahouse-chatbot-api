@@ -194,14 +194,15 @@ def _run_auto_migration():
 
 
 # Attempt migration immediately after db is configured (on app startup)
-print("🚀 [INIT] Attempting app context migration at startup...", file=sys.stderr)
-try:
-    with app.app_context():
-        print("✨ [INIT] App context created at startup, running migration...", file=sys.stderr)
-        _run_auto_migration()
-except Exception as e:
-    print(f"⚠️  [INIT] App context at startup failed: {e}", file=sys.stderr)
-    # If app context not available at startup, MUST run on first request
+# NOTE: Disabled in production as it can cause app startup hangs
+# print("🚀 [INIT] Attempting app context migration at startup...", file=sys.stderr)
+# try:
+#     with app.app_context():
+#         print("✨ [INIT] App context created at startup, running migration...", file=sys.stderr)
+#         _run_auto_migration()
+# except Exception as e:
+#     print(f"⚠️  [INIT] App context at startup failed: {e}", file=sys.stderr)
+#     # If app context not available at startup, MUST run on first request
 
 
 # CRITICAL FALLBACK: Run on EVERY request until migration succeeds
