@@ -9,12 +9,19 @@ from src.models.chatbot import Conversation, Lead, db
 analytics_bp = Blueprint("analytics", __name__)
 
 
+def _clamp_days(raw_days: int, default: int = 7, max_days: int = 31) -> int:
+    """Sanitize days parameter to prevent heavy full-table scans."""
+    if raw_days is None:
+        return default
+    return max(1, min(raw_days, max_days))
+
+
 @analytics_bp.route("/overview", methods=["GET"])
 def get_overview():
     """Pobierz ogólny przegląd analityki"""
     try:
         # Parametry zapytania
-        days = request.args.get("days", 7, type=int)
+        days = _clamp_days(request.args.get("days", 7, type=int))
         start_date = datetime.now(timezone.utc) - timedelta(days=days)
 
         # Statystyki konwersacji
@@ -31,12 +38,16 @@ def get_overview():
             .filter(Conversation.timestamp >= start_date)
             .scalar()
         )
+        unique_sessions = int(unique_sessions or 0)
 
         # Średni czas trwania sesji
         avg_session_duration = (
             db.session.query(func.avg(UserEngagement.session_duration_seconds))
             .filter(UserEngagement.first_interaction >= start_date)
             .scalar()
+        )
+        avg_session_duration = (
+            float(avg_session_duration) if avg_session_duration is not None else 0.0
         )
 
         # Współczynnik konwersji
@@ -83,7 +94,7 @@ def get_overview():
 def get_conversation_analytics():
     """Pobierz analitykę konwersacji"""
     try:
-        days = request.args.get("days", 7, type=int)
+        days = _clamp_days(request.args.get("days", 7, type=int))
         start_date = datetime.now(timezone.utc) - timedelta(days=days)
 
         # Konwersacje według dnia
@@ -131,7 +142,7 @@ def get_conversation_analytics():
 def get_engagement_analytics():
     """Pobierz analitykę zaangażowania użytkowników"""
     try:
-        days = request.args.get("days", 7, type=int)
+        days = _clamp_days(request.args.get("days", 7, type=int))
         start_date = datetime.now(timezone.utc) - timedelta(days=days)
 
         # Zaangażowanie użytkowników
@@ -189,8 +200,12 @@ def get_engagement_analytics():
                     {"event": event, "count": count} for event, count in conversion_stats
                 ],
                 "averages": {
-                    "messages_per_session": round(avg_messages, 2) if avg_messages else 0,
-                    "session_duration_seconds": round(avg_duration, 2) if avg_duration else 0,
+                    "messages_per_session": (
+                        round(float(avg_messages), 2) if avg_messages is not None else 0
+                    ),
+                    "session_duration_seconds": (
+                        round(float(avg_duration), 2) if avg_duration is not None else 0
+                    ),
                 },
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             }
@@ -325,7 +340,7 @@ def get_performance_metrics():
 def get_lead_analytics():
     """Pobierz analitykę leadów"""
     try:
-        days = request.args.get("days", 7, type=int)
+        days = _clamp_days(request.args.get("days", 7, type=int))
         start_date = datetime.now(timezone.utc) - timedelta(days=days)
 
         # Leady według dnia
@@ -384,7 +399,7 @@ def export_analytics():
     """Eksportuj dane analityczne"""
     try:
         export_type = request.args.get("type", "overview")
-        days = request.args.get("days", 30, type=int)
+        days = _clamp_days(request.args.get("days", 30, type=int), default=30, max_days=60)
         start_date = datetime.now(timezone.utc) - timedelta(days=days)
 
         data = {}
@@ -424,7 +439,7 @@ def export_analytics():
 def dashboard_summary():
     """Dashboard summary - legacy endpoint for compatibility"""
     try:
-        days = request.args.get("days", 30, type=int)
+        days = _clamp_days(request.args.get("days", 30, type=int), default=30, max_days=60)
         # budget = request.args.get("budget", 0, type=int)  # For future use
 
         start_date = datetime.now(timezone.utc) - timedelta(days=days)

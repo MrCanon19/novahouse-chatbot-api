@@ -235,45 +235,68 @@
         let weeklyChart = null;
         const API_BASE = window.location.origin;
 
-        async function loadDashboard() {
+        async function fetchJsonOrThrow(url, contextLabel) {
+            const response = await fetch(url);
+            let data = {};
+
             try {
-                showLoading();
+                data = await response.json();
+            } catch (_) {
+                // Fallback to empty object if response body is not JSON
+            }
 
-                // Try new analytics API first (24h for "today", 7d for trends)
-                try {
-                    const [overviewTodayResp, overviewWeekResp] = await Promise.all([
-                        fetch(`${API_BASE}/api/analytics/overview?days=1`),
-                        fetch(`${API_BASE}/api/analytics/overview?days=7`),
-                    ]);
+            const errorText = data.error || data.message;
 
-                    const overviewTodayData = await overviewTodayResp.json();
-                    const overviewWeekData = await overviewWeekResp.json();
+            if (!response.ok) {
+                throw new Error(`${contextLabel}: ${errorText || `HTTP ${response.status}`}`);
+            }
 
-                    if (overviewTodayData.status === 'success' && overviewWeekData.status === 'success') {
-                        updateFromNewAPI(overviewTodayData, overviewWeekData);
-                        hideError();
-                        return;
-                    }
-                } catch (apiError) {
-                    console.log('New API not available, trying legacy endpoint:', apiError);
-                }
+            if (data.status && data.status !== 'success') {
+                throw new Error(`${contextLabel}: ${errorText || 'API zwróciło błąd'}`);
+            }
 
-                // Fallback to legacy endpoint
-                const response = await fetch('/api/analytics/dashboard/summary?budget=10');
-                const result = await response.json();
+            return data;
+        }
 
-                if (result.success) {
+        async function loadDashboard() {
+            showLoading();
+            hideError();
+
+            let primaryError = null;
+
+            try {
+                const [overviewTodayData, overviewWeekData] = await Promise.all([
+                    fetchJsonOrThrow(`${API_BASE}/api/analytics/overview?days=1`, 'Przegląd 24h'),
+                    fetchJsonOrThrow(`${API_BASE}/api/analytics/overview?days=7`, 'Przegląd 7 dni'),
+                ]);
+
+                updateFromNewAPI(overviewTodayData, overviewWeekData);
+                return;
+            } catch (apiError) {
+                primaryError = apiError;
+                console.warn('New analytics API failed, will try legacy endpoint', apiError);
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/analytics/dashboard/summary?budget=10`);
+                const result = await response.json().catch(() => ({}));
+
+                if (result && result.success) {
                     updateTodayMetrics(result.data.today);
                     updateBudgetStatus(result.data.budget);
                     updateWeeklyChart(result.data.weekly_trend);
                     updateTopQuestions(result.data.top_questions);
                     updatePerformanceMetrics(result.data.today);
-                    hideError();
-                } else {
-                    showError('Błąd ładowania danych: ' + result.error);
+                    return;
                 }
-            } catch (error) {
-                showError('Błąd połączenia: ' + error.message);
+
+                const fallbackMsg = result.error || result.message || 'Legacy API zwróciło błąd';
+                throw new Error(fallbackMsg);
+            } catch (fallbackError) {
+                const details = [primaryError ? primaryError.message : null, fallbackError?.message]
+                    .filter(Boolean)
+                    .join(' | ');
+                showError(`Błąd ładowania danych: ${details || 'Nieznany błąd'}`);
             }
         }
 
