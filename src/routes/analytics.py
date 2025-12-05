@@ -436,7 +436,7 @@ def dashboard_summary():
 
         leads_count = Lead.query.filter(Lead.created_at >= start_date).count()
 
-        intents = IntentAnalytics.query.filter(IntentAnalytics.created_at >= start_date).all()
+        intents = IntentAnalytics.query.filter(IntentAnalytics.date >= start_date.date()).all()
 
         top_intent = "unknown"
         if intents:
