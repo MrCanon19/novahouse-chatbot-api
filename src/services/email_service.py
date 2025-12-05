@@ -219,7 +219,7 @@ class EmailService:
                     </div>
 
                     <p style="color: #666; font-size: 14px;">
-                        Masz pytania? Zadzwoń: <strong>+48 585 004 663</strong>
+                        Masz pytania? Zadzwoń: <strong>+48 502 274 453</strong>
                     </p>
                 </div>
 
@@ -246,7 +246,7 @@ class EmailService:
 
         NovaHouse - 30+ projektów | 95% zadowolonych | 94% przed terminem
 
-        Telefon: +48 585 004 663
+        Telefon: +48 502 274 453
         Web: https://novahouse.pl
         """
 
@@ -309,7 +309,7 @@ class EmailService:
                 </ul>
 
                 <p style="color: #666; font-size: 14px;">
-                    Masz pytania? Zadzwoń: <strong>+48 585 004 663</strong>
+                    Masz pytania? Zadzwoń: <strong>+48 502 274 453</strong>
                 </p>
 
                 <div class="footer">

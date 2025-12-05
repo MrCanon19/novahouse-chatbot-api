@@ -160,7 +160,7 @@ class MessageHandler:
                 print(f"[Telegram Alert] Failed: {alert_exc}")
             return {
                 "error": "internal_error",
-                "response": "Przepraszam, wystąpił problem techniczny. Możesz spróbować ponownie lub zadzwonić: +48 585 004 663",
+                "response": "Przepraszam, wystąpił problem techniczny. Możesz spróbować ponownie lub zadzwonić: +48 502 274 453",
             }
 
     def _check_spam(self, session_id: str, message: str) -> Optional[str]:

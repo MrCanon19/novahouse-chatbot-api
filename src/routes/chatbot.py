@@ -897,7 +897,7 @@ else:
 SYSTEM_PROMPT = f"""Jesteś asystentem NovaHouse — firmy wykańczającej mieszkania pod klucz.
 
 📍 DZIAŁAMY W: {', '.join(COVERAGE_AREAS['primary'])}
-📞 KONTAKT: +48 585 004 663 (podawaj TYLKO gdy klient pyta o kontakt, szczegóły techniczne lub chce umówić rozmowę)
+📞 KONTAKT: +48 502 274 453 (podawaj TYLKO gdy klient pyta o kontakt, szczegóły techniczne lub chce umówić rozmowę)
 
 🏆 NASZE WYNIKI:
 • {COMPANY_STATS['completed_projects']} ukończonych projektów
@@ -2108,7 +2108,7 @@ def get_default_response(message: str) -> str:
         "• Dostępne materiały\n"
         "• Czas realizacji\n"
         "• Gwarancję i warunki\n\n"
-        "Lub jeśli wolisz — skontaktuj się z nami: +48 585 004 663"
+        "Lub jeśli wolisz — skontaktuj się z nami: +48 502 274 453"
     )
 
 

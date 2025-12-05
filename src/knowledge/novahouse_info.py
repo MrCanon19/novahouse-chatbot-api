@@ -15,7 +15,7 @@ BUSINESS_HOURS = {
 # Informacje kontaktowe
 CONTACT_INFO = {
     "company_name": "NovaHouse Sp. z o.o.",
-    "phone_main": "+48 585 004 663",
+    "phone_main": "+48 502 274 453",
     "phone_logistics": "+48 509 929 437",
     "phone_finance": "+48 607 518 544",
     "email_main": "kontakt@novahouse.pl",
@@ -376,7 +376,7 @@ FAQ = {
     "raporty_postep": "Tak, regularnie przesyłamy raporty dotyczące postępu prac, w tym zdjęcia. Dzięki temu możesz na bieżąco śledzić postępy bez konieczności wychodzenia z domu.",
     # Informacje firmowe
     "dane_firmowe": "NovaHouse Sp. z o.o. jest zarejestrowana pod numerem KRS 0000612864, posiada NIP 5833201699 oraz REGON 364323586. Kapitał zakładowy firmy wynosi 100.000,00 PLN. Działamy od 2011 roku.",
-    "kontakt_specjalistyczny": "W sprawach logistyki i zamówień można dzwonić pod numer +48 509 929 437, w kwestiach finansowych i księgowych pod numer +48 607 518 544. W sprawie współpracy z partnerami i wykonawcami: partnerzy@novahouse.pl. Główny kontakt: +48 585 004 663, kontakt@novahouse.pl.",
+    "kontakt_specjalistyczny": "W sprawach logistyki i zamówień można dzwonić pod numer +48 509 929 437, w kwestiach finansowych i księgowych pod numer +48 607 518 544. W sprawie współpracy z partnerami i wykonawcami: partnerzy@novahouse.pl. Główny kontakt: +48 502 274 453, kontakt@novahouse.pl.",
     "doswiadczenie_firmy": "NovaHouse działa na rynku od 2011 roku. Mamy za sobą ponad 350 zrealizowanych projektów i 96% zadowolonych klientów. Współpracujemy z ponad 120 sprawdzonymi dostawcami i wykonawcami. 94% naszych projektów oddajemy przed terminem.",
     # Brakujące klucze FAQ
     "cennik_dodatkowy": "Każde dodatkowe prace wyceniamy na podstawie naszego cennika pisemnie przed wykonaniem. Zero niespodzianek i pełna kontrola kosztów. Wszystko pokazujemy z góry i podpisujemy przed pracami.",
