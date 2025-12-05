@@ -306,9 +306,24 @@
 
             // Fetch additional data
             const [conversationsData, engagementData, leadsData] = await Promise.all([
-                fetch(`${API_BASE}/api/analytics/conversations?days=7`).then(r => r.json()).catch(() => null),
-                fetch(`${API_BASE}/api/analytics/engagement?days=7`).then(r => r.json()).catch(() => null),
-                fetch(`${API_BASE}/api/analytics/leads?days=7`).then(r => r.json()).catch(() => null)
+                fetch(`${API_BASE}/api/analytics/conversations?days=7`)
+                    .then(r => r.json())
+                    .catch(e => {
+                        console.warn('Conversations API error:', e);
+                        return null;
+                    }),
+                fetch(`${API_BASE}/api/analytics/engagement?days=7`)
+                    .then(r => r.json())
+                    .catch(e => {
+                        console.warn('Engagement API error:', e);
+                        return null;
+                    }),
+                fetch(`${API_BASE}/api/analytics/leads?days=7`)
+                    .then(r => r.json())
+                    .catch(e => {
+                        console.warn('Leads API error:', e);
+                        return null;
+                    })
             ]);
 
             // Update today metrics
@@ -332,20 +347,26 @@
             updateBudgetStatus(budgetData);
 
             // Update weekly chart
-            if (conversationsData && conversationsData.conversations_by_day) {
+            if (conversationsData && conversationsData.conversations_by_day && conversationsData.conversations_by_day.length > 0) {
                 updateWeeklyChart(conversationsData.conversations_by_day.map(d => ({
                     date: d.date,
                     conversations: d.count,
                     cost: 0
                 })));
+            } else {
+                // Fallback: show empty chart
+                updateWeeklyChart([]);
             }
 
             // Update top questions (use 7d intents)
-            if (overviewWeek.top_intents) {
+            if (overviewWeek.top_intents && overviewWeek.top_intents.length > 0) {
                 updateTopQuestions(overviewWeek.top_intents.map(i => ({
                     question: i.intent,
                     count: i.count
                 })));
+            } else {
+                // Fallback: show no data message
+                updateTopQuestions([]);
             }
 
             // Update performance metrics
