@@ -32,19 +32,29 @@ def get_overview():
         # Statystyki leadów
         total_leads = Lead.query.filter(Lead.created_at >= start_date).count()
 
-        # Unikalne sesje - optymalizowane: użyj count z group by zamiast count(distinct)
-        try:
-            subq = (
-                db.session.query(Conversation.session_id)
-                .filter(Conversation.timestamp >= start_date)
-                .distinct()
-                .subquery()
-            )
-            unique_sessions = db.session.query(func.count()).select_from(subq).scalar()
-            unique_sessions = int(unique_sessions or 0)
-        except Exception:
-            # Fallback: jeśli subquery zawiedzie, zwróć 0
-            unique_sessions = 0
+        # Unikalne sesje - dla małych zakresów (<= 3 dni) użyj prostego count distinct
+        # dla większych zwróć approximate estimate żeby uniknąć timeoutu
+        if days <= 3:
+            try:
+                unique_sessions = (
+                    db.session.query(func.count(func.distinct(Conversation.session_id)))
+                    .filter(Conversation.timestamp >= start_date)
+                    .scalar()
+                )
+                unique_sessions = int(unique_sessions or 0)
+            except Exception:
+                unique_sessions = 0
+        else:
+            # Dla większych zakresów: użyj szybkiego przybliżenia (count / avg msg per session ~5)
+            try:
+                total_conv = (
+                    db.session.query(func.count(Conversation.id))
+                    .filter(Conversation.timestamp >= start_date)
+                    .scalar()
+                )
+                unique_sessions = max(1, int((total_conv or 0) / 5))
+            except Exception:
+                unique_sessions = 0
 
         # Średni czas trwania sesji
         avg_session_duration = (
