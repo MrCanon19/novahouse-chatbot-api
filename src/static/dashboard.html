@@ -197,9 +197,9 @@
         <div id="error-container"></div>
 
         <div class="dashboard-grid">
-            <!-- Metryki dzisiejsze -->
+            <!-- Metryki z ostatnich 24h -->
             <div class="card">
-                <h3>📊 Dzisiejsze metryki</h3>
+                <h3>📊 Metryki (ostatnie 24h)</h3>
                 <div id="today-metrics" class="loading">Ładowanie...</div>
             </div>
 
@@ -239,13 +239,18 @@
             try {
                 showLoading();
 
-                // Try new analytics API first
+                // Try new analytics API first (24h for "today", 7d for trends)
                 try {
-                    const overviewResponse = await fetch(`${API_BASE}/api/analytics/overview?days=7`);
-                    const overviewData = await overviewResponse.json();
+                    const [overviewTodayResp, overviewWeekResp] = await Promise.all([
+                        fetch(`${API_BASE}/api/analytics/overview?days=1`),
+                        fetch(`${API_BASE}/api/analytics/overview?days=7`),
+                    ]);
 
-                    if (overviewData.status === 'success') {
-                        updateFromNewAPI(overviewData);
+                    const overviewTodayData = await overviewTodayResp.json();
+                    const overviewWeekData = await overviewWeekResp.json();
+
+                    if (overviewTodayData.status === 'success' && overviewWeekData.status === 'success') {
+                        updateFromNewAPI(overviewTodayData, overviewWeekData);
                         hideError();
                         return;
                     }
@@ -272,8 +277,9 @@
             }
         }
 
-        async function updateFromNewAPI(overviewData) {
-            const overview = overviewData.overview;
+        async function updateFromNewAPI(overviewTodayData, overviewWeekData) {
+            const overviewToday = overviewTodayData.overview || {};
+            const overviewWeek = overviewWeekData.overview || {};
 
             // Fetch additional data
             const [conversationsData, engagementData, leadsData] = await Promise.all([
@@ -284,10 +290,10 @@
 
             // Update today metrics
             const todayData = {
-                conversations: overview.total_conversations || 0,
-                leads: overview.total_leads || 0,
+                conversations: overviewToday.total_conversations || 0,
+                leads: overviewToday.total_leads || 0,
                 cost_usd: 0,
-                avg_response_time_ms: (overview.avg_session_duration_seconds || 0) * 1000
+                avg_response_time_ms: (overviewToday.avg_session_duration_seconds || 0) * 1000
             };
             updateTodayMetrics(todayData);
 
@@ -311,9 +317,9 @@
                 })));
             }
 
-            // Update top questions (use top intents)
-            if (overview.top_intents) {
-                updateTopQuestions(overview.top_intents.map(i => ({
+            // Update top questions (use 7d intents)
+            if (overviewWeek.top_intents) {
+                updateTopQuestions(overviewWeek.top_intents.map(i => ({
                     question: i.intent,
                     count: i.count
                 })));
