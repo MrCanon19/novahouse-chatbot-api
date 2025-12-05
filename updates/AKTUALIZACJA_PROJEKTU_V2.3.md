@@ -207,7 +207,7 @@
 
 ### Kontakt:
 
-- **Główny:** +48 585 004 663
+- **Główny:** +48 502 274 453
 - **Logistyka:** +48 509 929 437
 - **Finanse:** +48 607 518 544
 - **Email:** kontakt@novahouse.pl

@@ -204,7 +204,7 @@
 - Gwarancja: 3 lata
 
 **Biura:** Gdańsk, Warszawa, Wrocław
-**Kontakt:** +48 585 004 663, +48 509 929 437, +48 607 518 544, kontakt@novahouse.pl
+**Kontakt:** +48 502 274 453, +48 509 929 437, +48 607 518 544, kontakt@novahouse.pl
 
 ---
 

@@ -258,7 +258,7 @@ See [SECURITY.md](SECURITY.md) for details.
 **NovaHouse Sp. z o.o.**
 
 - Email: [kontakt@novahouse.pl](mailto:kontakt@novahouse.pl)
-- Phone: +48 585 004 663
+- Phone: +48 502 274 453
 - Website: [https://novahouse.pl](https://novahouse.pl)
 
 Created by **Michał Marini**
