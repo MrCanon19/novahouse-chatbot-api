@@ -665,7 +665,7 @@ class MessageHandler:
                 context_memory.get("email") or context_memory.get("phone")
             )
             if not has_contact:
-                print(f"[Lead Creation] Insufficient data - skipping lead creation")
+                print("[Lead Creation] Insufficient data - skipping lead creation")
                 return None
 
             print("[Lead Creation] Creating lead from conversation data...")

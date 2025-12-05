@@ -142,7 +142,7 @@ class LeadAssignmentService:
         """Send Slack notification about new lead assignment"""
         try:
             payload = {
-                "text": f"🆕 New Lead Assigned",
+                "text": "🆕 New Lead Assigned",
                 "blocks": [
                     {
                         "type": "section",

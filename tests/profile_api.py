@@ -111,9 +111,9 @@ def profile_full_app():
 
 def print_profile_stats(profiler, title, top_n=30):
     """Print formatted profiling statistics"""
-    print(f"\n{'='*80}")
+    print(f"\n{'=' * 80}")
     print(f"  {title}")
-    print(f"{'='*80}\n")
+    print(f"{'=' * 80}\n")
 
     s = io.StringIO()
     ps = pstats.Stats(profiler, stream=s).sort_stats(SortKey.CUMULATIVE)
@@ -122,9 +122,9 @@ def print_profile_stats(profiler, title, top_n=30):
     print(s.getvalue())
 
     # Print additional insights
-    print(f"\n{'─'*80}")
+    print(f"\n{'─' * 80}")
     print("📊 Top Time-Consuming Functions (by cumulative time):")
-    print(f"{'─'*80}\n")
+    print(f"{'─' * 80}\n")
 
     s2 = io.StringIO()
     ps2 = pstats.Stats(profiler, stream=s2).sort_stats(SortKey.TIME)
