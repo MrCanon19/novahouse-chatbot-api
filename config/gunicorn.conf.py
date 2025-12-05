@@ -10,11 +10,12 @@ backlog = 2048
 workers = int(os.environ.get('GUNICORN_WORKERS', '2'))
 worker_class = "sync"  # Zmiana z gthread na sync - stabilniejsze na App Engine
 worker_connections = 1000
-timeout = 60  # Zwiększono dla wolniejszych zapytań AI
+timeout = 120  # Zwiększono dla wolnych analytics queries i cold starts
+graceful_timeout = 30  # Graceful shutdown time
 keepalive = 5
 
 # Restart workers after this many requests, to help prevent memory leaks
-max_requests = 1000
+max_requests = 500  # Zmniejszono - częstszy restart = mniej memory leaks
 max_requests_jitter = 50
 
 # Logging
