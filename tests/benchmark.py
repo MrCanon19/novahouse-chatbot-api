@@ -95,9 +95,9 @@ def print_benchmark_result(name: str, result: Dict):
 
 def run_benchmark(base_url: str, iterations: int = 10):
     """Run comprehensive benchmark"""
-    print(f"\n{BLUE}{'='*70}{RESET}")
+    print(f"\n{BLUE}{'=' * 70}{RESET}")
     print(f"{BLUE}📊 NovaHouse Chatbot - Performance Benchmark{RESET}")
-    print(f"{BLUE}{'='*70}{RESET}\n")
+    print(f"{BLUE}{'=' * 70}{RESET}\n")
     print(f"Target: {base_url}")
     print(f"Iterations per endpoint: {iterations}")
     print(f"Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
@@ -123,9 +123,9 @@ def run_benchmark(base_url: str, iterations: int = 10):
         print_benchmark_result(name, result)
 
     # Summary
-    print(f"{BLUE}{'='*70}{RESET}")
+    print(f"{BLUE}{'=' * 70}{RESET}")
     print(f"{BLUE}📈 Summary{RESET}")
-    print(f"{BLUE}{'='*70}{RESET}\n")
+    print(f"{BLUE}{'=' * 70}{RESET}\n")
 
     successful = [r for r in results.values() if r["success"]]
     if successful:

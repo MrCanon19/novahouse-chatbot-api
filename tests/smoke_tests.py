@@ -66,9 +66,9 @@ def test_endpoint(
 def run_smoke_tests(base_url: str):
     """Uruchom wszystkie smoke tests"""
 
-    print(f"\n{BLUE}{'='*60}{RESET}")
+    print(f"\n{BLUE}{'=' * 60}{RESET}")
     print(f"{BLUE}🧪 NovaHouse Chatbot - Smoke Tests{RESET}")
-    print(f"{BLUE}{'='*60}{RESET}\n")
+    print(f"{BLUE}{'=' * 60}{RESET}\n")
     print(f"Target: {base_url}\n")
 
     tests = [
@@ -107,9 +107,9 @@ def run_smoke_tests(base_url: str):
             print(f"   {message}\n")
 
     # Summary
-    print(f"{BLUE}{'='*60}{RESET}")
+    print(f"{BLUE}{'=' * 60}{RESET}")
     print(f"{BLUE}📊 Summary{RESET}")
-    print(f"{BLUE}{'='*60}{RESET}\n")
+    print(f"{BLUE}{'=' * 60}{RESET}\n")
 
     total = passed + failed
     pass_rate = (passed / total * 100) if total > 0 else 0

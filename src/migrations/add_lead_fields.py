@@ -4,14 +4,16 @@ Migracja: Dodanie nowych pól do tabeli Lead
 Data: 2025-10-11
 """
 
-import sys
 import os
+import sys
 
 # Dodaj ścieżkę do głównego katalogu projektu
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
-from src.main import app, db
 from sqlalchemy import text
+
+from src.main import app, db
+
 
 def run_migration():
     """Uruchom migrację - dodaj nowe pola do Lead"""
@@ -25,7 +27,7 @@ def run_migration():
             "ALTER TABLE leads ADD COLUMN status VARCHAR(50) DEFAULT 'new'",
             "ALTER TABLE leads ADD COLUMN notes TEXT",
             "ALTER TABLE leads ADD COLUMN monday_item_id VARCHAR(100)",
-            "ALTER TABLE leads ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP"
+            "ALTER TABLE leads ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP",
         ]
 
         for sql in new_columns:
@@ -42,5 +44,6 @@ def run_migration():
             db.session.rollback()
             print(f"\n❌ Migration failed: {e}")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     run_migration()

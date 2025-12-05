@@ -52,7 +52,7 @@ class AdvancedAnalyticsService:
 
             # Verified leads (email or phone verified)
             verified_leads = Lead.query.filter(
-                db.or_(Lead.email_verified == True, Lead.phone_verified == True)
+                db.or_(Lead.email_verified.is_(True), Lead.phone_verified.is_(True))
             ).count()
 
             # Calculate conversion rates
