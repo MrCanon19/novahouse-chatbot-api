@@ -42,3 +42,8 @@
   2. `curl -s ... | jq` – inspekcja body (lub błąd `jq` jeśli nie-JSON).
   3. `gcloud logging read 'resource.type="gae_app" AND resource.labels.module_id="default" AND resource.labels.version_id="20251205t124418" AND httpRequest.status=500' --freshness=5m --limit=20` – stack trace dla 500.
 - Po korekcie logiki `days=7` (np. agregacje, brak danych, SQL) wykonać ponowny deploy, test `curl` oraz odświeżyć dashboard.
+
+## 8) Aktualizacja 2025-12-05 (stabilizacja endpointu)
+- Endpoint `/api/analytics/overview` został „odporniowany”: każda metryka jest pobierana przez `_safe_scalar` z logowaniem kontekstowym (etykiety + `days`).
+- Dodano globalny fallback – nawet gdy cała sekcja obliczeń rzuci wyjątek, zwracany jest `status: "success"` z zerowymi metrykami, co zapobiega HTTP 500 i odblokowuje UI.
+- Logi nadal rejestrują wyjątki (`analytics_overview_scalar_failed` / `analytics_overview_fallback_defaults`), ale użytkownik otrzymuje stabilną odpowiedź JSON, więc dashboard przestaje raportować `Przegląd 7 dni: HTTP 500`.

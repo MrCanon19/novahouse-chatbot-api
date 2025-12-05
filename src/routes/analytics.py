@@ -23,91 +23,115 @@ def get_overview():
     days = _clamp_days(request.args.get("days", 7, type=int))
     start_date = datetime.now(timezone.utc) - timedelta(days=days)
 
-    def _safe_scalar(query_fn, fallback=0):
+    def _safe_scalar(label, query_fn, fallback=0):
         """Execute a query and log errors instead of bubbling 500."""
         try:
-            return query_fn() or fallback
-        except Exception as exc:  # pragma: no cover - defensive logging path
-            current_app.logger.exception("analytics_overview_scalar_failed", extra={"days": days})
+            result = query_fn()
+            return fallback if result is None else result
+        except Exception:  # pragma: no cover - defensive logging path
+            current_app.logger.exception(
+                "analytics_overview_scalar_failed", extra={"days": days, "label": label}
+            )
             return fallback
 
-    # Statystyki konwersacji
-    total_conversations = _safe_scalar(
-        lambda: Conversation.query.filter(Conversation.timestamp >= start_date).count(), fallback=0
-    )
+    empty_overview = {
+        "total_conversations": 0,
+        "total_leads": 0,
+        "unique_sessions": 0,
+        "avg_session_duration_seconds": 0,
+        "conversion_rate_percent": 0,
+        "top_intents": [],
+    }
 
-    # Statystyki leadów
-    total_leads = _safe_scalar(
-        lambda: Lead.query.filter(Lead.created_at >= start_date).count(), fallback=0
-    )
-
-    # Unikalne sesje - dla małych zakresów (<= 3 dni) użyj prostego count distinct
-    # dla większych zwróć approximate estimate żeby uniknąć timeoutu
-    if days <= 3:
-        unique_sessions = _safe_scalar(
-            lambda: int(
-                db.session.query(func.count(func.distinct(Conversation.session_id)))
-                .filter(Conversation.timestamp >= start_date)
-                .scalar()
-                or 0
-            ),
+    try:
+        # Statystyki konwersacji
+        total_conversations = _safe_scalar(
+            "total_conversations",
+            lambda: Conversation.query.filter(Conversation.timestamp >= start_date).count(),
             fallback=0,
         )
-    else:
-        # Dla większych zakresów: użyj szybkiego przybliżenia (count / avg msg per session ~5)
-        total_conv = _safe_scalar(
-            lambda: db.session.query(func.count(Conversation.id))
-            .filter(Conversation.timestamp >= start_date)
-            .scalar(),
+
+        # Statystyki leadów
+        total_leads = _safe_scalar(
+            "total_leads",
+            lambda: Lead.query.filter(Lead.created_at >= start_date).count(),
             fallback=0,
         )
-        # jeśli nie mamy danych, uniknij dzielenia przez zero – zwróć 0 sesji
-        unique_sessions = max(0, int((total_conv or 0) / 5))
 
-    # Średni czas trwania sesji
-    avg_session_duration = _safe_scalar(
-        lambda: db.session.query(func.avg(UserEngagement.session_duration_seconds))
-        .filter(UserEngagement.first_interaction >= start_date)
-        .scalar(),
-        fallback=0.0,
-    )
-    avg_session_duration = float(avg_session_duration)
-
-    # Współczynnik konwersji
-    conversion_rate = (total_leads / unique_sessions * 100) if unique_sessions > 0 else 0
-
-    # Top intencje
-    def _top_intents_query():
-        return (
-            db.session.query(
-                IntentAnalytics.intent_name,
-                func.sum(IntentAnalytics.trigger_count).label("total_triggers"),
+        # Unikalne sesje - dla małych zakresów (<= 3 dni) użyj prostego count distinct
+        # dla większych zwróć approximate estimate żeby uniknąć timeoutu
+        if days <= 3:
+            unique_sessions = _safe_scalar(
+                "unique_sessions_small_window",
+                lambda: int(
+                    db.session.query(func.count(func.distinct(Conversation.session_id)))
+                    .filter(Conversation.timestamp >= start_date)
+                    .scalar()
+                    or 0
+                ),
+                fallback=0,
             )
-            .filter(IntentAnalytics.date >= start_date.date())
-            .group_by(IntentAnalytics.intent_name)
-            .order_by(func.sum(IntentAnalytics.trigger_count).desc())
-            .limit(5)
-            .all()
-        )
+        else:
+            # Dla większych zakresów: użyj szybkiego przybliżenia (count / avg msg per session ~5)
+            total_conv = _safe_scalar(
+                "unique_sessions_total_conv",
+                lambda: db.session.query(func.count(Conversation.id))
+                .filter(Conversation.timestamp >= start_date)
+                .scalar(),
+                fallback=0,
+            )
+            # jeśli nie mamy danych, uniknij dzielenia przez zero – zwróć 0 sesji
+            unique_sessions = max(0, int((total_conv or 0) / 5))
 
-    top_intents = _safe_scalar(_top_intents_query, fallback=[])
+        # Średni czas trwania sesji
+        avg_session_duration = _safe_scalar(
+            "avg_session_duration",
+            lambda: db.session.query(func.avg(UserEngagement.session_duration_seconds))
+            .filter(UserEngagement.first_interaction >= start_date)
+            .scalar(),
+            fallback=0.0,
+        )
+        avg_session_duration = float(avg_session_duration)
+
+        # Współczynnik konwersji
+        conversion_rate = (total_leads / unique_sessions * 100) if unique_sessions > 0 else 0
+
+        # Top intencje
+        def _top_intents_query():
+            return (
+                db.session.query(
+                    IntentAnalytics.intent_name,
+                    func.sum(IntentAnalytics.trigger_count).label("total_triggers"),
+                )
+                .filter(IntentAnalytics.date >= start_date.date())
+                .group_by(IntentAnalytics.intent_name)
+                .order_by(func.sum(IntentAnalytics.trigger_count).desc())
+                .limit(5)
+                .all()
+            )
+
+        top_intents = _safe_scalar("top_intents", _top_intents_query, fallback=[])
+
+        overview_payload = {
+            "total_conversations": total_conversations,
+            "total_leads": total_leads,
+            "unique_sessions": unique_sessions,
+            "avg_session_duration_seconds": (
+                round(avg_session_duration, 2) if avg_session_duration else 0
+            ),
+            "conversion_rate_percent": round(conversion_rate, 2),
+            "top_intents": [{"intent": intent, "count": count} for intent, count in top_intents],
+        }
+
+    except Exception:  # pragma: no cover - safety net for any unexpected errors
+        current_app.logger.exception("analytics_overview_fallback_defaults", extra={"days": days})
+        overview_payload = empty_overview
 
     return jsonify(
         {
             "status": "success",
             "period_days": days,
-            "overview": {
-                "total_conversations": total_conversations,
-                "total_leads": total_leads,
-                "unique_sessions": unique_sessions,
-                "avg_session_duration_seconds": (
-                    round(avg_session_duration, 2) if avg_session_duration else 0
-                ),
-                "conversion_rate_percent": round(conversion_rate, 2),
-                "top_intents": [
-                    {"intent": intent, "count": count} for intent, count in top_intents
-                ],
-            },
+            "overview": overview_payload,
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
     )
