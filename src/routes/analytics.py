@@ -23,15 +23,21 @@ def get_overview():
     days = _clamp_days(request.args.get("days", 7, type=int))
     start_date = datetime.now(timezone.utc) - timedelta(days=days)
 
+    warnings = []
+
     def _safe_scalar(label, query_fn, fallback=0):
         """Execute a query and log errors instead of bubbling 500."""
         try:
             result = query_fn()
-            return fallback if result is None else result
+            if result is None:
+                warnings.append(f"{label}:no_data")
+                return fallback
+            return result
         except Exception:  # pragma: no cover - defensive logging path
             current_app.logger.exception(
                 "analytics_overview_scalar_failed", extra={"days": days, "label": label}
             )
+            warnings.append(f"{label}:error")
             return fallback
 
     empty_overview = {
@@ -111,6 +117,15 @@ def get_overview():
             )
 
         top_intents = _safe_scalar("top_intents", _top_intents_query, fallback=[])
+        # If the query returned an unexpected shape, convert safely instead of raising
+        safe_top_intents = []
+        for item in top_intents:
+            try:
+                intent, count = item
+            except Exception:
+                warnings.append("top_intents:malformed_row")
+                continue
+            safe_top_intents.append({"intent": intent, "count": count})
 
         overview_payload = {
             "total_conversations": total_conversations,
@@ -120,21 +135,25 @@ def get_overview():
                 round(avg_session_duration, 2) if avg_session_duration else 0
             ),
             "conversion_rate_percent": round(conversion_rate, 2),
-            "top_intents": [{"intent": intent, "count": count} for intent, count in top_intents],
+            "top_intents": safe_top_intents,
         }
 
     except Exception:  # pragma: no cover - safety net for any unexpected errors
         current_app.logger.exception("analytics_overview_fallback_defaults", extra={"days": days})
         overview_payload = empty_overview
+        warnings.append("overview:exception_fallback")
 
-    return jsonify(
-        {
-            "status": "success",
-            "period_days": days,
-            "overview": overview_payload,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-        }
-    )
+    response = {
+        "status": "success",
+        "period_days": days,
+        "overview": overview_payload,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+    if warnings:
+        response["warnings"] = warnings
+
+    return jsonify(response)
 
 
 @analytics_bp.route("/conversations", methods=["GET"])
