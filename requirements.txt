@@ -31,6 +31,7 @@ locust==2.32.3
 snakeviz==2.2.0
 coverage-badge==1.1.2
 openai>=1.0.0
+groq>=0.5.0
 # Optional ML dependencies (for local development and lead scoring)
 # Not required for GAE deployment - gracefully degrades to rule-based scoring
 numpy>=1.24.0; platform_system != "AppEngine"

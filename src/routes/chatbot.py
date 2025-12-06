@@ -1860,7 +1860,15 @@ def check_faq(message):
     # FAQ patterns with keywords and threshold
     faq_patterns = {
         "roznice_miedzy_pakietami": (
-            ["pakiet", "express", "comfort", "premium", "indywidualny", "różnice między", "jaki pakiet"],
+            [
+                "pakiet",
+                "express",
+                "comfort",
+                "premium",
+                "indywidualny",
+                "różnice między",
+                "jaki pakiet",
+            ],
             0.50,
         ),
         "jak_dlugo_trwa": (
@@ -2132,12 +2140,46 @@ def check_faq(message):
     if "luxury" in message_lower or "luksus" in message_lower:
         return get_package_description("luxury")
 
-    # Pytania ogólne o pakiety - WŁĄCZONE dla lepszego UX
-    # Teraz obsługujemy tylko ogólne pytania, konkretne trafiają do AI
-    if any(
-        word in message_lower
-        for word in ["jakie macie pakiety", "jakie pakiety", "co oferujesz", "jakie oferujesz"]
-    ):
+    # Wykrywanie intencji pokazania pakietów
+    # 1. Bezpośrednie pytanie o pakiety
+    # 2. Potwierdzenie chęci poznania pakietów (tak, chcę, tak chcę, pokaz, opowiedz)
+    show_packages_keywords = [
+        "jakie macie pakiety",
+        "jakie pakiety",
+        "co oferujesz",
+        "jakie oferujesz",
+        "pokaż pakiety",
+        "pokaz pakiety",
+        "opowiedz o pakietach",
+        "chcę poznać pakiety",
+    ]
+
+    # Krótkie potwierdzenia gdy kontekst sugeruje że pytaliśmy o pakiety
+    short_confirmations = [
+        "tak",
+        "chcę",
+        "tak chcę",
+        "chce",
+        "tak chce",
+        "pokaz",
+        "pokaż",
+        "opowiedz",
+        "tak pokaz",
+        "tak pokaż",
+        "jasne",
+        "ok",
+        "dobra",
+    ]
+
+    # Sprawdź czy to pytanie o pakiety LUB krótkie potwierdzenie
+    wants_packages = any(word in message_lower for word in show_packages_keywords) or (
+        len(message_lower.split()) <= 3
+        and any(
+            word == message_lower.strip() or word in message_lower for word in short_confirmations
+        )
+    )
+
+    if wants_packages:
         return (
             "📦 NASZE PAKIETY:\n\n"
             "1️⃣ **EXPRESS** - Szybkie, proste wykończenie\n"
