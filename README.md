@@ -37,6 +37,29 @@ python main.py
 
 📚 Więcej: [DOCKER.md](docs/features/DOCKER.md) | [LOCAL AI SETUP](docs/guides/LOCAL_AI_SETUP.md) 🤖 | [CONTRIBUTING.md](docs/misc/CONTRIBUTING.md) | **[📚 Pełna dokumentacja](docs/README.md)**
 
+### Lokalny run na Groq (bez kosztów)
+
+```bash
+# 1) Skopiuj i uzupełnij env
+cp config/environments/.env.example .env
+echo "LLM_PROVIDER=groq" >> .env
+echo "GROQ_API_KEY=your_groq_key" >> .env
+echo "GROQ_MODEL=mixtral-8x7b-32768" >> .env  # opcjonalnie wybierz inny model
+
+# 2) Zainstaluj zależności (Groq jest już w requirements.txt)
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+# 3) Odpal serwer z gotowym skryptem helperem
+./scripts/run_local_groq.sh
+
+# 4) Prosty test E2E
+curl -X POST http://127.0.0.1:5050/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message":"Cześć, co robisz?"}'
+```
+
 ## 🛠️ Tech Stack
 
 - **Backend:** Python 3.13, Flask 3.1, SQLAlchemy 2.0
