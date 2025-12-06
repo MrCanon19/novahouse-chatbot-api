@@ -1317,7 +1317,7 @@ def format_data_confirmation_message(context_memory):
     Format a nice confirmation message with user's data
     """
     parts = [
-        "📋 **Świetnie! Podsumujmy Twoje dane:**\n",
+        "📋 Świetnie! Podsumujmy Twoje dane:\n",
         f"👤 Imię: {context_memory.get('name', 'Nie podano')}",
     ]
 
@@ -1533,7 +1533,7 @@ def generate_follow_up_question(context_memory, user_message, bot_response, conv
             variant, ab_question = get_ab_test_variant(conversation, "package_to_sqm")
             if ab_question:
                 return ab_question
-        return "💡 **A jaki jest mniej więcej metraż Twojego mieszkania?** To pomoże mi lepiej dopasować ofertę."
+        return "💡 A jaki jest mniej więcej metraż Twojego mieszkania? To pomoże mi lepiej dopasować ofertę."
 
     # Square meters given → ask about location (A/B TEST)
     if (
@@ -1548,7 +1548,7 @@ def generate_follow_up_question(context_memory, user_message, bot_response, conv
             variant, ab_question = get_ab_test_variant(conversation, "sqm_to_location")
             if ab_question:
                 return ab_question
-        return "📍 **W jakim mieście szukasz wykonawcy?** Mamy zespoły w całej Polsce."
+        return "📍 W jakim mieście szukasz wykonawcy? Mamy zespoły w całej Polsce."
 
     # Price question → ask about budget/financing (A/B TEST)
     if not has_contact and any(
@@ -1558,27 +1558,34 @@ def generate_follow_up_question(context_memory, user_message, bot_response, conv
             variant, ab_question = get_ab_test_variant(conversation, "price_to_budget")
             if ab_question:
                 return ab_question
-        return "💰 **Masz już określony budżet? Mogę pokazać opcje finansowania i rozłożenia płatności.**"
+        return (
+            "💰 Masz już określony budżet? Mogę pokazać opcje finansowania i rozłożenia płatności."
+        )
 
     # Talked about materials → ask about style preferences
     if any(
         word in user_lower for word in ["materiał", "product", "płytk", "farb", "podłog", "boazeri"]
     ):
-        return "🎨 **Jaki styl wnętrz Cię interesuje?** (np. minimalistyczny, industrialny, skandynawski)"
+        return (
+            "🎨 Jaki styl wnętrz Cię interesuje? (np. minimalistyczny, industrialny, skandynawski)"
+        )
 
     # Talked about timeline → ask about start date
     if any(word in user_lower for word in ["czas", "długo", "termin", "kiedy", "jak szybko"]):
-        return "📅 **Kiedy planujesz rozpocząć projekt?** (np. zaraz, za miesiąc, za 3 miesiące)"
+        return "📅 Kiedy planujesz rozpocząć projekt? (np. zaraz, za miesiąc, za 3 miesiące)"
+
+    # Don't add follow-up if we already have basic data (city + property_type + square_meters)
+    has_basic_data = has_city and context_memory.get("property_type") and has_sqm
+    if has_basic_data:
+        return None
 
     # General package info → ask if they want personalized quote
     if has_package and has_sqm and not has_contact:
-        return "📊 **Chcesz otrzymać szczegółową wycenę dostosowaną do Twojego mieszkania?** Podaj email, wyślę spersonalizowaną ofertę."
+        return "📊 Chcesz otrzymać szczegółową wycenę dostosowaną do Twojego mieszkania? Podaj email, wyślę spersonalizowaną ofertę."
 
     # Nothing specific → gentle engagement
     if not has_contact and len(user_message) < 50:
-        return (
-            "🤔 **Masz jakieś konkretne pytania? Chętnie opowiem więcej o procesie wykończenia!**"
-        )
+        return "🤔 Masz jakieś konkretne pytania? Chętnie opowiem więcej o procesie wykończenia!"
 
     return None
 
@@ -1731,6 +1738,7 @@ def extract_context(message, existing_context):
     name_patterns = [
         r"(?:jestem|nazywam się|mam na imię|to ja|cześć jestem)\s+([A-ZŚŻŹĆŃĄĘÓŁ][a-ząęółćżźśń]+(?:\s+[A-ZŚŻŹĆŃĄĘÓŁ][a-ząęółćżźśń]+)?)",
         r"^([A-ZŚŻŹĆŃĄĘÓŁ][a-ząęółćżźśń]+\s+[A-ZŚŻŹĆŃĄĘÓŁ][a-ząęółćżźśń]+)$",  # Just "Jan Kowalski" without prefix
+        r"^([A-ZŚŻŹĆŃĄĘÓŁ][a-ząęółćżźśń]+)$",  # Just single name "Michał"
     ]
     for pattern in name_patterns:
         match = re.search(pattern, message, re.IGNORECASE)
