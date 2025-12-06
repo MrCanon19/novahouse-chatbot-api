@@ -150,10 +150,18 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 # Connection pool settings dla App Engine (only for PostgreSQL)
 if db_url.startswith("postgresql://"):
     app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-        "pool_size": 3,  # Małe - max 3 połączenia na instancję
-        "max_overflow": 1,  # Max 1 dodatkowe połączenie
-        "pool_pre_ping": True,  # Sprawdź czy połączenie działa
-        "pool_recycle": 1800,  # Recykluj połączenia co 30 min
+        "pool_size": 2,  # Zmniejszamy na 2 żeby zmniejszyć load
+        "max_overflow": 0,  # Brak overflow - stricte 2 połączenia
+        "pool_pre_ping": True,  # Zawsze sprawdzaj czy połączenie żyje
+        "pool_recycle": 900,  # Recykluj co 15 min zamiast 30 (App Engine timeout)
+        "pool_reset_on_return": "rollback",  # Reset stanu połączenia po każdym użyciu
+        "connect_args": {
+            "connect_timeout": 5,  # Max 5s na połączenie
+            "keepalives": 1,  # Włącz keepalives
+            "keepalives_idle": 30,  # Keepalive co 30s
+            "keepalives_interval": 10,  # Spróbuj co 10s
+            "keepalives_count": 5,  # Max 5 prób
+        },
     }
 db.init_app(app)
 
@@ -281,6 +289,39 @@ from src.routes.monitoring import monitoring_bp
 app.register_blueprint(monitoring_bp)
 # KROK 6: Tworzymy tabele w kontekście w pełni skonfigurowanej aplikacji.
 with app.app_context():
+    # Retry logic dla Connection Pool na start
+    max_retries = 3
+    retry_count = 0
+    connection_ok = False
+
+    while retry_count < max_retries and not connection_ok:
+        try:
+            # Test connection before create_all
+            with db.engine.connect() as conn:
+                conn.execute(db.text("SELECT 1"))
+            connection_ok = True
+            logger.info("✅ Database connection established on startup")
+        except Exception as e:
+            retry_count += 1
+            if retry_count < max_retries:
+                wait_time = 2**retry_count  # Exponential backoff: 2, 4s
+                logger.warning(
+                    f"⚠️ DB connection failed (attempt {retry_count}/{max_retries}), retrying in {wait_time}s: {str(e)[:100]}"
+                )
+                import time
+
+                time.sleep(wait_time)
+            else:
+                logger.error(
+                    f"❌ Database connection failed after {max_retries} attempts - using fallback SQLite"
+                )
+                # Fallback to SQLite if PostgreSQL fails
+                if not db_url.startswith("sqlite"):
+                    app.config["SQLALCHEMY_DATABASE_URI"] = (
+                        f"sqlite:///{os.path.join(os.path.dirname(__file__), 'database', 'app.db')}"
+                    )
+                    db.engine.dispose()
+
     try:
         db.create_all()
     except Exception as e:
@@ -332,6 +373,24 @@ with app.app_context():
 # ═══════════════════════════════════════════════════════════════
 # GLOBAL ERROR HANDLERS
 # ═══════════════════════════════════════════════════════════════
+
+# Handle psycopg2 connection errors gracefully
+from sqlalchemy.exc import OperationalError as SQLAlchemyOperationalError
+
+
+@app.errorhandler(SQLAlchemyOperationalError)
+def handle_db_connection_error(error):
+    """Handle database connection errors"""
+    logger.error(f"Database connection error: {str(error)[:200]}")
+    # Try to recover by disposing of the connection pool
+    try:
+        db.engine.dispose()
+    except Exception as e:
+        logger.warning(f"Failed to dispose connection pool: {e}")
+    return {
+        "error": "Database temporarily unavailable. Please try again.",
+        "code": "DB_UNAVAILABLE",
+    }, 503
 
 
 @app.errorhandler(413)
