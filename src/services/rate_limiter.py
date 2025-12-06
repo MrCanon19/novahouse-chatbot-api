@@ -142,6 +142,16 @@ def rate_limit(
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args, **kwargs):
+            # Always lazy-load limiter to avoid None issues and import-time Redis connects
+            try:
+                limiter = ensure_rate_limiter()
+            except Exception as e:  # Fail-open if anything goes wrong
+                import traceback
+
+                print(f"Rate limiter unavailable, allowing request: {e}")
+                traceback.print_exc()
+                return func(*args, **kwargs)
+
             # Get identifiers
             data = request.get_json() or {}
             session_id = data.get("session_id", "unknown")
@@ -149,7 +159,7 @@ def rate_limit(
 
             # Check session rate limit
             if limit_by in ["session", "both"]:
-                allowed, retry_after = rate_limiter.check_rate_limit(
+                allowed, retry_after = limiter.check_rate_limit(
                     session_id, "session", max_requests, window_seconds
                 )
                 if not allowed:
@@ -169,9 +179,7 @@ def rate_limit(
                 # More lenient for IP (100 requests per hour)
                 ip_max = max_requests * 10
                 ip_window = window_seconds * 60
-                allowed, retry_after = rate_limiter.check_rate_limit(
-                    ip_address, "ip", ip_max, ip_window
-                )
+                allowed, retry_after = limiter.check_rate_limit(ip_address, "ip", ip_max, ip_window)
                 if not allowed:
                     return (
                         jsonify(

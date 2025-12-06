@@ -234,28 +234,57 @@
     <script>
         let weeklyChart = null;
         const API_BASE = window.location.origin;
+        let retryCount = 0;
+        const MAX_RETRIES = 5;
+        const RETRY_DELAYS = [1000, 2000, 4000, 8000, 16000]; // Exponential backoff
 
-        async function fetchJsonOrThrow(url, contextLabel) {
-            const response = await fetch(url);
-            let data = {};
+        // KULOODPORNY fetch z retry logic i timeout
+        async function fetchWithRetry(url, contextLabel, attempt = 0) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
             try {
-                data = await response.json();
-            } catch (_) {
-                // Fallback to empty object if response body is not JSON
+                const response = await fetch(url, {
+                    signal: controller.signal,
+                    headers: {
+                        'Cache-Control': 'no-cache',
+                        'Pragma': 'no-cache'
+                    }
+                });
+                clearTimeout(timeoutId);
+
+                let data = {};
+                try {
+                    const text = await response.text();
+                    data = text ? JSON.parse(text) : {};
+                } catch (parseError) {
+                    console.warn(`Parse error for ${contextLabel}:`, parseError);
+                    data = {};
+                }
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${data.error || data.message || 'Unknown error'}`);
+                }
+
+                return data;
+            } catch (error) {
+                clearTimeout(timeoutId);
+
+                // Retry logic
+                if (attempt < MAX_RETRIES) {
+                    const delay = RETRY_DELAYS[attempt] || 16000;
+                    console.warn(`${contextLabel} failed (attempt ${attempt + 1}/${MAX_RETRIES}), retrying in ${delay}ms...`, error.message);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    return fetchWithRetry(url, contextLabel, attempt + 1);
+                }
+
+                // Max retries exceeded
+                throw new Error(`${contextLabel} failed after ${MAX_RETRIES} attempts: ${error.message}`);
             }
+        }
 
-            const errorText = data.error || data.message;
-
-            if (!response.ok) {
-                throw new Error(`${contextLabel}: ${errorText || `HTTP ${response.status}`}`);
-            }
-
-            if (data.status && data.status !== 'success') {
-                throw new Error(`${contextLabel}: ${errorText || 'API zwróciło błąd'}`);
-            }
-
-            return data;
+        async function fetchJsonOrThrow(url, contextLabel) {
+            return fetchWithRetry(url, contextLabel, 0);
         }
 
         async function loadDashboard() {
@@ -263,68 +292,107 @@
             hideError();
 
             let primaryError = null;
+            let fallbackError = null;
 
+            // Strategia 1: Nowoczesne API (z retry)
             try {
-                const [overviewTodayData, overviewWeekData] = await Promise.all([
+                const [overviewTodayData, overviewWeekData] = await Promise.allSettled([
                     fetchJsonOrThrow(`${API_BASE}/api/analytics/overview?days=1`, 'Przegląd 24h'),
                     fetchJsonOrThrow(`${API_BASE}/api/analytics/overview?days=7`, 'Przegląd 7 dni'),
                 ]);
 
-                updateFromNewAPI(overviewTodayData, overviewWeekData);
-                return;
+                // Sprawdź czy przynajmniej jedno się udało
+                if (overviewTodayData.status === 'fulfilled' || overviewWeekData.status === 'fulfilled') {
+                    const todayData = overviewTodayData.status === 'fulfilled' ? overviewTodayData.value : {};
+                    const weekData = overviewWeekData.status === 'fulfilled' ? overviewWeekData.value : {};
+                    await updateFromNewAPI(todayData, weekData);
+                    console.log('✅ Dashboard loaded successfully (new API)');
+                    return;
+                } else {
+                    primaryError = overviewTodayData.reason || overviewWeekData.reason;
+                }
             } catch (apiError) {
                 primaryError = apiError;
-                console.warn('New analytics API failed, will try legacy endpoint', apiError);
+                console.warn('⚠️ New analytics API failed, trying legacy endpoint...', apiError);
             }
 
+            // Strategia 2: Legacy API (z retry)
             try {
-                const response = await fetch(`${API_BASE}/api/analytics/dashboard/summary?budget=10`);
-                const result = await response.json().catch(() => ({}));
+                const result = await fetchJsonOrThrow(
+                    `${API_BASE}/api/analytics/dashboard/summary?budget=10`,
+                    'Legacy Dashboard'
+                );
 
-                if (result && result.success) {
-                    updateTodayMetrics(result.data.today);
-                    updateBudgetStatus(result.data.budget);
-                    updateWeeklyChart(result.data.weekly_trend);
-                    updateTopQuestions(result.data.top_questions);
-                    updatePerformanceMetrics(result.data.today);
+                if (result) {
+                    const data = result.data || {};
+                    updateTodayMetrics(data.today || {});
+                    updateBudgetStatus(data.budget || {});
+                    updateWeeklyChart(data.weekly_trend || []);
+                    updateTopQuestions(data.top_questions || []);
+                    updatePerformanceMetrics(data.today || {});
+                    console.log('✅ Dashboard loaded successfully (legacy API)');
                     return;
                 }
+            } catch (legacyError) {
+                fallbackError = legacyError;
+                console.warn('⚠️ Legacy API also failed, using offline mode...', legacyError);
+            }
 
-                const fallbackMsg = result.error || result.message || 'Legacy API zwróciło błąd';
-                throw new Error(fallbackMsg);
-            } catch (fallbackError) {
-                const details = [primaryError ? primaryError.message : null, fallbackError?.message]
-                    .filter(Boolean)
-                    .join(' | ');
-                showError(`Błąd ładowania danych: ${details || 'Nieznany błąd'}`);
+            // Strategia 3: Offline Mode (mock data)
+            try {
+                console.log('⚠️ All APIs failed, loading offline mock data');
+                updateTodayMetrics({
+                    conversations: 0,
+                    leads: 0,
+                    cost_usd: 0,
+                    avg_response_time_ms: 0
+                });
+                updateBudgetStatus({
+                    budget_usd: 10,
+                    spent_usd: 0,
+                    usage_percent: 0,
+                    remaining_usd: 10,
+                    projected_monthly_usd: 0,
+                    status: 'OK'
+                });
+                updateWeeklyChart([]);
+                updateTopQuestions([]);
+                updatePerformanceMetrics({
+                    conversations: 0,
+                    leads: 0,
+                    cost_usd: 0,
+                    avg_response_time_ms: 0
+                });
+
+                const errorMsg = [
+                    primaryError?.message,
+                    fallbackError?.message
+                ].filter(Boolean).join(' | ') || 'Serwer tymczasowo niedostępny';
+
+                showError(
+                    `⚠️ Tryb offline: ${errorMsg}<br><br>` +
+                    `Dashboard działa w trybie offline. Odśwież stronę za chwilę.`
+                );
+            } catch (mockError) {
+                console.error('❌ Critical: Even mock data failed!', mockError);
+                showError('❌ Krytyczny błąd: Nie można załadować dashboardu. Skontaktuj się z administratorem.');
             }
         }
 
         async function updateFromNewAPI(overviewTodayData, overviewWeekData) {
-            const overviewToday = overviewTodayData.overview || {};
-            const overviewWeek = overviewWeekData.overview || {};
+            const overviewToday = overviewTodayData?.overview || {};
+            const overviewWeek = overviewWeekData?.overview || {};
 
-            // Fetch additional data
-            const [conversationsData, engagementData, leadsData] = await Promise.all([
-                fetch(`${API_BASE}/api/analytics/conversations?days=7`)
-                    .then(r => r.json())
-                    .catch(e => {
-                        console.warn('Conversations API error:', e);
-                        return null;
-                    }),
-                fetch(`${API_BASE}/api/analytics/engagement?days=7`)
-                    .then(r => r.json())
-                    .catch(e => {
-                        console.warn('Engagement API error:', e);
-                        return null;
-                    }),
-                fetch(`${API_BASE}/api/analytics/leads?days=7`)
-                    .then(r => r.json())
-                    .catch(e => {
-                        console.warn('Leads API error:', e);
-                        return null;
-                    })
+            // Fetch additional data z retry logic
+            const [conversationsResult, engagementResult, leadsResult] = await Promise.allSettled([
+                fetchWithRetry(`${API_BASE}/api/analytics/conversations?days=7`, 'Conversations', 0).catch(e => null),
+                fetchWithRetry(`${API_BASE}/api/analytics/engagement?days=7`, 'Engagement', 0).catch(e => null),
+                fetchWithRetry(`${API_BASE}/api/analytics/leads?days=7`, 'Leads', 0).catch(e => null)
             ]);
+
+            const conversationsData = conversationsResult.status === 'fulfilled' ? conversationsResult.value : null;
+            const engagementData = engagementResult.status === 'fulfilled' ? engagementResult.value : null;
+            const leadsData = leadsResult.status === 'fulfilled' ? leadsResult.value : null;
 
             // Update today metrics
             const todayData = {
@@ -375,24 +443,34 @@
 
         function updateTodayMetrics(data) {
             const container = document.getElementById('today-metrics');
-            container.innerHTML = `
-                <div class="metric">
-                    <span class="metric-label">Rozmowy:</span>
-                    <span class="metric-value">${data.conversations}</span>
-                </div>
-                <div class="metric">
-                    <span class="metric-label">Leady:</span>
-                    <span class="metric-value success">${data.leads}</span>
-                </div>
-                <div class="metric">
-                    <span class="metric-label">Koszt:</span>
-                    <span class="metric-value">${data.cost_usd.toFixed(4)} USD</span>
-                </div>
-                <div class="metric">
-                    <span class="metric-label">Śr. czas odpowiedzi:</span>
-                    <span class="metric-value">${data.avg_response_time_ms.toFixed(0)} ms</span>
-                </div>
-            `;
+            try {
+                const conversations = Number(data?.conversations) || 0;
+                const leads = Number(data?.leads) || 0;
+                const cost = Number(data?.cost_usd) || 0;
+                const responseTime = Number(data?.avg_response_time_ms) || 0;
+
+                container.innerHTML = `
+                    <div class="metric">
+                        <span class="metric-label">Rozmowy:</span>
+                        <span class="metric-value">${conversations}</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Leady:</span>
+                        <span class="metric-value success">${leads}</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Koszt:</span>
+                        <span class="metric-value">${cost.toFixed(4)} USD</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Śr. czas odpowiedzi:</span>
+                        <span class="metric-value">${responseTime.toFixed(0)} ms</span>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error updating today metrics:', error);
+                container.innerHTML = '<div class="error">Błąd wyświetlania metryk</div>';
+            }
         }
 
         function updateBudgetStatus(data) {
@@ -426,13 +504,30 @@
         }
 
         function updateWeeklyChart(data) {
-            const ctx = document.getElementById('weeklyChart').getContext('2d');
+            try {
+                const ctx = document.getElementById('weeklyChart')?.getContext('2d');
+                if (!ctx) {
+                    console.warn('Chart canvas not found');
+                    return;
+                }
 
-            if (weeklyChart) {
-                weeklyChart.destroy();
-            }
+                if (weeklyChart) {
+                    weeklyChart.destroy();
+                    weeklyChart = null;
+                }
 
-            weeklyChart = new Chart(ctx, {
+                // Bezpieczna walidacja danych
+                const chartData = Array.isArray(data) ? data : [];
+                if (chartData.length === 0) {
+                    console.warn('No chart data available');
+                    chartData.push({
+                        date: new Date().toISOString().split('T')[0],
+                        conversations: 0,
+                        cost: 0
+                    });
+                }
+
+                weeklyChart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: data.map(d => {
@@ -492,22 +587,33 @@
 
         function updateTopQuestions(data) {
             const container = document.getElementById('top-questions');
+            try {
+                const questions = Array.isArray(data) ? data : [];
 
-            if (data.length === 0) {
-                container.innerHTML = '<p class="loading">Brak danych o pytaniach</p>';
-                return;
+                if (questions.length === 0) {
+                    container.innerHTML = '<p class="loading">Brak danych o pytaniach</p>';
+                    return;
+                }
+
+                const sanitizedQuestions = questions.map(q => ({
+                    question: String(q?.question || 'Brak pytania').substring(0, 200),
+                    count: Number(q?.count) || 0
+                }));
+
+                container.innerHTML = `
+                    <div class="questions-list">
+                        ${sanitizedQuestions.map(q => `
+                            <div class="question-item">
+                                <div class="question-text">${q.question}</div>
+                                <div class="question-count">${q.count}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error updating top questions:', error);
+                container.innerHTML = '<div class="error">Błąd wyświetlania pytań</div>';
             }
-
-            container.innerHTML = `
-                <div class="questions-list">
-                    ${data.map(q => `
-                        <div class="question-item">
-                            <div class="question-text">${q.question}</div>
-                            <div class="question-count">${q.count}</div>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
         }
 
         function updatePerformanceMetrics(data) {
@@ -550,8 +656,27 @@
         // WYŁĄCZONE: Auto-odświeżanie co 5 minut (na życzenie 19.11.2025)
         // setInterval(loadDashboard, 5 * 60 * 1000);
 
-        // Ładowanie przy starcie
-        document.addEventListener('DOMContentLoaded', loadDashboard);
+        // Auto-recovery: Jeśli dashboard nie załaduje się w 30s, spróbuj ponownie
+        let dashboardLoadTimeout = null;
+        function setupAutoRecovery() {
+            dashboardLoadTimeout = setTimeout(() => {
+                console.warn('⚠️ Dashboard load timeout, retrying...');
+                loadDashboard();
+            }, 30000);
+        }
+
+        // Ładowanie przy starcie z auto-recovery
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDashboard();
+            setupAutoRecovery();
+        });
+
+        // Clear timeout gdy dashboard się załaduje
+        window.addEventListener('load', () => {
+            if (dashboardLoadTimeout) {
+                clearTimeout(dashboardLoadTimeout);
+            }
+        });
     </script>
 </body>
 </html>

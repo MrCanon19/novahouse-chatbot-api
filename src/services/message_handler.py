@@ -6,7 +6,9 @@ Modular, clean, with state machine and validation
 import json
 import logging
 import os
+import re
 import time
+import unicodedata
 from datetime import datetime, timezone
 from typing import Dict, Optional, Tuple
 
@@ -46,8 +48,11 @@ class MessageHandler:
             dict with response, session_id, conversation_id, state
         """
         try:
+            # 0. Normalize user input for better extraction (preserve original for history)
+            normalized_message = self._normalize_input(user_message)
+
             # 1. Rate limiting & spam detection
-            spam_check = self._check_spam(session_id, user_message)
+            spam_check = self._check_spam(session_id, normalized_message)
             if spam_check:
                 return {"error": spam_check, "response": "Proszę zwolnić tempo wiadomości."}
 
@@ -82,11 +87,11 @@ class MessageHandler:
 
             # 6. Resolve references in multi-turn dialog (a srebrnego?, a w warszawie?)
             resolved_message = multi_turn_dialog.resolve_references(
-                user_message, context_memory, message_history, session_id
+                normalized_message, context_memory, message_history, session_id
             )
-            if resolved_message != user_message:
+            if resolved_message != normalized_message:
                 print(f"[MultiTurn] Resolved '{user_message}' -> '{resolved_message}'")
-                user_message = resolved_message
+                normalized_message = resolved_message
 
             # 7. Initialize state machine
             state_machine = ConversationStateMachine()
@@ -94,11 +99,17 @@ class MessageHandler:
             state_machine.current_state = current_state
 
             # 8. Extract context from message
-            context_memory = self._extract_and_validate_context(user_message, context_memory)
+            context_memory = self._extract_and_validate_context(normalized_message, context_memory)
+
+            # 8b. Heuristics: enrich context if we have key signals
+            # Pass both original and normalized message - use original for name extraction
+            context_memory = self._enrich_context_with_heuristics(
+                normalized_message, context_memory, user_message
+            )
 
             # 9. Analyze sentiment in real-time
             sentiment_analysis = sentiment_service.analyze_message_sentiment(
-                user_message, session_id
+                normalized_message, session_id
             )
 
             # Save user message
@@ -106,7 +117,11 @@ class MessageHandler:
 
             # 10. Generate response based on state
             bot_response, follow_up = self._generate_response(
-                user_message, context_memory, conversation, state_machine, sentiment_analysis
+                normalized_message,
+                context_memory,
+                conversation,
+                state_machine,
+                sentiment_analysis,
             )
 
             # 11. Handle state transitions
@@ -278,6 +293,201 @@ class MessageHandler:
                         raise
         return conversation
 
+    def _normalize_input(self, message: str) -> str:
+        """Lowercase, strip emoji/punctuation noise, normalize meters/budget formats."""
+        text = message.lower()
+        text = text.replace(",", ".")
+        # remove common emoji/symbols (keep polish letters and digits)
+        text = re.sub(r"[^0-9a-ząćęłńóśżź\s\.\-]+", " ", text)
+        # normalize metraż tokens
+        text = re.sub(r"m2|metr(?:ow|ów)?|metr(?:y)?", " m2 ", text)
+        text = re.sub(r"\s+", " ", text).strip()
+        return text
+
+    def _strip_accents(self, text: str) -> str:
+        """Remove accents for fuzzy intent checks (greetings with typos)."""
+        normalized = unicodedata.normalize("NFKD", text)
+        return "".join(ch for ch in normalized if not unicodedata.combining(ch))
+
+    def _levenshtein(self, a: str, b: str) -> int:
+        """Small Levenshtein distance for short tokens."""
+        if a == b:
+            return 0
+        if not a:
+            return len(b)
+        if not b:
+            return len(a)
+        # Early exit if lengths differ too much
+        if abs(len(a) - len(b)) > 2:
+            return 3
+
+        prev_row = list(range(len(b) + 1))
+        for i, ca in enumerate(a, 1):
+            curr_row = [i]
+            for j, cb in enumerate(b, 1):
+                cost = 0 if ca == cb else 1
+                curr_row.append(
+                    min(
+                        curr_row[-1] + 1,  # insertion
+                        prev_row[j] + 1,  # deletion
+                        prev_row[j - 1] + cost,  # substitution
+                    )
+                )
+            prev_row = curr_row
+        return prev_row[-1]
+
+    def _is_greeting(self, message: str) -> bool:
+        """Detect greetings with minor typos (czesc, cześć, hejj, witaj)."""
+        base = self._strip_accents(message.lower())
+        base_clean = re.sub(r"[^a-z\s]", " ", base)
+        tokens = base_clean.split()
+        greetings = [
+            "czesc",
+            "czescie",
+            "czes",
+            "cześć",
+            "hej",
+            "heja",
+            "hejka",
+            "siema",
+            "witaj",
+            "witam",
+            "dzień",
+            "dzien",
+            "dobry",
+        ]
+
+        for token in tokens:
+            if token in greetings:
+                return True
+            for g in greetings:
+                if self._levenshtein(token, g) <= 1:
+                    return True
+
+        # Multi-word greetings like "dzien dobry"
+        if "dzien dobry" in base_clean or "dzien dob" in base_clean:
+            return True
+        if "dz" in tokens and "dobry" in tokens:
+            return True
+
+        return False
+
+    def _build_greeting_response(self, context_memory: Dict) -> str:
+        """Friendly welcome that nudges for key data."""
+        prompts = []
+        if not context_memory.get("name"):
+            prompts.append("Jak masz na imię?")
+
+        missing = self._get_missing_fields(context_memory)
+        if "city" in missing:
+            prompts.append("Podaj miasto inwestycji.")
+        if "property_type" in missing:
+            prompts.append("To mieszkanie czy dom?")
+        if "square_meters" in missing:
+            prompts.append("Ile m2 ma nieruchomość?")
+        if "budget" in missing:
+            prompts.append("Jaki budżet zakładasz (może być orientacyjny)?")
+
+        ask = " ".join(prompts) if prompts else "W czym mogę pomóc?"
+        return f"Cześć! Jestem asystentem NovaHouse. {ask}"
+
+    def _enrich_context_with_heuristics(
+        self, message: str, context: Dict, original_message: str = None
+    ) -> Dict:
+        """Heuristic extraction: budget (zł/pln), metraż, miasto, typ, name.
+        Uses original_message for name extraction (before lowercasing).
+        """
+        updated = dict(context)
+
+        # Use original message for name extraction (has proper capitalization)
+        name_extraction_text = original_message or message
+
+        # Name: Try to extract single name or "imię nazwisko" format (only if not already set)
+        if not updated.get("name"):
+            name_patterns = [
+                r"(?:jestem|nazwam się|mam na imię|to ja|cześć jestem)\s+([A-ZŚŻŹĆŃĄĘÓŁ][a-ząęółćżźśń]+(?:\s+[A-ZŚŻŹĆŃĄĘÓŁ][a-ząęółćżźśń]+)?)",
+                r"^([A-ZŚŻŹĆŃĄĘÓŁ][a-ząęółćżźśń]+\s+[A-ZŚŻŹĆŃĄĘÓŁ][a-ząęółćżźśń]+)$",  # "Jan Kowalski"
+                r"^([A-ZŚŻŹĆŃĄĘÓŁ][a-ząęółćżźśń]+)$",  # Single name "Michał"
+            ]
+            for pattern in name_patterns:
+                name_match = re.search(pattern, name_extraction_text, re.IGNORECASE)
+                if name_match:
+                    extracted_name = name_match.group(1).strip()
+                    if len(extracted_name) >= 2 and extracted_name[0].isupper():
+                        updated["name"] = extracted_name
+                        break
+
+        # Budget: e.g. 200000, 200k, 200 tys
+        budget_match = re.search(r"(\d+[\.]?\d*)\s*(k|tys)?\s*(zł|pln)?", message)
+        if budget_match and not updated.get("budget"):
+            try:
+                val = float(budget_match.group(1))
+                if budget_match.group(2):
+                    val = val * 1000
+                updated["budget"] = int(val)
+            except Exception:
+                pass
+
+        # Square meters: number followed by m2, metr, metrów, metorow, m², etc.
+        sqm_match = re.search(r"(\d+[\.]?\d*)\s*(m2|m²|metr|metrów|metorow|mkw)", message)
+        if sqm_match and not updated.get("square_meters"):
+            try:
+                updated["square_meters"] = int(float(sqm_match.group(1)))
+            except Exception:
+                pass
+
+        # Property type - only extract if it's in context of a property info question
+        # Don't extract from generic questions like "obejrzeć mieszkanie online"
+        if not updated.get("property_type"):
+            # Look for "dom" or "mieszkanie" in context of property decisions (e.g., "to dom czy mieszkanie", "ile metrów ma dom")
+            # or when paired with budget/metraż info
+            if re.search(
+                r"\bdom\b.*(?:metr|m2|m²|budżet|budzet|ile|jaki|który)", message, re.IGNORECASE
+            ) or re.search(
+                r"(?:metr|m2|m²|budżet|budzet|ile|jaki|który).*\bdom\b", message, re.IGNORECASE
+            ):
+                updated["property_type"] = "dom"
+            elif re.search(
+                r"\bmieszkani\w*\b.*(?:metr|m2|m²|budżet|budzet|ile|jaki|który)",
+                message,
+                re.IGNORECASE,
+            ) or re.search(
+                r"(?:metr|m2|m²|budżet|budzet|ile|jaki|który).*\bmieszkani\w*\b",
+                message,
+                re.IGNORECASE,
+            ):
+                updated["property_type"] = "mieszkanie"
+            # Also catch direct answers like "dom", "mieszkanie" alone or "to dom", "to mieszkanie"
+            elif re.search(r"^\s*(?:to\s+)?dom\s*$", message, re.IGNORECASE):
+                updated["property_type"] = "dom"
+            elif re.search(r"^\s*(?:to\s+)?mieszkani\w*\s*$", message, re.IGNORECASE):
+                updated["property_type"] = "mieszkanie"
+
+        # City (limited list of major cities)
+        if not updated.get("city"):
+            cities = [
+                "warszawa",
+                "krakow",
+                "kraków",
+                "wroclaw",
+                "wrocław",
+                "poznan",
+                "poznań",
+                "gdansk",
+                "gdańsk",
+                "gdynia",
+                "szczecin",
+                "lublin",
+                "lodz",
+                "łódź",
+            ]
+            for city in cities:
+                if city in message:
+                    updated["city"] = city
+                    break
+
+        return updated
+
     def _extract_and_validate_context(self, message: str, existing_context: Dict) -> Dict:
         """Extract context from message and validate"""
         from src.routes.chatbot import extract_context
@@ -322,7 +532,6 @@ class MessageHandler:
             check_faq,
             check_learned_faq,
             generate_follow_up_question,
-            get_default_response,
         )
 
         # Check for data confirmation
@@ -334,6 +543,19 @@ class MessageHandler:
         if sentiment_analysis and sentiment_analysis.get("should_escalate"):
             return self._handle_escalation(sentiment_analysis, conversation)
 
+        # Friendly greeting if user starts with a hello (even with typos)
+        # Check if it's a short greeting without much context
+        is_short_greeting = self._is_greeting(user_message) and len(user_message.split()) <= 3
+        has_minimal_context = not any(
+            [context_memory.get("name"), context_memory.get("email"), context_memory.get("phone")]
+        )
+
+        if is_short_greeting and has_minimal_context:
+            greeting_response = self._build_greeting_response(context_memory)
+            # Strip bold just in case
+            greeting_response = greeting_response.replace("**", "")
+            return greeting_response, None
+
         # Response hierarchy (GPT FIRST for intelligent responses)
         bot_response = None
 
@@ -342,7 +564,8 @@ class MessageHandler:
 
         # 2. OpenAI GPT (FIRST for price calculations, comparisons, intelligent responses)
         # Skip FAQ for complex questions - let GPT handle them with context
-        if not bot_response:
+        # BUT skip GPT for greetings - use dedicated greeting response
+        if not bot_response and not is_short_greeting:
             user_lower = user_message.lower()
             # Use GPT for: prices, calculations, comparisons, complex questions with context
             use_gpt = any(
@@ -370,13 +593,31 @@ class MessageHandler:
         if not bot_response:
             bot_response = check_faq(user_message)
 
-        # 4. Check if message is unclear - offer clarification
-        if not bot_response and len(user_message.split()) <= 3:
+        # 4. Check if message is unclear - offer clarification (skip if greeting or has useful data)
+        # Don't show confusion if user just provided name, city, sqm, etc.
+        has_useful_data = any(
+            [
+                context_memory.get("name"),
+                context_memory.get("city"),
+                context_memory.get("square_meters"),
+                context_memory.get("property_type"),
+                context_memory.get("budget"),
+            ]
+        )
+
+        if (
+            not bot_response
+            and len(user_message.split()) <= 3
+            and not is_short_greeting
+            and not has_useful_data
+        ):
             clarification = proactive_suggestions.get_smart_clarification(
                 user_message, context_memory
             )
             if clarification:
-                return clarification.get("message", ""), None
+                clarification_msg = clarification.get("message", "")
+                clarification_msg = clarification_msg.replace("**", "")
+                return clarification_msg, None
 
         # 5. OpenAI GPT (fallback for everything else)
         if not bot_response:
@@ -392,14 +633,47 @@ class MessageHandler:
         if not bot_response:
             bot_response = check_learned_faq(user_message)
 
-        # 6. Final fallback with clarification
+        # 6. Final fallback with clarification and targeted ask
         if not bot_response:
-            clarification = proactive_suggestions.get_smart_clarification(
-                user_message, context_memory
-            )
-            if clarification:
-                return clarification.get("message", ""), None
-            bot_response = get_default_response(user_message)
+            # If we have useful data, acknowledge and ask for missing fields
+            if has_useful_data:
+                missing = self._get_missing_fields(context_memory)
+                if missing:
+                    # Build acknowledgment
+                    ack_parts = []
+                    if context_memory.get("name"):
+                        ack_parts.append(f"Cześć {context_memory['name']}!")
+                    if context_memory.get("property_type"):
+                        ack_parts.append(f"Świetnie, {context_memory['property_type']}")
+                    if context_memory.get("square_meters"):
+                        ack_parts.append(f"{context_memory['square_meters']} m²")
+
+                    acknowledgment = " ".join(ack_parts) if ack_parts else "Super!"
+                    question = self._build_targeted_question(missing)
+                    bot_response = f"{acknowledgment} {question}"
+                else:
+                    bot_response = "Świetnie! Mam już podstawowe informacje. Chcesz poznać nasze pakiety wykończeniowe?"
+            else:
+                # Try clarification only if not a greeting and no useful data
+                if not is_short_greeting:
+                    clarification = proactive_suggestions.get_smart_clarification(
+                        user_message, context_memory
+                    )
+                    if clarification:
+                        bot_response = clarification.get("message", "")
+
+                if not bot_response:
+                    missing = self._get_missing_fields(context_memory)
+                    fallback_count = context_memory.get("fallback_count", 0) + 1
+                    context_memory["fallback_count"] = fallback_count
+
+                    if missing and fallback_count < 3:
+                        bot_response = self._build_targeted_question(missing)
+                    else:
+                        bot_response = "Zbierzmy to szybko: podaj proszę miasto, typ (dom/mieszkanie), metraż i budżet (lub brak budżetu)."
+
+        # Strip markdown bold if model returns it
+        bot_response = bot_response.replace("**", "")
 
         # Add empathetic prefix based on sentiment
         if sentiment_analysis:
@@ -415,6 +689,30 @@ class MessageHandler:
         )
 
         return bot_response, follow_up
+
+    def _get_missing_fields(self, context_memory: Dict) -> list:
+        missing = []
+        if not context_memory.get("city"):
+            missing.append("city")
+        if not context_memory.get("property_type"):
+            missing.append("property_type")
+        if not context_memory.get("square_meters"):
+            missing.append("square_meters")
+        if not context_memory.get("budget"):
+            missing.append("budget")
+        return missing
+
+    def _build_targeted_question(self, missing: list) -> str:
+        # Ask for the most important missing field first
+        if "city" in missing:
+            return "Podaj proszę miasto inwestycji."
+        if "property_type" in missing:
+            return "To dom czy mieszkanie?"
+        if "square_meters" in missing:
+            return "Ile metrów ma nieruchomość (podaj m2)?"
+        if "budget" in missing:
+            return "Jaki masz budżet (może być przybliżony lub brak budżetu)?"
+        return "Podaj proszę miasto, typ (dom/mieszkanie), metraż i budżet (lub brak budżetu)."
 
     def _handle_escalation(
         self, sentiment_analysis: Dict, conversation: ChatConversation
