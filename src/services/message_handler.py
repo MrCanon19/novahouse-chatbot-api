@@ -4,7 +4,9 @@ Modular, clean, with state machine and validation
 """
 
 import json
+import logging
 import os
+import time
 from datetime import datetime, timezone
 from typing import Dict, Optional, Tuple
 
@@ -199,9 +201,6 @@ class MessageHandler:
 
     def _get_or_create_conversation(self, session_id: str) -> ChatConversation:
         """Find or create conversation"""
-        import logging
-        import time
-
         from sqlalchemy.exc import OperationalError
 
         logger = logging.getLogger(__name__)
@@ -546,9 +545,6 @@ class MessageHandler:
             )
 
             # Save lead with retry logic
-            import logging
-            import time
-
             from sqlalchemy.exc import OperationalError
 
             logger = logging.getLogger(__name__)
@@ -826,9 +822,6 @@ class MessageHandler:
             )
 
             # Save lead with retry logic
-            import logging
-            import time
-
             from sqlalchemy.exc import OperationalError
 
             logger = logging.getLogger(__name__)
