@@ -85,14 +85,18 @@ def get_rate_limiter():
         from src.services.redis_service import get_redis_cache
 
         cache = get_redis_cache()
-        if cache.enabled:
+        if cache and cache.redis_client and cache.enabled:
             # Use Redis-based rate limiter for production (multi-instance safe)
             return RedisRateLimiter()
         else:
             # Fallback to in-memory for development
             return RateLimiter()
-    except Exception:
-        # Fallback if Redis unavailable
+    except Exception as e:
+        # Fallback if Redis unavailable or import fails
+        import traceback
+
+        print(f"Warning: Failed to load Redis rate limiter: {e}")
+        traceback.print_exc()
         return RateLimiter()
 
 
@@ -103,7 +107,15 @@ def ensure_rate_limiter():
     """Ensure rate limiter is initialized"""
     global rate_limiter
     if rate_limiter is None:
-        rate_limiter = get_rate_limiter()
+        try:
+            rate_limiter = get_rate_limiter()
+        except Exception as e:
+            # Emergency fallback
+            import traceback
+
+            print(f"ERROR: Failed to ensure rate limiter: {e}")
+            traceback.print_exc()
+            rate_limiter = RateLimiter()
     return rate_limiter
 
 

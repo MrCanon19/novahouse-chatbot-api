@@ -1118,8 +1118,9 @@ def chat():
         ]
         skip_rate_limit = any(keyword in user_message.lower() for keyword in important_keywords)
 
-        from src.services.rate_limiter import rate_limiter
+        from src.services.rate_limiter import ensure_rate_limiter
 
+        rate_limiter = ensure_rate_limiter()
         if not skip_rate_limit:
             allowed, retry_after = rate_limiter.check_rate_limit(
                 session_id, "session", max_requests=10, window_seconds=60
