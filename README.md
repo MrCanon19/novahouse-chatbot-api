@@ -60,6 +60,29 @@ curl -X POST http://127.0.0.1:5050/chat \
   -d '{"message":"Cześć, co robisz?"}'
 ```
 
+### Jak uruchamiam lokalnie Groq (checklista)
+
+1. Skopiuj ".env.example" i ustaw klucze:
+   ```bash
+   cp config/environments/.env.example .env
+   echo "LLM_PROVIDER=groq" >> .env
+   # uzupełnij GROQ_API_KEY i (opcjonalnie) GROQ_MODEL w .env
+   ```
+2. Ustaw uprawnienia dla helpera (jednorazowo):
+   ```bash
+   chmod +x scripts/run_local_groq.sh
+   ```
+3. Odpal backend z Groq na porcie 5050:
+   ```bash
+   ./scripts/run_local_groq.sh
+   ```
+4. Sprawdź E2E curl-em, że backend odpowiada:
+   ```bash
+   curl -X POST http://127.0.0.1:5050/chat \
+     -H "Content-Type: application/json" \
+     -d '{"message": "Cześć, sprawdzam Groq lokalnie"}'
+   ```
+
 ## 🛠️ Tech Stack
 
 - **Backend:** Python 3.13, Flask 3.1, SQLAlchemy 2.0
