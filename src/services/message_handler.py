@@ -15,6 +15,7 @@ from typing import Dict, Optional, Tuple
 from src.models.chatbot import ChatConversation, ChatMessage, CompetitiveIntel, Lead, db
 from src.services.context_validator import ContextValidator
 from src.services.conversation_state_machine import ConversationStateMachine
+from src.services.llm.engine import run_llm
 from src.services.multi_turn_dialog import multi_turn_dialog
 from src.services.proactive_suggestions import proactive_suggestions
 from src.services.rate_limiter import conversation_limiter
@@ -742,83 +743,55 @@ class MessageHandler:
         sentiment_analysis: Dict = None,
         session_id: Optional[str] = None,
     ) -> Optional[str]:
-        """Get response from OpenAI GPT with retry logic"""
-        try:
-            from openai import OpenAI
+        """Get response from configured LLM provider with retry logic"""
 
-            from src.routes.chatbot import SYSTEM_PROMPT
+        from src.routes.chatbot import SYSTEM_PROMPT
 
-            if not self._gpt_enabled:
-                print("[GPT] GPT_FALLBACK_ENABLED=false – skipping GPT call")
-                return None
-
-            openai_api_key = os.getenv("OPENAI_API_KEY")
-            if not openai_api_key or openai_api_key.lower().startswith("test_"):
-                print(
-                    "[GPT] OPENAI_API_KEY not configured/invalid – skipping GPT call (using FAQ/fallback)."
-                )
-                return None
-
-            if session_id and not self._allow_gpt_call(session_id):
-                print(
-                    f"[GPT] Rate limit reached for session {session_id} – skipping GPT call and using fallback."
-                )
-                return None
-
-            openai_client = OpenAI(api_key=openai_api_key)
-
-            # Get conversation history
-            history = (
-                ChatMessage.query.filter_by(conversation_id=conversation.id)
-                .order_by(ChatMessage.timestamp.asc())
-                .all()
-            )
-
-            # Summarize older messages to preserve long-term memory without blowing tokens
-            history_limit = 10
-            history_dicts = [{"sender": m.sender, "message": m.message} for m in history]
-            context = ""
-            if len(history) > history_limit:
-                older = history_dicts[:-history_limit]
-                recent = history_dicts[-history_limit:]
-                older_summary = summarization_service.generate_summary(context_memory, older)
-                context = f"(Streszczenie wcześniejszych wiadomości: {older_summary})\n"
-                history_dicts = recent
-
-            context += "\n".join(
-                [
-                    f"{'User' if msg['sender'] == 'user' else 'Bot'}: {msg['message']}"
-                    for msg in history_dicts
-                ]
-            )
-
-            # Add memory context
-            memory_prompt = self._build_memory_prompt(context_memory)
-
-            print(f"[GPT] Processing: {user_message[:50]}...")
-            messages = [
-                {"role": "system", "content": SYSTEM_PROMPT + memory_prompt},
-                {"role": "user", "content": f"Context:\n{context}\n\nUser: {user_message}"},
-            ]
-
-            response = openai_client.chat.completions.create(
-                model="gpt-4o-mini", messages=messages, max_tokens=500, temperature=0.7
-            )
-
-            bot_response = response.choices[0].message.content
-            print(f"[GPT] Response: {bot_response[:100]}...")
-            return bot_response
-
-        except Exception as e:
-            import logging
-            import traceback
-
-            logger = logging.getLogger(__name__)
-            logger.error(f"[GPT] OpenAI API error: {e}", exc_info=True)
-            print(f"[GPT] Error: {e}")
-            print(f"[GPT] Traceback: {traceback.format_exc()}")
-            # Return None to trigger FAQ/default fallback (not duplicate error message)
+        if not self._gpt_enabled:
+            print("[GPT] GPT_FALLBACK_ENABLED=false – skipping GPT call")
             return None
+
+        if session_id and not self._allow_gpt_call(session_id):
+            print(
+                f"[GPT] Rate limit reached for session {session_id} – skipping GPT call and using fallback."
+            )
+            return None
+
+        history = (
+            ChatMessage.query.filter_by(conversation_id=conversation.id)
+            .order_by(ChatMessage.timestamp.asc())
+            .all()
+        )
+
+        history_limit = 10
+        history_dicts = [{"sender": m.sender, "message": m.message} for m in history]
+        context = ""
+        if len(history) > history_limit:
+            older = history_dicts[:-history_limit]
+            recent = history_dicts[-history_limit:]
+            older_summary = summarization_service.generate_summary(context_memory, older)
+            context = f"(Streszczenie wcześniejszych wiadomości: {older_summary})\n"
+            history_dicts = recent
+
+        context += "\n".join(
+            [
+                f"{'User' if msg['sender'] == 'user' else 'Bot'}: {msg['message']}"
+                for msg in history_dicts
+            ]
+        )
+
+        memory_prompt = self._build_memory_prompt(context_memory)
+
+        print(f"[GPT] Processing: {user_message[:50]}...")
+        messages = [
+            {"role": "system", "content": SYSTEM_PROMPT + memory_prompt},
+            {"role": "user", "content": f"Context:\n{context}\n\nUser: {user_message}"},
+        ]
+
+        bot_response = run_llm(messages, temperature=0.7, max_tokens=500)
+        if bot_response:
+            print(f"[GPT] Response: {bot_response[:100]}...")
+        return bot_response
 
     def _allow_gpt_call(self, session_id: str) -> bool:
         """Simple in-memory rate limit for GPT calls per session."""
