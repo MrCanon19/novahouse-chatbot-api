@@ -16,8 +16,9 @@ def create_lead():
     """Create a new lead"""
     # Rate limit lead creation per session/IP
     try:
-        from src.services.rate_limiter import rate_limiter
+        from src.services.rate_limiter import ensure_rate_limiter
 
+        rate_limiter = ensure_rate_limiter()
         session_id = request.headers.get("X-Session-ID") or request.remote_addr or "default"
         allowed, retry_after = rate_limiter.check_rate_limit(
             session_id, "lead_create", max_requests=5, window_seconds=60

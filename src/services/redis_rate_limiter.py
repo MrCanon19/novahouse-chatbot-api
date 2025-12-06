@@ -17,7 +17,17 @@ class RedisRateLimiter:
     """Redis-based rate limiter with sliding window"""
 
     def __init__(self):
-        self.redis = get_redis_cache().redis_client
+        # Lazy load redis client only when needed
+        self._redis = None
+
+    @property
+    def redis(self):
+        """Lazy load redis client"""
+        if self._redis is None:
+            cache = get_redis_cache()
+            if cache and cache.redis_client:
+                self._redis = cache.redis_client
+        return self._redis
 
     def check_rate_limit(
         self,
@@ -89,8 +99,20 @@ class RedisRateLimiter:
             return True, {"limit": limit, "remaining": limit, "reset": int(time.time()) + window}
 
 
-# Global rate limiter instance
-redis_rate_limiter = RedisRateLimiter(redis_cache)
+# Global rate limiter instance - lazy loaded
+redis_rate_limiter = None
+
+
+def get_redis_rate_limiter():
+    """Lazy load Redis rate limiter"""
+    global redis_rate_limiter
+    if redis_rate_limiter is None:
+        try:
+            redis_rate_limiter = RedisRateLimiter()
+        except Exception as e:
+            print(f"Failed to create Redis rate limiter: {e}")
+            return None
+    return redis_rate_limiter
 
 
 def rate_limit_redis(limit: int = 100, window: int = 60, key_func=None):
@@ -111,6 +133,12 @@ def rate_limit_redis(limit: int = 100, window: int = 60, key_func=None):
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
+            # Get rate limiter (lazy load)
+            limiter = get_redis_rate_limiter()
+            if not limiter:
+                # Fallback: allow request if Redis unavailable
+                return func(*args, **kwargs)
+
             # Generate rate limit key
             if key_func:
                 key = key_func(request)
@@ -119,7 +147,7 @@ def rate_limit_redis(limit: int = 100, window: int = 60, key_func=None):
                 key = f"rate_limit:{request.remote_addr}:{request.endpoint}"
 
             # Check rate limit
-            allowed, info = redis_rate_limiter.is_allowed(key, limit, window)
+            allowed, info = limiter.is_allowed(key, limit, window)
 
             if not allowed:
                 response = jsonify(
