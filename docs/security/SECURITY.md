@@ -148,7 +148,7 @@ pip install --upgrade <package>
 
 ### 9. API Authentication
 
-**Current:** 
+**Current:**
 - ✅ Admin endpoints protected with @require_api_key
 - ✅ backup.py: All 4 endpoints require X-API-Key
 - ✅ dashboard_widgets.py: All 8 endpoints require X-API-Key

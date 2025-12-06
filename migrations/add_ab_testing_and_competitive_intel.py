@@ -4,7 +4,6 @@ Date: 2024-12-19
 """
 
 from sqlalchemy import inspect
-
 from src.models.chatbot import CompetitiveIntel, FollowUpTest, db
 
 

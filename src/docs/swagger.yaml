@@ -3,7 +3,7 @@ info:
   title: NovaHouse Chatbot API
   description: |
     API dla inteligentnego chatbota NovaHouse - firmy specjalizującej się w kompleksowych remontach i wykończeniach wnętrz.
-    
+
     ## Features
     - 🤖 AI-powered chatbot z Google Gemini
     - 📊 Advanced analytics & reporting
@@ -13,7 +13,7 @@ info:
     - 🔒 RODO/GDPR compliance
     - 🛡️ Rate limiting & security
     - 💾 Caching system
-    
+
   version: 2.1.0
   contact:
     name: NovaHouse Support
@@ -52,7 +52,7 @@ components:
       in: header
       name: X-API-Key
       description: Admin API key for protected endpoints
-  
+
   schemas:
     ChatMessage:
       type: object
@@ -71,7 +71,7 @@ components:
           type: string
           description: Optional user identifier
           example: "user_12345"
-    
+
     ChatResponse:
       type: object
       properties:
@@ -99,7 +99,7 @@ components:
             type: string
           description: Suggested next actions for user
           example: ["Zobacz portfolio", "Umów rozmowę"]
-    
+
     Lead:
       type: object
       required:
@@ -166,7 +166,7 @@ components:
           type: boolean
           description: RODO consent given
           example: true
-    
+
     Portfolio:
       type: object
       properties:
@@ -189,7 +189,7 @@ components:
           type: string
           format: uri
           example: "https://novahouse.pl/realizacje/apartament-wilanow"
-    
+
     Review:
       type: object
       properties:
@@ -210,7 +210,7 @@ components:
         source:
           type: string
           example: "Google"
-    
+
     AnalyticsStats:
       type: object
       properties:
@@ -237,7 +237,7 @@ components:
             pricing: 423
             services: 356
             portfolio: 289
-    
+
     Error:
       type: object
       properties:
@@ -492,7 +492,7 @@ paths:
                     type: integer
                   per_page:
                     type: integer
-    
+
     post:
       tags: [leads]
       summary: Create new lead

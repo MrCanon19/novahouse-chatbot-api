@@ -8,7 +8,6 @@ import os
 from typing import Dict, Optional
 
 import requests
-
 from src.services.slow_query_logger import log_slow_query
 
 

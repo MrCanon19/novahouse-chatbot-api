@@ -17,4 +17,3 @@ steps:
 # Opcje budowania
 options:
   logging: CLOUD_LOGGING_ONLY
-

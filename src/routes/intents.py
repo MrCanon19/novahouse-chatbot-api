@@ -5,7 +5,6 @@ Intent management endpoints
 import json
 
 from flask import Blueprint, jsonify
-
 from src.models.chatbot import Intent
 
 intents_bp = Blueprint("intents", __name__)

@@ -4,11 +4,10 @@
 Automated CHANGELOG Generator
 Generates changelog from conventional commits
 """
-import subprocess
 import re
-from datetime import datetime
+import subprocess
 from collections import defaultdict
-import sys
+from datetime import datetime
 
 # Conventional commit types
 COMMIT_TYPES = {

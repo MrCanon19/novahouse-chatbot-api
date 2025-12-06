@@ -5,7 +5,6 @@ Requires API_KEY authentication
 """
 
 from flask import Blueprint, jsonify
-
 from src.middleware.security import require_api_key
 from src.models.chatbot import db
 

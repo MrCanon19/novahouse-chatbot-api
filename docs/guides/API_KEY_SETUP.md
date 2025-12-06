@@ -59,10 +59,10 @@ env_variables:
   SECRET_KEY: "2e2abf938bb057c9dea1515ec726a2ab4fc378399596e3309b1e310c4e3ff489"
   DATABASE_URL: "postgresql://..."
   MONDAY_API_KEY: "..."
-  
+
   # ✅ Dodaj admin API key:
   API_KEY: "uZ8vN-xQw3TpLmK9rY2fA+jH5cV=Bn4D"
-  
+
   # Optional services:
   REDIS_URL: "redis://..."
   TWILIO_ACCOUNT_SID: "..."
@@ -99,24 +99,24 @@ def require_api_key(f):
     @wraps(f)
     def wrapped(*args, **kwargs):
         import os
-        
+
         # Sprawdź czy API_KEY jest skonfigurowany
         api_key = os.getenv('API_KEY') or os.getenv('ADMIN_API_KEY')
         if not api_key:
             # Development mode - allow access
             return f(*args, **kwargs)
-        
+
         # Sprawdź klucz w headerach
         provided_key = request.headers.get('X-API-Key') or request.headers.get('X-ADMIN-API-KEY')
-        
+
         if not provided_key or provided_key != api_key:
             return jsonify({
                 'error': 'Unauthorized',
                 'message': 'Valid API key required'
             }), 401
-        
+
         return f(*args, **kwargs)
-    
+
     return wrapped
 ```
 

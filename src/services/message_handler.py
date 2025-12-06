@@ -27,6 +27,11 @@ class MessageHandler:
 
     def __init__(self):
         self.validator = ContextValidator()
+        # Per-session GPT call limiter to prevent runaway costs
+        self._gpt_call_window_sec = int(os.getenv("GPT_CALL_WINDOW_SEC", "60"))
+        self._gpt_calls_per_window = int(os.getenv("GPT_CALLS_PER_WINDOW", "5"))
+        self._gpt_call_tracker: Dict[str, Dict[str, float]] = {}
+        self._gpt_enabled = os.getenv("GPT_FALLBACK_ENABLED", "true").lower() == "true"
 
     def process_message(self, user_message: str, session_id: str) -> Dict:
         """
@@ -258,10 +263,12 @@ class MessageHandler:
 
         if errors:
             print(f"[Validation] Errors: {errors}")
-            # Keep original values if validation failed
-            for field, error in errors.items():
+            # Keep original values if validation failed; drop newly provided invalid fields
+            for field in list(errors.keys()):
                 if field in updated_context and field in existing_context:
                     updated_context[field] = existing_context[field]
+                else:
+                    updated_context.pop(field, None)
 
         # Merge sanitized values
         updated_context.update(sanitized)
@@ -325,7 +332,11 @@ class MessageHandler:
 
             if use_gpt:
                 bot_response = self._get_gpt_response(
-                    user_message, conversation, context_memory, sentiment_analysis
+                    user_message,
+                    conversation,
+                    context_memory,
+                    sentiment_analysis,
+                    conversation.session_id,
                 )
 
         # 3. Standard FAQ (for simple, factual questions without context)
@@ -343,7 +354,11 @@ class MessageHandler:
         # 5. OpenAI GPT (fallback for everything else)
         if not bot_response:
             bot_response = self._get_gpt_response(
-                user_message, conversation, context_memory, sentiment_analysis
+                user_message,
+                conversation,
+                context_memory,
+                sentiment_analysis,
+                conversation.session_id,
             )
 
         # 5. Learned FAQ (as fallback)
@@ -402,32 +417,54 @@ class MessageHandler:
         conversation: ChatConversation,
         context_memory: Dict,
         sentiment_analysis: Dict = None,
+        session_id: Optional[str] = None,
     ) -> Optional[str]:
         """Get response from OpenAI GPT with retry logic"""
         try:
             from openai import OpenAI
-
             from src.routes.chatbot import SYSTEM_PROMPT
 
+            if not self._gpt_enabled:
+                print("[GPT] GPT_FALLBACK_ENABLED=false – skipping GPT call")
+                return None
+
             openai_api_key = os.getenv("OPENAI_API_KEY")
-            if not openai_api_key:
+            if not openai_api_key or openai_api_key.lower().startswith("test_"):
                 print(
-                    "ALERT: OPENAI_API_KEY not configured or expired! Sprawdź sekret w repozytorium GitHub."
+                    "[GPT] OPENAI_API_KEY not configured/invalid – skipping GPT call (using FAQ/fallback)."
                 )
+                return None
+
+            if session_id and not self._allow_gpt_call(session_id):
+                print(
+                    f"[GPT] Rate limit reached for session {session_id} – skipping GPT call and using fallback."
+                )
+                return None
+
             openai_client = OpenAI(api_key=openai_api_key)
 
             # Get conversation history
             history = (
                 ChatMessage.query.filter_by(conversation_id=conversation.id)
-                .order_by(ChatMessage.timestamp.desc())
-                .limit(10)
+                .order_by(ChatMessage.timestamp.asc())
                 .all()
             )
 
-            context = "\n".join(
+            # Summarize older messages to preserve long-term memory without blowing tokens
+            history_limit = 10
+            history_dicts = [{"sender": m.sender, "message": m.message} for m in history]
+            context = ""
+            if len(history) > history_limit:
+                older = history_dicts[:-history_limit]
+                recent = history_dicts[-history_limit:]
+                older_summary = summarization_service.generate_summary(context_memory, older)
+                context = f"(Streszczenie wcześniejszych wiadomości: {older_summary})\n"
+                history_dicts = recent
+
+            context += "\n".join(
                 [
-                    f"{'User' if msg.sender == 'user' else 'Bot'}: {msg.message}"
-                    for msg in reversed(history[:-1])
+                    f"{'User' if msg['sender'] == 'user' else 'Bot'}: {msg['message']}"
+                    for msg in history_dicts
                 ]
             )
 
@@ -458,6 +495,22 @@ class MessageHandler:
             print(f"[GPT] Traceback: {traceback.format_exc()}")
             # Return None to trigger FAQ/default fallback (not duplicate error message)
             return None
+
+    def _allow_gpt_call(self, session_id: str) -> bool:
+        """Simple in-memory rate limit for GPT calls per session."""
+        now = time.time()
+        record = self._gpt_call_tracker.get(session_id, {"start": now, "count": 0})
+        window_elapsed = now - record["start"]
+
+        if window_elapsed > self._gpt_call_window_sec:
+            record = {"start": now, "count": 0}
+
+        if record["count"] >= self._gpt_calls_per_window:
+            return False
+
+        record["count"] += 1
+        self._gpt_call_tracker[session_id] = record
+        return True
 
     def _build_memory_prompt(self, context_memory: Dict) -> str:
         """Build comprehensive memory prompt for GPT"""

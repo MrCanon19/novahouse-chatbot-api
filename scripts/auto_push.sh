@@ -16,7 +16,7 @@ cd /Users/michalmarini/Projects/manus/novahouse-chatbot-api
 # Check if there are changes to commit
 if [[ -n $(git status -s) ]]; then
     echo "[$TIMESTAMP] Changes detected, creating backup..." >> "$LOG_FILE"
-    
+
     # Create backup before pushing
     BACKUP_NAME="backup_$(date +%Y%m%d_%H%M%S).tar.gz"
     tar -czf "$BACKUP_DIR/$BACKUP_NAME" \
@@ -26,13 +26,13 @@ if [[ -n $(git status -s) ]]; then
         --exclude='.git' \
         --exclude='backups' \
         . 2>> "$LOG_FILE"
-    
+
     echo "[$TIMESTAMP] Backup created: $BACKUP_NAME" >> "$LOG_FILE"
-    
+
     # Add and commit changes
     git add -A
     git commit -m "Auto: periodic workspace sync - $(date +%Y%m%d_%H%M%S)" >> "$LOG_FILE" 2>&1
-    
+
     echo "[$TIMESTAMP] Changes committed" >> "$LOG_FILE"
 else
     echo "[$TIMESTAMP] No changes to commit" >> "$LOG_FILE"

@@ -247,7 +247,7 @@ const socket = io('https://glass-core-467907-e9.ey.r.appspot.com');
 
 socket.on('connect', () => {
   console.log('✅ Connected to WebSocket!');
-  
+
   socket.emit('chat_message', {
     session_id: 'test-' + Date.now(),
     message: 'Ile kosztuje pakiet Standard?',
@@ -262,7 +262,7 @@ socket.on('message_received', (data) => {
 socket.on('bot_response', (data) => {
   console.log('🤖 Bot response:', data.response);
   console.log('💾 Conversation ID:', data.conversation_id);
-  
+
   // Powinno zwrócić prawdziwą odpowiedź AI, nie "Echo:"
   // Przykład: "Pakiet Standard kosztuje od 1200 zł/m²..."
 });

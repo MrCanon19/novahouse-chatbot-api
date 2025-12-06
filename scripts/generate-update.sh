@@ -49,9 +49,9 @@ echo ""
 cat > "${UPDATE_FILE}" << EOF
 # 🚀 Aktualizacja Projektu NovaHouse Chatbot
 
-**Wersja:** ${VERSION}  
-**Data deployment:** ${READABLE_DATE} ${DEPLOY_TIME}  
-**Branch:** ${BRANCH}  
+**Wersja:** ${VERSION}
+**Data deployment:** ${READABLE_DATE} ${DEPLOY_TIME}
+**Branch:** ${BRANCH}
 **Commit:** ${COMMIT_HASH}
 
 ---
@@ -113,7 +113,7 @@ $(git log --oneline -5 --pretty=format:"- %s (%h)")
 
 ---
 
-**Wygenerowano:** ${READABLE_DATE} ${DEPLOY_TIME}  
+**Wygenerowano:** ${READABLE_DATE} ${DEPLOY_TIME}
 **Status:** 🟡 Oczekuje na weryfikację
 EOF
 

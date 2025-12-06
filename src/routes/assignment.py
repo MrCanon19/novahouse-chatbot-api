@@ -5,7 +5,6 @@ Endpoints for managing lead assignments to sales team.
 """
 
 from flask import Blueprint, jsonify
-
 from src.models.chatbot import Lead
 from src.services.lead_assignment_service import lead_assignment_service
 

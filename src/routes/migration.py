@@ -5,7 +5,6 @@ Only accessible with ADMIN_API_KEY
 
 from flask import Blueprint, jsonify, request
 from sqlalchemy import inspect, text
-
 from src.models.chatbot import db
 
 migration_bp = Blueprint("migration", __name__)

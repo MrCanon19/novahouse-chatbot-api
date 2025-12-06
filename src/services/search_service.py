@@ -8,12 +8,11 @@ import os
 from datetime import datetime, timezone
 from typing import Any, Dict, List
 
+from src.services.slow_query_logger import log_slow_query
 from whoosh.analysis import StemmingAnalyzer
 from whoosh.fields import DATETIME, ID, KEYWORD, TEXT, Schema
 from whoosh.index import create_in, exists_in, open_dir
 from whoosh.qparser import FuzzyTermPlugin, MultifieldParser
-
-from src.services.slow_query_logger import log_slow_query
 
 # Search index directory (use /tmp in App Engine - read-only filesystem)
 INDEX_DIR = (

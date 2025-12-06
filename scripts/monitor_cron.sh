@@ -17,7 +17,7 @@ if [ -n "$RECENT_ERRORS" ]; then
     echo "$(date): WARNING - Errors detected in auto-push logs:" >> "$ALERT_FILE"
     echo "$RECENT_ERRORS" >> "$ALERT_FILE"
     echo "----------------------------------------" >> "$ALERT_FILE"
-    
+
     # Optional: Send notification (macOS)
     osascript -e 'display notification "Auto-push errors detected! Check logs." with title "Git Auto-Push Monitor"' 2>/dev/null || true
 fi

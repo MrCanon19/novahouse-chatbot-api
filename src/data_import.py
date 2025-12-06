@@ -13,7 +13,6 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from flask import Flask
-
 from src.models.chatbot import Entity, Intent, db
 
 logger = logging.getLogger(__name__)

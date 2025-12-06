@@ -8,7 +8,6 @@ from datetime import datetime, timezone
 
 from flask import Blueprint, jsonify, request
 from sqlalchemy import text
-
 from src.models.chatbot import db
 
 admin_migration_bp = Blueprint("admin_migration", __name__)

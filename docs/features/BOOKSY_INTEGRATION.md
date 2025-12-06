@@ -199,13 +199,13 @@ Przykład integacji w HTML:
 <!-- Booking Widget -->
 <div id="booking-widget" style="margin-top: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 8px;">
     <h3>📅 Zarezerwuj konsultację</h3>
-    
+
     <label>Wybierz usługę:</label>
     <select id="service-select"></select>
-    
+
     <label>Wybierz termin:</label>
     <select id="slots-select"></select>
-    
+
     <button onclick="confirmBooking()">Zarezerwuj</button>
 </div>
 
@@ -213,7 +213,7 @@ Przykład integacji w HTML:
 async function loadServices() {
     const response = await fetch('/api/booking/services');
     const data = await response.json();
-    
+
     const select = document.getElementById('service-select');
     data.services.forEach(service => {
         const option = document.createElement('option');
@@ -226,7 +226,7 @@ async function loadServices() {
 async function loadSlots(serviceId) {
     const response = await fetch(`/api/booking/available-slots?service_id=${serviceId}`);
     const data = await response.json();
-    
+
     const select = document.getElementById('slots-select');
     select.innerHTML = '';
     data.slots.forEach(slot => {
@@ -240,7 +240,7 @@ async function loadSlots(serviceId) {
 async function confirmBooking() {
     const slot = document.getElementById('slots-select').value;
     const service = document.getElementById('service-select').value;
-    
+
     const response = await fetch('/api/booking/create', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -252,7 +252,7 @@ async function confirmBooking() {
             start_time: slot
         })
     });
-    
+
     const result = await response.json();
     alert(`✅ Rezerwacja potwierdzona! ID: ${result.booking_id}`);
 }
@@ -275,9 +275,9 @@ W `src/routes/chatbot.py` dodaj logikę oferowania rezerwacji:
 ```python
 def get_default_response(message: str) -> str:
     """Get a default response when Gemini is not available"""
-    
+
     message_lower = message.lower()
-    
+
     if any(word in message_lower for word in ['rezerwacja', 'termin', 'umówić', 'spotkanie']):
         return """
 🗓️ **Chętnie umówimy Cię na konsultację!**
@@ -288,7 +288,7 @@ Dostępne usługi:
 
 Kliknij przycisk poniżej, aby wybrać termin. ⬇️
 """
-    
+
     # ... rest of default responses
 ```
 

@@ -169,10 +169,10 @@ curl http://localhost:8080/api/analytics/export?type=overview&days=30
 ### Problemy:
 1. **Brak endpointu do zarządzania leadami**
    - Potrzebne: Edycja statusu leada, masowe operacje
-   
+
 2. **Brak sekcji zarządzania rezerwacjami**
    - Potrzebne: Wyświetlenie zarezerwowanych konsultacji z Booksy
-   
+
 3. **Brak analytics dla leadów po źródle**
    - Potrzebne: Chatbot vs. Kwestionariusz vs. Inne źródła
 

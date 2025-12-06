@@ -75,7 +75,7 @@
             const q = questions[currentQuestion];
             updateProgress();
             let html = `<div class="question-number">Pytanie ${currentQuestion + 1} z ${questions.length}</div><div class="question-title">${q.question}</div>`;
-            
+
             if (q.type === 'choice') {
                 html += '<div class="options">';
                 q.options.forEach(opt => html += `<div class="option" onclick="selectOption('${opt}')">${opt}</div>`);
@@ -85,7 +85,7 @@
             } else {
                 html += `<input type="number" id="answer-input" onchange="inputAnswer(this.value)" placeholder="Wpisz wartość">`;
             }
-            
+
             document.getElementById('question-container').innerHTML = html;
             document.getElementById('next-btn').disabled = true;
         }

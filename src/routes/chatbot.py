@@ -878,7 +878,12 @@ AI_PROVIDER = None
 def ensure_openai_client():
     """Ensure OpenAI client is initialized (lazy loading)"""
     global openai_client, AI_PROVIDER
-    if openai_client is None and OPENAI_API_KEY:
+    gpt_enabled = os.getenv("GPT_FALLBACK_ENABLED", "true").lower() == "true"
+    if not gpt_enabled:
+        print("⚠️  GPT_FALLBACK_ENABLED=false – skipping GPT client init")
+        return None
+
+    if openai_client is None and OPENAI_API_KEY and not OPENAI_API_KEY.lower().startswith("test_"):
         client = get_openai_client()
         if client:
             openai_client = client
@@ -886,6 +891,8 @@ def ensure_openai_client():
             print("✅ OpenAI GPT-4o-mini enabled (proven & reliable)")
         else:
             print("⚠️  No AI configured - set OPENAI_API_KEY")
+    elif not OPENAI_API_KEY or OPENAI_API_KEY.lower().startswith("test_"):
+        print("⚠️  OPENAI_API_KEY missing/placeholder – GPT disabled")
     return openai_client
 
 

@@ -3,7 +3,7 @@
 
 [run]
 source = src
-omit = 
+omit =
     */tests/*
     */venv/*
     */__pycache__/*

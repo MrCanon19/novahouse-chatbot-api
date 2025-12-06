@@ -100,13 +100,13 @@ def load_secrets():
             from google.cloud import secretmanager
             client = secretmanager.SecretManagerServiceClient()
             project_id = os.getenv('GOOGLE_CLOUD_PROJECT')
-            
+
             secrets_to_load = ['SECRET_KEY', 'DATABASE_URL', 'MONDAY_API_KEY']
             for secret_name in secrets_to_load:
                 name = f"projects/{project_id}/secrets/{secret_name}/versions/latest"
                 response = client.access_secret_version(name=name)
                 os.environ[secret_name] = response.payload.data.decode('UTF-8')
-            
+
             print("✅ Secrets loaded from Secret Manager")
         except Exception as e:
             print(f"⚠️ Failed to load secrets: {e}")
