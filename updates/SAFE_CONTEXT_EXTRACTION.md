@@ -5,6 +5,10 @@
 - Updated `src/routes/chatbot.py` and `src/services/message_handler.py` to use the protected extractor.
 - Documented the migration path, request flow, and guardrails for the new extractor.
 
+## Scope
+- Runtime behavior has not changed beyond the existing switch to `extract_context_safe` in the chatbot route and message handler.
+- Notes below are informational for rollout and production monitoring.
+
 ## Migration notes
 - Replaced the legacy context extractor with `extract_context_safe` in the chatbot route so every new conversation is hydrated through the safeguarded path.
 - Simplified `MessageHandler` to rely solely on the validated payload returned by `extract_context_safe`, removing the legacy fallback logic.
