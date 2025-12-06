@@ -165,8 +165,16 @@ class RedisCache:
             return {"enabled": False, "error": str(e)}
 
 
-# Global cache instance
-redis_cache = RedisCache()
+# Global cache instance - lazy loaded to avoid import deadlock on App Engine
+redis_cache = None
+
+
+def get_redis_cache():
+    """Lazy load redis_cache to avoid import deadlock on App Engine"""
+    global redis_cache
+    if redis_cache is None:
+        redis_cache = RedisCache()
+    return redis_cache
 
 
 def cached_redis(ttl: int = 300, key_prefix: str = "cache"):
@@ -190,7 +198,8 @@ def cached_redis(ttl: int = 300, key_prefix: str = "cache"):
             cache_key = f"{key_prefix}:{func.__name__}:{str(args)}:{str(kwargs)}"
 
             # Try to get from cache
-            cached_value = redis_cache.get(cache_key)
+            cache = get_redis_cache()
+            cached_value = cache.get(cache_key)
             if cached_value is not None:
                 return cached_value
 
@@ -198,7 +207,7 @@ def cached_redis(ttl: int = 300, key_prefix: str = "cache"):
             result = func(*args, **kwargs)
 
             # Store in cache
-            redis_cache.set(cache_key, result, ttl)
+            cache.set(cache_key, result, ttl)
 
             return result
 
@@ -207,22 +216,31 @@ def cached_redis(ttl: int = 300, key_prefix: str = "cache"):
     return decorator
 
 
+def get_redis_cache():
+    """Lazy load redis_cache to avoid import deadlock on App Engine"""
+    global redis_cache
+    if redis_cache is None:
+        redis_cache = RedisCache()
+    return redis_cache
+
+
 def warm_redis_cache():
     """Pre-warm Redis cache with frequently accessed data"""
     try:
         from src.knowledge.novahouse_info import CLIENT_REVIEWS, FAQ, PORTFOLIO, PROCESS_STEPS
 
+        cache = get_redis_cache()
         # Cache FAQ
-        redis_cache.set("knowledge:faq", FAQ, ttl=3600)
+        cache.set("knowledge:faq", FAQ, ttl=3600)
 
         # Cache portfolio
-        redis_cache.set("knowledge:portfolio", PORTFOLIO, ttl=3600)
+        cache.set("knowledge:portfolio", PORTFOLIO, ttl=3600)
 
         # Cache process
-        redis_cache.set("knowledge:process", PROCESS_STEPS, ttl=3600)
+        cache.set("knowledge:process", PROCESS_STEPS, ttl=3600)
 
         # Cache reviews
-        redis_cache.set("knowledge:reviews", CLIENT_REVIEWS, ttl=3600)
+        cache.set("knowledge:reviews", CLIENT_REVIEWS, ttl=3600)
 
         print("✅ Redis cache warmed with knowledge base data")
 

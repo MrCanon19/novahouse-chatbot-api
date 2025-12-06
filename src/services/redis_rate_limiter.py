@@ -10,14 +10,14 @@ from functools import wraps
 
 from flask import jsonify, request
 
-from src.services.redis_service import redis_cache
+from src.services.redis_service import get_redis_cache
 
 
 class RedisRateLimiter:
     """Redis-based rate limiter with sliding window"""
 
-    def __init__(self, redis_client):
-        self.redis = redis_client
+    def __init__(self):
+        self.redis = get_redis_cache().redis_client
 
     def check_rate_limit(
         self,

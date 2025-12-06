@@ -78,19 +78,33 @@ class RateLimiter:
 
 
 # Global rate limiter instance with Redis fallback
-try:
-    from src.services.redis_rate_limiter import RedisRateLimiter
-    from src.services.redis_service import redis_cache
+def get_rate_limiter():
+    """Lazy load rate limiter to avoid import deadlock"""
+    try:
+        from src.services.redis_rate_limiter import RedisRateLimiter
+        from src.services.redis_service import get_redis_cache
 
-    if redis_cache.enabled:
-        # Use Redis-based rate limiter for production (multi-instance safe)
-        rate_limiter = RedisRateLimiter(redis_cache)
-    else:
-        # Fallback to in-memory for development
-        rate_limiter = RateLimiter()
-except Exception:
-    # Fallback if Redis unavailable
-    rate_limiter = RateLimiter()
+        cache = get_redis_cache()
+        if cache.enabled:
+            # Use Redis-based rate limiter for production (multi-instance safe)
+            return RedisRateLimiter()
+        else:
+            # Fallback to in-memory for development
+            return RateLimiter()
+    except Exception:
+        # Fallback if Redis unavailable
+        return RateLimiter()
+
+
+rate_limiter = None
+
+
+def ensure_rate_limiter():
+    """Ensure rate limiter is initialized"""
+    global rate_limiter
+    if rate_limiter is None:
+        rate_limiter = get_rate_limiter()
+    return rate_limiter
 
 
 def rate_limit(
