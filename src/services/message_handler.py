@@ -93,21 +93,35 @@ class MessageHandler:
                 print(f"[MultiTurn] Resolved '{user_message}' -> '{resolved_message}'")
                 normalized_message = resolved_message
 
-            # 7. Initialize state machine
+            # 7. Check for out-of-scope queries BEFORE entity extraction
+            out_of_scope_response = self._check_out_of_scope(normalized_message)
+            if out_of_scope_response:
+                # Save messages and return early
+                self._save_message(conversation.id, user_message, "user")
+                self._save_message(conversation.id, out_of_scope_response, "bot")
+                return {
+                    "response": out_of_scope_response,
+                    "session_id": session_id,
+                    "conversation_id": conversation.id,
+                    "state": "initial",
+                    "typing_indicator": True,
+                }
+
+            # 8. Initialize state machine
             state_machine = ConversationStateMachine()
             current_state = state_machine.determine_state(context_memory)
             state_machine.current_state = current_state
 
-            # 8. Extract context from message
+            # 9. Extract context from message
             context_memory = self._extract_and_validate_context(normalized_message, context_memory)
 
-            # 8b. Heuristics: enrich context if we have key signals
+            # 9b. Heuristics: enrich context if we have key signals
             # Pass both original and normalized message - use original for name extraction
             context_memory = self._enrich_context_with_heuristics(
                 normalized_message, context_memory, user_message
             )
 
-            # 9. Analyze sentiment in real-time
+            # 10. Analyze sentiment in real-time
             sentiment_analysis = sentiment_service.analyze_message_sentiment(
                 normalized_message, session_id
             )
@@ -115,7 +129,7 @@ class MessageHandler:
             # Save user message
             self._save_message(conversation.id, user_message, "user")
 
-            # 10. Generate response based on state
+            # 11. Generate response based on state
             bot_response, follow_up = self._generate_response(
                 normalized_message,
                 context_memory,
@@ -124,22 +138,22 @@ class MessageHandler:
                 sentiment_analysis,
             )
 
-            # 11. Handle state transitions
+            # 12. Handle state transitions
             new_state = state_machine.determine_state(context_memory)
             if new_state != current_state:
                 success, error = state_machine.transition(new_state)
                 if not success:
                     print(f"[StateMachine] Transition failed: {error}")
 
-            # 12. Save bot response
+            # 13. Save bot response
             self._save_message(conversation.id, bot_response, "bot")
 
-            # 13. Generate proactive suggestions
+            # 14. Generate proactive suggestions
             suggestions = proactive_suggestions.get_suggestions(
                 new_state, context_memory, user_message
             )
 
-            # 14. Update conversation context with summary
+            # 15. Update conversation context with summary
             # Note: For summary, we can use all messages (not limited to MAX_HISTORY_SIZE)
             # because context_data is stored separately and summary is for analytics
             messages_for_summary = ChatMessage.query.filter_by(
@@ -559,14 +573,50 @@ class MessageHandler:
         # Response hierarchy (GPT FIRST for intelligent responses)
         bot_response = None
 
+        # Define user_lower and is_short_confirmation early for use in multiple places
+        user_lower = user_message.lower().strip()
+        is_short_confirmation = len(user_message.split()) <= 3 and any(
+            keyword in user_lower for keyword in ["tak", "chce", "chcę", "pokaz", "pokaż"]
+        )
+
+        # 0. Check if user wants to see packages
+        # This handles: "tak chce", "chcę", "pokaż pakiety", etc.
+        wants_packages_keywords = [
+            "tak chce",
+            "tak chcę",
+            "chce",
+            "chcę",
+            "pokaż",
+            "pokaz",
+            "opowiedz",
+            "tak pokaż",
+            "tak pokaz",
+            "chcę poznać",
+            "chce poznac",
+            "jakie pakiety",
+            "pokaż pakiety",
+            "pokaz pakiety",
+        ]
+
+        # Check if explicitly asking for packages OR short confirmation when we have basic context
+        has_basic_context = context_memory.get("city") or context_memory.get("property_type")
+
+        if any(keyword in user_lower for keyword in wants_packages_keywords) or (
+            is_short_confirmation and has_basic_context
+        ):
+            # User wants to see packages - trigger package FAQ
+            bot_response = check_faq("jakie pakiety macie")
+            if bot_response:
+                context_memory["asked_about_packages"] = False  # Reset any flag
+
         # 1. Booking intent (highest priority)
-        bot_response = check_booking_intent(user_message, context_memory)
+        if not bot_response:
+            bot_response = check_booking_intent(user_message, context_memory)
 
         # 2. OpenAI GPT (FIRST for price calculations, comparisons, intelligent responses)
         # Skip FAQ for complex questions - let GPT handle them with context
-        # BUT skip GPT for greetings - use dedicated greeting response
-        if not bot_response and not is_short_greeting:
-            user_lower = user_message.lower()
+        # BUT skip GPT for greetings and short confirmations - use dedicated responses
+        if not bot_response and not is_short_greeting and not is_short_confirmation:
             # Use GPT for: prices, calculations, comparisons, complex questions with context
             use_gpt = any(
                 [
@@ -653,6 +703,7 @@ class MessageHandler:
                     bot_response = f"{acknowledgment} {question}"
                 else:
                     bot_response = "Świetnie! Mam już podstawowe informacje. Chcesz poznać nasze pakiety wykończeniowe?"
+                    context_memory["asked_about_packages"] = True  # Set flag
             else:
                 # Try clarification only if not a greeting and no useful data
                 if not is_short_greeting:
@@ -689,6 +740,47 @@ class MessageHandler:
         )
 
         return bot_response, follow_up
+
+    def _check_out_of_scope(self, message: str) -> Optional[str]:
+        """
+        Check if the message is out of scope (job search, unrelated topics)
+        Returns polite decline message if out of scope, None otherwise
+        """
+        message_lower = message.lower()
+
+        # Job search keywords
+        job_keywords = [
+            "prac",  # praca, pracę, pracować
+            "zatrudni",  # zatrudnienie, zatrudnić
+            "etat",
+            "stanowisko",
+            "rekrutacj",  # rekrutacja, rekrutację
+            "cv",
+            "aplikacj",  # aplikacja (job application)
+            "kariera",
+            "wakans",  # wakanse, wakansów
+            "ofert pracy",
+            "oferta pracy",
+            "szukam pracy",
+            "znaleźć prac",  # znaleźć pracę
+        ]
+
+        # Check if message contains job-related keywords
+        if any(keyword in message_lower for keyword in job_keywords):
+            # Make sure it's not about our work/services (wykończenie, prace wykończeniowe)
+            service_keywords = ["wykończ", "remont", "budow", "pakiet"]
+            if not any(keyword in message_lower for keyword in service_keywords):
+                return (
+                    "Cześć! Jestem asystentem NovaHouse i specjalizuję się "
+                    "w pakietach wykończeniowych mieszkań i domów. 😊\n\n"
+                    "Mogę Ci pomóc w:\n"
+                    "🏠 Wyborze pakietu wykończeniowego\n"
+                    "💰 Informacjach o cenach i wycenach\n"
+                    "📅 Umówieniu spotkania z konsultantem\n\n"
+                    "Planujesz wykończenie mieszkania lub domu?"
+                )
+
+        return None
 
     def _get_missing_fields(self, context_memory: Dict) -> list:
         missing = []
@@ -1403,7 +1495,7 @@ class MessageHandler:
 
             # PRIVACY & SECURITY: Only restore context if user has provided email or phone
             # Without explicit identifier, user gets fresh start (prevents data leakage to wrong user)
-            
+
             # Case 1: User has email - find by email
             if existing_email:
                 previous_leads = (

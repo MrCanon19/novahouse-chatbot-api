@@ -191,7 +191,10 @@ class ProactiveSuggestionsService:
         unclear_lower = unclear_input.lower()
 
         # Check if asking about packages first
-        if any(word in unclear_lower for word in ["pakiet", "express", "comfort", "premium", "indywidualny"]):
+        if any(
+            word in unclear_lower
+            for word in ["pakiet", "express", "comfort", "premium", "indywidualny"]
+        ):
             return {
                 "type": "clarification",
                 "message": "📦 Pytasz o pakiety wykończeniowe? Mogę powiedzieć o:",
