@@ -56,6 +56,8 @@ from src.models.chatbot import (
     RodoConsent,
     db,
 )
+from src.services.extract_context_safe import extract_context_safe
+from src.services.llm.engine import load_provider, run_llm
 
 chatbot_bp = Blueprint("chatbot", __name__)
 
@@ -94,13 +96,7 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
             context_memory = json.loads(conversation.context_data or "{}")
 
             # Extract and update context from user message (with safeguards)
-            try:
-                from src.services.extract_context_safe import extract_context_safe
-
-                context_memory = extract_context_safe(user_message, context_memory)
-            except ImportError:
-                # Fallback to legacy extract_context if safe version not available
-                context_memory = extract_context(user_message, context_memory)
+            context_memory = extract_context_safe(user_message, context_memory)
             conversation.context_data = json.dumps(context_memory)
 
             # Zapisz wiadomość użytkownika
@@ -129,10 +125,9 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
 
             # 4. Jeśli nie znaleziono w FAQ, ZAWSZE użyj AI (OpenAI GPT) - PRIORYTET!
             if not bot_response:
-                client = ensure_openai_client()
-                if client:
+                provider = load_provider()
+                if provider.get("client"):
                     try:
-                        # Pobierz historię konwersacji
                         history = (
                             ChatMessage.query.filter_by(conversation_id=conversation.id)
                             .order_by(ChatMessage.timestamp.desc())
@@ -143,11 +138,10 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                         context = "\n".join(
                             [
                                 f"{'User' if msg.sender == 'user' else 'Bot'}: {msg.message}"
-                                for msg in reversed(history[:-1])  # Exclude current message
+                                for msg in reversed(history[:-1])
                             ]
                         )
 
-                        # Add memory context with proper name declension
                         memory_prompt = ""
                         if context_memory:
                             from src.utils.polish_declension import PolishDeclension
@@ -158,7 +152,6 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                                 declined_name = PolishDeclension.decline_full_name(name)
                                 is_polish = PolishDeclension.is_polish_name(name.split()[0])
 
-                                # Add both forms for GPT reference
                                 memory_items.append(
                                     f"Imię: {name} (wołacz: {declined_name}, polskie: {is_polish})"
                                 )
@@ -175,7 +168,7 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                                     memory_items
                                 )
 
-                        print(f"[OpenAI GPT] Przetwarzanie: {user_message[:50]}...")
+                        print(f"[LLM] Przetwarzanie: {user_message[:50]}...")
                         messages = [
                             {"role": "system", "content": SYSTEM_PROMPT + memory_prompt},
                             {
@@ -183,23 +176,17 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                                 "content": f"Context:\n{context}\n\nUser: {user_message}",
                             },
                         ]
-                        response = client.chat.completions.create(
-                            model=GPT_MODEL,
-                            messages=messages,
-                            max_tokens=500,
-                            temperature=0.7,
-                        )
-                        bot_response = response.choices[0].message.content
-                        print(
-                            f"[OpenAI GPT] Response: {bot_response[:100] if bot_response else 'EMPTY'}..."
-                        )
+                        bot_response = run_llm(messages, model=GPT_MODEL, max_tokens=500, temperature=0.7)
+                        if bot_response:
+                            print(
+                                f"[LLM] Response: {bot_response[:100] if bot_response else 'EMPTY'}..."
+                            )
 
                     except Exception as e:
-                        print(f"[GPT ERROR] {type(e).__name__}: {e}")
-                        # Fallback tylko przy błędzie GPT
+                        print(f"[LLM ERROR] {type(e).__name__}: {e}")
                         bot_response = get_default_response(user_message)
                 else:
-                    print("[WARNING] OpenAI nie skonfigurowany - używam fallback")
+                    print("[WARNING] LLM provider nie skonfigurowany - używam fallback")
                     bot_response = get_default_response(user_message)
 
             # Jeśli NADAL brak odpowiedzi (nie powinno się zdarzyć)
@@ -501,10 +488,9 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
 
         # 4. Jeśli nie znaleziono w FAQ, ZAWSZE użyj AI (OpenAI GPT) - PRIORYTET!
         if not bot_response:
-            client = ensure_openai_client()
-            if client:
+            provider = load_provider()
+            if provider.get("client"):
                 try:
-                    # Pobierz historię konwersacji
                     history = (
                         ChatMessage.query.filter_by(conversation_id=conversation.id)
                         .order_by(ChatMessage.timestamp.desc())
@@ -515,11 +501,10 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                     context = "\n".join(
                         [
                             f"{'User' if msg.sender == 'user' else 'Bot'}: {msg.message}"
-                            for msg in reversed(history[:-1])  # Exclude current message
+                            for msg in reversed(history[:-1])
                         ]
                     )
 
-                    # Add memory context with proper name declension
                     memory_prompt = ""
                     if context_memory:
                         from src.utils.polish_declension import PolishDeclension
@@ -529,8 +514,6 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                             name = context_memory["name"]
                             parts = name.split()
                             first = parts[0]
-                            # Remaining parts of the name are not used here
-                            # Try to infer gender from first name (simple heuristic)
                             gender = "female" if first.endswith("a") else "male"
                             cases = PolishDeclension.decline_full_name_cases(name, gender)
                             is_polish = PolishDeclension.is_polish_name(first)
@@ -549,28 +532,22 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                                 memory_items
                             )
 
-                    print(f"[OpenAI GPT] Przetwarzanie: {user_message[:50]}...")
+                    print(f"[LLM] Przetwarzanie: {user_message[:50]}...")
                     messages = [
                         {"role": "system", "content": SYSTEM_PROMPT + memory_prompt},
                         {"role": "user", "content": f"Context:\n{context}\n\nUser: {user_message}"},
                     ]
-                    response = client.chat.completions.create(
-                        model=GPT_MODEL,
-                        messages=messages,
-                        max_tokens=500,
-                        temperature=0.7,
-                    )
-                    bot_response = response.choices[0].message.content
-                    print(
-                        f"[OpenAI GPT] Response: {bot_response[:100] if bot_response else 'EMPTY'}..."
-                    )
+                    bot_response = run_llm(messages, model=GPT_MODEL, max_tokens=500, temperature=0.7)
+                    if bot_response:
+                        print(
+                            f"[LLM] Response: {bot_response[:100] if bot_response else 'EMPTY'}..."
+                        )
 
                 except Exception as e:
-                    print(f"[GPT ERROR] {type(e).__name__}: {e}")
-                    # Fallback tylko przy błędzie GPT
+                    print(f"[LLM ERROR] {type(e).__name__}: {e}")
                     bot_response = get_default_response(user_message)
             else:
-                print("[WARNING] OpenAI nie skonfigurowany - używam fallback")
+                print("[WARNING] LLM provider nie skonfigurowany - używam fallback")
                 bot_response = get_default_response(user_message)
 
         # Jeśli NADAL brak odpowiedzi (nie powinno się zdarzyć)
@@ -888,22 +865,27 @@ AI_PROVIDER = None
 
 def ensure_openai_client():
     """Ensure OpenAI client is initialized (lazy loading)"""
+
     global openai_client, AI_PROVIDER
+
     gpt_enabled = os.getenv("GPT_FALLBACK_ENABLED", "true").lower() == "true"
     if not gpt_enabled:
         print("⚠️  GPT_FALLBACK_ENABLED=false – skipping GPT client init")
         return None
 
-    if openai_client is None and OPENAI_API_KEY and not OPENAI_API_KEY.lower().startswith("test_"):
-        client = get_openai_client()
-        if client:
-            openai_client = client
-            AI_PROVIDER = "openai"
-            print("✅ OpenAI GPT-4o-mini enabled (proven & reliable)")
-        else:
-            print("⚠️  No AI configured - set OPENAI_API_KEY")
-    elif not OPENAI_API_KEY or OPENAI_API_KEY.lower().startswith("test_"):
-        print("⚠️  OPENAI_API_KEY missing/placeholder – GPT disabled")
+    provider = load_provider()
+    client = provider.get("client")
+    if provider.get("name") != "openai":
+        print("⚠️  LLM_PROVIDER is not openai – skipping OpenAI client init")
+        return None
+
+    if client is None:
+        reason = provider.get("disabled_reason", "OpenAI client unavailable")
+        print(f"⚠️  {reason} – GPT disabled")
+        return None
+
+    openai_client = client
+    AI_PROVIDER = "openai"
     return openai_client
 
 
