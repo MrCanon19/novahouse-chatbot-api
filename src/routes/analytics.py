@@ -393,6 +393,12 @@ def get_lead_analytics():
         days = _clamp_days(request.args.get("days", 7, type=int))
         start_date = datetime.now(timezone.utc) - timedelta(days=days)
 
+        # Set query timeout to prevent OOM from large table scans
+        try:
+            db.session.execute(text("SET LOCAL statement_timeout TO 3000"))
+        except Exception:
+            db.session.rollback()
+
         # Leady według dnia
         leads_by_day = (
             db.session.query(
@@ -401,6 +407,7 @@ def get_lead_analytics():
             .filter(Lead.created_at >= start_date)
             .group_by(func.date(Lead.created_at))
             .order_by(func.date(Lead.created_at))
+            .limit(366)  # Max 366 days, safety limit
             .all()
         )
 
@@ -409,6 +416,7 @@ def get_lead_analytics():
             db.session.query(Lead.interested_package, func.count(Lead.id).label("count"))
             .filter(Lead.created_at >= start_date, Lead.interested_package.isnot(None))
             .group_by(Lead.interested_package)
+            .limit(100)  # Max 100 unique packages, safety limit
             .all()
         )
 
@@ -417,6 +425,7 @@ def get_lead_analytics():
             db.session.query(Lead.property_type, func.count(Lead.id).label("count"))
             .filter(Lead.created_at >= start_date, Lead.property_type.isnot(None))
             .group_by(Lead.property_type)
+            .limit(100)  # Max 100 unique property types, safety limit
             .all()
         )
 
