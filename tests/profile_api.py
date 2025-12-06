@@ -23,6 +23,7 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 def profile_chatbot_endpoint():
     """Profile chatbot message processing"""
     from flask import Flask
+
     from src.routes.chatbot import chatbot_bp
 
     app = Flask(__name__)
@@ -46,6 +47,7 @@ def profile_chatbot_endpoint():
 def profile_search_endpoint():
     """Profile knowledge base search"""
     from flask import Flask
+
     from src.routes.search import search_bp
 
     app = Flask(__name__)
@@ -67,6 +69,7 @@ def profile_search_endpoint():
 def profile_analytics_endpoint():
     """Profile analytics aggregation"""
     from flask import Flask
+
     from src.routes.analytics import analytics_bp
 
     app = Flask(__name__)

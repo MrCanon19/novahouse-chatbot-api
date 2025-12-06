@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 from unittest.mock import Mock
 
 import pytest
+
 from src.services.session_timeout import SessionTimeoutService
 
 

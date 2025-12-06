@@ -4,6 +4,7 @@ Endpointy udostępniające bazę wiedzy o firmie
 """
 
 from flask import Blueprint, jsonify
+
 from src.knowledge.novahouse_info import (
     BLOG_ARTICLES,
     CLIENT_REVIEWS,

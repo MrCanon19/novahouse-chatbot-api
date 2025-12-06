@@ -117,7 +117,7 @@ class ContextValidator:
     @staticmethod
     def validate_city(city: str) -> Tuple[bool, Optional[str], Optional[str]]:
         """
-        Validate city name
+        Validate city name using Polish cities database
 
         Returns:
             (is_valid, sanitized_value, error_message)
@@ -125,31 +125,50 @@ class ContextValidator:
         if not city or not isinstance(city, str):
             return False, None, "City is empty"
 
-        city = city.strip().lower()
+        # Try to normalize using cities database
+        try:
+            from src.utils.polish_cities import PolishCities
 
-        # Remove accents for comparison
-        city_normalized = (
-            city.replace("ł", "l")
-            .replace("ą", "a")
-            .replace("ę", "e")
-            .replace("ć", "c")
-            .replace("ń", "n")
-            .replace("ó", "o")
-            .replace("ś", "s")
-            .replace("ź", "z")
-            .replace("ż", "z")
-        )
+            normalized = PolishCities.normalize_city_name(city)
+            is_known = PolishCities.is_polish_city(normalized)
 
-        if city_normalized in ContextValidator.VALID_CITIES:
-            return True, city.title(), None
+            if is_known:
+                return True, normalized, None
+            else:
+                # Fallback: check old static list
+                city_lower = city.strip().lower()
+                if city_lower in ContextValidator.VALID_CITIES:
+                    return True, city.strip().title(), None
 
-        # Fuzzy match (close enough)
-        for valid_city in ContextValidator.VALID_CITIES:
-            if city_normalized in valid_city or valid_city in city_normalized:
-                return True, valid_city.title(), None
+                # Accept anyway but warn
+                return (
+                    True,
+                    city.strip().title(),
+                    "City not in major cities list (accepted anyway)",
+                )
+        except ImportError:
+            # Fallback to old logic if cities module not available
+            city = city.strip().lower()
+            city_normalized = (
+                city.replace("ł", "l")
+                .replace("ą", "a")
+                .replace("ę", "e")
+                .replace("ć", "c")
+                .replace("ń", "n")
+                .replace("ó", "o")
+                .replace("ś", "s")
+                .replace("ź", "z")
+                .replace("ż", "z")
+            )
 
-        # Accept anyway but warn
-        return True, city.title(), "City not in major cities list (accepted anyway)"
+            if city_normalized in ContextValidator.VALID_CITIES:
+                return True, city.title(), None
+
+            for valid_city in ContextValidator.VALID_CITIES:
+                if city_normalized in valid_city or valid_city in city_normalized:
+                    return True, valid_city.title(), None
+
+            return True, city.title(), "City not in major cities list (accepted anyway)"
 
     @staticmethod
     def validate_square_meters(sqm: Any) -> Tuple[bool, Optional[int], Optional[str]]:

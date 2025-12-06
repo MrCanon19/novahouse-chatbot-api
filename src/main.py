@@ -54,6 +54,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from flask_cors import CORS
 from sqlalchemy import text
+
 from src.models.chatbot import db
 
 # Error monitoring: GCP Error Reporting działa AUTOMATYCZNIE w App Engine!

@@ -8,8 +8,9 @@ import os
 from datetime import datetime
 from typing import List
 
-from src.services.email_service import EmailService
 from twilio.rest import Client
+
+from src.services.email_service import EmailService
 
 # Twilio configuration
 TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")

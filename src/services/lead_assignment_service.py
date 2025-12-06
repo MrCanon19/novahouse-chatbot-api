@@ -10,6 +10,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Dict, List
 
 import requests
+
 from src.models.chatbot import Lead, db
 
 

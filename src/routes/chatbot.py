@@ -13,6 +13,10 @@ from sqlalchemy.exc import SQLAlchemyError
 OPENAI_AVAILABLE = False
 _openai_client = None
 
+# GPT Model selection (env configurable)
+# Options: gpt-4o-mini (cheap, fast) | gpt-4o (expensive, better Polish) | gpt-4-turbo
+GPT_MODEL = os.getenv("GPT_MODEL", "gpt-4o-mini")  # Default: gpt-4o-mini
+
 
 def get_openai_client():
     """Lazy load OpenAI client"""
@@ -23,6 +27,7 @@ def get_openai_client():
 
             _openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
             OPENAI_AVAILABLE = True
+            print(f"✅ OpenAI client initialized with model: {GPT_MODEL}")
         except ImportError:
             OPENAI_AVAILABLE = False
             print("⚠️  openai package not installed - GPT disabled")
@@ -173,7 +178,7 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                             },
                         ]
                         response = client.chat.completions.create(
-                            model="gpt-4o",  # Better for Polish grammar & declension
+                            model=GPT_MODEL,
                             messages=messages,
                             max_tokens=500,
                             temperature=0.7,
@@ -544,7 +549,7 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                         {"role": "user", "content": f"Context:\n{context}\n\nUser: {user_message}"},
                     ]
                     response = client.chat.completions.create(
-                        model="gpt-4o",  # Better for Polish grammar & declension
+                        model=GPT_MODEL,
                         messages=messages,
                         max_tokens=500,
                         temperature=0.7,
@@ -1002,11 +1007,12 @@ SYSTEM_PROMPT = f"""Jesteś asystentem NovaHouse — firmy wykańczającej miesz
 • metraż w pytaniu → zapamiętaj i ZAWSZE przeliczaj ceny
 • budżet w pytaniu → zapamiętaj i rekomenduj pakiet
 
-🇵🇱 ODMIANA IMION:
-• Powitanie: "Cześć Janie!" / "Witaj Mario!"
-• Dalsze wiadomości: naturalnie, imię opcjonalne
-• Imiona polskie: odmieniaj (Jan→Janie, Maria→Mario)
-• Imiona obce: bez odmiany (Alex, John)
+🇵🇱 ODMIANA IMION I NATURALNY TON:
+• **Pierwsze powitanie**: użyj wołacza imienia TYLKO raz na start (np. "Cześć Marcinie!" / "Witaj Mario!")
+• **Dalsze wiadomości**: pisz naturalnie BEZ ciągłego używania imienia - używaj tylko sporadycznie (co 3-4 wiadomości) lub w szczególnych momentach (pytanie o coś ważnego, podziękowanie)
+• **Imiona polskie**: ZAWSZE odmieniaj w wołaczu (Marcin→Marcinie, Maria→Mario, Paweł→Pawle)
+• **Imiona obce**: NIE odmieniaj (Alex, John, Michael - zostaw bez zmian)
+• **Naturalność**: rozmowa ma płynąć swobodnie - nie forsuj imienia w każdej wiadomości
 
 💬 PRZYKŁADY ODPOWIEDZI:
 

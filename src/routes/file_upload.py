@@ -120,8 +120,9 @@ def upload_multiple_images():
         JSON with upload results
     """
     try:
-        from src.services.file_upload_service import file_upload_service
         from werkzeug.utils import secure_filename
+
+        from src.services.file_upload_service import file_upload_service
 
         # Check if files in request
         if "files[]" not in request.files:

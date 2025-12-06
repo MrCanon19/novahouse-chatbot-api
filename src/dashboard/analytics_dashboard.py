@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import pandas as pd
+
 from src.models.leads import Lead
 
 # Eksport danych do CSV

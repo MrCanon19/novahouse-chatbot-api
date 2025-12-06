@@ -2,6 +2,7 @@ from datetime import datetime, timedelta, timezone
 
 from flask import Blueprint, jsonify, request
 from sqlalchemy import func, text
+
 from src.models.analytics import ChatAnalytics, IntentAnalytics, PerformanceMetrics, UserEngagement
 from src.models.chatbot import Conversation, Lead, db
 
@@ -723,6 +724,7 @@ def export_csv_v2():
     """Export analytics data to CSV (v2)"""
     try:
         from flask import make_response
+
         from src.services.advanced_analytics import advanced_analytics
 
         data_type = request.args.get("type", "leads")

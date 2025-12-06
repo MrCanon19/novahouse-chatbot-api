@@ -5,6 +5,7 @@ Endpoints for application monitoring, alerts, and diagnostics.
 """
 
 from flask import Blueprint, jsonify
+
 from src.services.monitoring_service import monitoring_service
 
 monitoring_bp = Blueprint("monitoring", __name__, url_prefix="/api/monitoring")
