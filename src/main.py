@@ -410,6 +410,10 @@ def deep_health_check():
 
 # Reszta kodu do serwowania plików statycznych pozostaje bez zmian.
 @app.route("/admin")
+def admin_page():
+    return app.send_static_file("admin-dashboard.html")
+
+
 @app.route("/qualification")
 def qualification_page():
     return app.send_static_file("qualification.html")

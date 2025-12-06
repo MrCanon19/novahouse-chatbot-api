@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
 from flask import Blueprint, jsonify, request
-from sqlalchemy import func
+from sqlalchemy import func, text
 
 from src.models.analytics import ChatAnalytics, IntentAnalytics, PerformanceMetrics, UserEngagement
 from src.models.chatbot import Conversation, Lead, db
@@ -24,16 +24,21 @@ def get_overview():
         days = _clamp_days(request.args.get("days", 7, type=int))
         start_date = datetime.now(timezone.utc) - timedelta(days=days)
 
-        # Statystyki konwersacji
-        total_conversations = Conversation.query.filter(
-            Conversation.timestamp >= start_date
-        ).count()
+        # Short per-request timeout to prevent long-running analytics scans from killing workers
+        try:
+            db.session.execute(text("SET LOCAL statement_timeout TO 5000"))
+        except Exception:
+            db.session.rollback()
 
         # Statystyki leadów
-        total_leads = Lead.query.filter(Lead.created_at >= start_date).count()
+        try:
+            total_leads = Lead.query.filter(Lead.created_at >= start_date).count()
+        except Exception:
+            db.session.rollback()
+            total_leads = 0
 
-        # Unikalne sesje - dla małych zakresów (<= 3 dni) użyj prostego count distinct
-        # dla większych zwróć approximate estimate żeby uniknąć timeoutu
+        # Unikalne sesje - dla małych zakresów (<= 3 dni) użyj count distinct
+        # dla większych wykorzystaj tabelę UserEngagement (1 wiersz na sesję) aby uniknąć drogich distinctów
         if days <= 3:
             try:
                 unique_sessions = (
@@ -43,18 +48,47 @@ def get_overview():
                 )
                 unique_sessions = int(unique_sessions or 0)
             except Exception:
+                db.session.rollback()
                 unique_sessions = 0
         else:
-            # Dla większych zakresów: użyj szybkiego przybliżenia (count / avg msg per session ~5)
             try:
-                total_conv = (
+                unique_sessions = (
+                    db.session.query(func.count(UserEngagement.id))
+                    .filter(UserEngagement.first_interaction >= start_date)
+                    .scalar()
+                )
+                unique_sessions = int(unique_sessions or 0)
+            except Exception:
+                db.session.rollback()
+                unique_sessions = 0
+
+        # Statystyki konwersacji
+        if days <= 3:
+            try:
+                total_conversations = (
                     db.session.query(func.count(Conversation.id))
                     .filter(Conversation.timestamp >= start_date)
                     .scalar()
                 )
-                unique_sessions = max(1, int((total_conv or 0) / 5))
+                total_conversations = int(total_conversations or 0)
             except Exception:
-                unique_sessions = 0
+                db.session.rollback()
+                total_conversations = 0
+        else:
+            # Szybkie przybliżenie: średnia liczba wiadomości na sesję * liczba sesji
+            try:
+                avg_messages_per_session = (
+                    db.session.query(func.avg(UserEngagement.total_messages))
+                    .filter(UserEngagement.first_interaction >= start_date)
+                    .scalar()
+                )
+                avg_messages_per_session = (
+                    float(avg_messages_per_session) if avg_messages_per_session else 5.0
+                )
+                total_conversations = int(unique_sessions * avg_messages_per_session)
+            except Exception:
+                db.session.rollback()
+                total_conversations = int(unique_sessions * 5)
 
         # Średni czas trwania sesji
         avg_session_duration = (
