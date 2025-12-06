@@ -5,7 +5,7 @@
 ### 1. Naprawiono błąd indeksowania wyszukiwarki
 - **Problem**: `"string indices must be integers, not 'str'"` w `search_service.py`
 - **Przyczyna**: Kod zakładał że `FAQ` i `PORTFOLIO` to listy, a są to dictionaries
-- **Rozwiązanie**: 
+- **Rozwiązanie**:
   - FAQ: Zmieniono na `dict.items()` (18 pytań zindeksowanych)
   - PORTFOLIO: Zmieniono na `dict.items()` (4 projekty)
   - BLOG_ARTICLES: Naprawiono klucz `'excerpt'` → `get('url')`

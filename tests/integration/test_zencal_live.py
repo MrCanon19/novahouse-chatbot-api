@@ -1,7 +1,6 @@
 import os
 
 import pytest
-
 from src.integrations.zencal_client import ZencalClient
 
 

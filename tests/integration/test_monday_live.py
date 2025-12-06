@@ -1,7 +1,6 @@
 import os
 
 import pytest
-
 from src.integrations.monday_client import MondayClient
 
 

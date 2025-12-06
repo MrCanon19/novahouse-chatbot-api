@@ -1,10 +1,8 @@
 # type: ignore
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
-
 from alembic import context
+from sqlalchemy import engine_from_config, pool
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -18,6 +16,7 @@ if config.config_file_name is not None:
 # Import models for autogenerate support
 import os
 import sys
+
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -26,11 +25,9 @@ load_dotenv()
 # Add src to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-# Import all models
-from src.models.user import User, APIKey
-from src.models.chatbot import ChatbotSession, Lead, Appointment
-from src.models.analytics import AnalyticsEvent, ABTest, ABTestVariant
 from src.database import Base
+
+# Import all models
 
 # Set target metadata for autogenerate
 target_metadata = Base.metadata

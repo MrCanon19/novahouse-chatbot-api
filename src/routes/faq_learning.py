@@ -7,7 +7,6 @@ Admin endpoints for managing learned FAQs
 from datetime import datetime, timezone
 
 from flask import Blueprint, jsonify, request
-
 from src.models.chatbot import db
 from src.models.faq_learning import LearnedFAQ, UnknownQuestion
 

@@ -41,4 +41,3 @@ W przypadku problemów skontaktuj się z zespołem deweloperskim.
 
 ---
 *Wygenerowano przez Manus AI - 11 sierpnia 2025*
-

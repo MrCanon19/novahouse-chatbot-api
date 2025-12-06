@@ -57,7 +57,7 @@ const socket = io('http://localhost:8080');
 
 socket.on('connect', () => {
     console.log('✅ Connected:', socket.id);
-    
+
     // Join admin room
     socket.emit('join', {room: 'admin'});
 });
@@ -304,7 +304,7 @@ socket.emit('join', {room: 'admin'});
 socket.on('new_lead', async (lead) => {
     // Show notification
     showToast(`Nowy lead: ${lead.name}`);
-    
+
     // Refresh metrics
     const metrics = await fetch('/api/widgets/metrics/summary').then(r => r.json());
     updateDashboard(metrics.data);
@@ -323,20 +323,20 @@ socket.on('analytics_update', (data) => {
 const uploadForm = document.getElementById('uploadForm');
 uploadForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    
+
     const formData = new FormData();
     const files = document.getElementById('fileInput').files;
-    
+
     for (let file of files) {
         formData.append('files[]', file);
     }
     formData.append('folder', 'room-gallery');
-    
+
     const result = await fetch('/api/upload/multiple', {
         method: 'POST',
         body: formData
     }).then(r => r.json());
-    
+
     // Display thumbnails
     result.results.forEach(upload => {
         if (upload.success) {
@@ -358,11 +358,11 @@ searchInput.addEventListener('input', (e) => {
     debounceTimer = setTimeout(async () => {
         const query = e.target.value;
         if (query.length < 2) return;
-        
+
         const suggestions = await fetch(
             `/api/search/suggest?q=${encodeURIComponent(query)}`
         ).then(r => r.json());
-        
+
         showSuggestions(suggestions.suggestions);
     }, 300);
 });
@@ -373,7 +373,7 @@ searchInput.addEventListener('keypress', async (e) => {
         const results = await fetch(
             `/api/search?q=${encodeURIComponent(e.target.value)}&limit=10`
         ).then(r => r.json());
-        
+
         displaySearchResults(results.results);
     }
 });

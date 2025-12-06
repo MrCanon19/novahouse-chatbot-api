@@ -9,7 +9,7 @@ import sys
 # Dodaj ścieżkę główną projektu do sys.path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
-from src.models.chatbot import db, RodoConsent
+from src.models.chatbot import RodoConsent, db
 
 
 def upgrade():
@@ -32,7 +32,7 @@ def downgrade():
     print("✅ Table rodo_consents dropped successfully")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from src.main import app
 
     with app.app_context():

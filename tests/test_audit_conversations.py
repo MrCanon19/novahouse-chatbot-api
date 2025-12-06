@@ -125,7 +125,7 @@ class TestAuditSet2EdgeCases:
             conv = ChatConversation.query.filter_by(session_id=session).first()
             # Should handle gracefully without crashing
             assert conv is not None
-            print(f"✓ Test 2.3 - Contradictory data: Handled gracefully")
+            print("✓ Test 2.3 - Contradictory data: Handled gracefully")
 
     def test_9_language_mixing(self, client):
         """Test 2.4: Polish and English mixed"""
@@ -176,7 +176,7 @@ class TestAuditSet3Memory:
             )
             assert response.status_code == 200
 
-        print(f"✓ Test 3.1 - 5-message memory: Completed without errors")
+        print("✓ Test 3.1 - 5-message memory: Completed without errors")
 
     def test_12_long_conversation_memory(self, client, app):
         """Test 3.2: 10-message conversation memory (respecting rate limiting)"""
@@ -242,7 +242,7 @@ class TestAuditSet3Memory:
             assert response.status_code == 200
             assert "response" in response.get_json()
 
-        print(f"✓ Test 3.4 - Repeated questions: Handled gracefully")
+        print("✓ Test 3.4 - Repeated questions: Handled gracefully")
 
     def test_15_message_history_limit(self, client, app):
         """Test 3.5: Verify history limit is respected (should be 10 messages)"""
@@ -252,7 +252,7 @@ class TestAuditSet3Memory:
         for i in range(25):
             client.post(
                 "/api/chatbot/chat",
-                json={"message": f"Wiadomość numer {i+1}", "session_id": session},
+                json={"message": f"Wiadomość numer {i + 1}", "session_id": session},
             )
 
         with app.app_context():
@@ -282,9 +282,7 @@ class TestAuditSet4Integration:
             conv = ChatConversation.query.filter_by(session_id=session).first()
             if conv:
                 # Check if lead was attempted to be created
-                print(
-                    f"✓ Test 4.1 - Lead creation: Conversation recorded (lead creation attempted)"
-                )
+                print("✓ Test 4.1 - Lead creation: Conversation recorded (lead creation attempted)")
 
     def test_17_booking_with_zencal(self, client):
         """Test 4.2: Booking intent with ZenCal"""
@@ -349,7 +347,7 @@ class TestAuditSet4Integration:
         with app.app_context():
             conv = ChatConversation.query.filter_by(session_id=session).first()
             if conv:
-                print(f"✓ Test 4.5 - City extraction: Location info processed")
+                print("✓ Test 4.5 - City extraction: Location info processed")
 
 
 class TestAuditLanguageAndStyle:

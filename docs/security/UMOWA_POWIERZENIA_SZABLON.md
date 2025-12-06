@@ -6,7 +6,7 @@
 
 ## ⚠️ WAŻNE
 
-Ten dokument to **szablon** umowy powierzenia przetwarzania danych osobowych zgodnie z RODO. 
+Ten dokument to **szablon** umowy powierzenia przetwarzania danych osobowych zgodnie z RODO.
 
 **Przed użyciem:**
 1. Skonsultuj się z prawnikiem specjalizującym się w RODO

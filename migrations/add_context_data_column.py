@@ -3,7 +3,6 @@ Quick migration to add missing context_data column
 """
 
 from sqlalchemy import text
-
 from src.models.chatbot import db
 
 

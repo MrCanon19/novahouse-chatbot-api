@@ -61,4 +61,4 @@ repos:
       - id: debug-statements
       - id: name-tests-test
         args: [--pytest-test-first]
-        exclude: ^(tests/(locustfile|profile_api)\.py|scripts/test_.*\.py)$
+        exclude: ^(tests/(locustfile|profile_api|benchmark|smoke_tests)\.py|scripts/test_.*\.py)$

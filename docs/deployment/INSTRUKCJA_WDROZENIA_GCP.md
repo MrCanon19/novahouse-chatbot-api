@@ -242,7 +242,7 @@ resources:
 handlers:
 - url: /static
   static_dir: src/static
-  
+
 - url: /.*
   script: auto
 
@@ -640,7 +640,7 @@ from google.cloud import monitoring_v3
 def record_conversation_metric(intent, success):
     client = monitoring_v3.MetricServiceClient()
     project_name = f"projects/{PROJECT_ID}"
-    
+
     # Utwórz punkt danych
     point = monitoring_v3.Point({
         "interval": {
@@ -648,7 +648,7 @@ def record_conversation_metric(intent, success):
         },
         "value": {"int64_value": 1}
     })
-    
+
     # Wyślij metrykę
     client.create_time_series(
         name=project_name,
@@ -902,7 +902,7 @@ handlers:
 - url: /admin/.*
   script: auto
   login: admin
-  
+
 - url: /api/admin/.*
   script: auto
   login: required
@@ -1043,25 +1043,25 @@ from datetime import datetime
 def backup_database():
     # Utwórz kopię bazy danych
     backup_filename = f"backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
-    
+
     # Skopiuj bazę danych
     source_db = os.path.join(os.path.dirname(__file__), 'database', 'app.db')
     backup_path = f"/tmp/{backup_filename}"
-    
+
     # Wykonaj backup
     with sqlite3.connect(source_db) as source:
         with sqlite3.connect(backup_path) as backup:
             source.backup(backup)
-    
+
     # Prześlij do Cloud Storage
     client = storage.Client()
     bucket = client.bucket('novahouse-chatbot-backups')
     blob = bucket.blob(f"database/{backup_filename}")
     blob.upload_from_filename(backup_path)
-    
+
     # Usuń lokalny plik tymczasowy
     os.remove(backup_path)
-    
+
     return backup_filename
 
 # Automatyczny backup (uruchamiany przez Cloud Scheduler)
@@ -1096,15 +1096,15 @@ def restore_database(backup_filename):
     client = storage.Client()
     bucket = client.bucket('novahouse-chatbot-backups')
     blob = bucket.blob(f"database/{backup_filename}")
-    
+
     # Pobierz do pliku tymczasowego
     backup_path = f"/tmp/{backup_filename}"
     blob.download_to_filename(backup_path)
-    
+
     # Zastąp aktualną bazę danych
     current_db = os.path.join(os.path.dirname(__file__), 'database', 'app.db')
     os.replace(backup_path, current_db)
-    
+
     return True
 
 @app.route('/admin/restore', methods=['POST'])
@@ -1191,4 +1191,3 @@ Chatbot NovaHouse jest teraz gotowy do pracy w środowisku produkcyjnym na Googl
 **Koniec instrukcji wdrożenia**
 
 *Dokument został wygenerowany przez Manus AI w dniu 11 sierpnia 2025 roku.*
-

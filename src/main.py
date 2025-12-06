@@ -54,7 +54,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from flask_cors import CORS
 from sqlalchemy import text
-
 from src.models.chatbot import db
 
 # Error monitoring: GCP Error Reporting działa AUTOMATYCZNIE w App Engine!
@@ -308,8 +307,6 @@ with app.app_context():
                 logger.warning(
                     f"⚠️ DB connection failed (attempt {retry_count}/{max_retries}), retrying in {wait_time}s: {str(e)[:100]}"
                 )
-                import time
-
                 time.sleep(wait_time)
             else:
                 logger.error(

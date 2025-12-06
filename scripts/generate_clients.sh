@@ -86,13 +86,13 @@ config = Configuration(
 # Create API client
 with ApiClient(config) as api_client:
     chatbot_api = ChatbotApi(api_client)
-    
+
     # Send chat message
     response = chatbot_api.chat_post({
         "message": "Tell me about NovaHouse packages",
         "session_id": "test-session"
     })
-    
+
     print(response)
 ```
 

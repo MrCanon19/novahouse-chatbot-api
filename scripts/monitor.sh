@@ -30,19 +30,19 @@ get_response_time() {
     local status=$(curl -s -o /dev/null -w "%{http_code}" "${URL}${endpoint}" 2>/dev/null)
     local end=$(date +%s%3N)
     local duration=$((end - start))
-    
+
     echo "${status}|${duration}"
 }
 
 # Monitor loop
 while true; do
     timestamp=$(date +"%H:%M:%S")
-    
+
     # Health check
     result=$(get_response_time "/api/health")
     status=$(echo $result | cut -d'|' -f1)
     duration=$(echo $result | cut -d'|' -f2)
-    
+
     if [ "$status" = "200" ]; then
         if [ $duration -lt 200 ]; then
             color=$GREEN
@@ -58,8 +58,8 @@ while true; do
         color=$RED
         status_text="✗ ERROR"
     fi
-    
+
     echo -e "${timestamp} | ${color}${status_text}${NC} | Status: ${status} | Time: ${duration}ms"
-    
+
     sleep $INTERVAL
 done

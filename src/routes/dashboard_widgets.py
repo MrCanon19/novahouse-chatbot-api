@@ -8,7 +8,6 @@ from datetime import datetime, timedelta, timezone
 
 from flask import Blueprint, jsonify, request
 from sqlalchemy import desc, func
-
 from src.middleware.security import require_api_key
 
 dashboard_widgets = Blueprint("dashboard_widgets", __name__)

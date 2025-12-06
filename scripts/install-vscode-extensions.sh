@@ -156,12 +156,12 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     if code --install-extension "github.copilot" --force &> /dev/null; then
         echo -e "${GREEN}✓${NC}"
     fi
-    
+
     echo -n "  Installing github.copilot-chat... "
     if code --install-extension "github.copilot-chat" --force &> /dev/null; then
         echo -e "${GREEN}✓${NC}"
     fi
-    
+
     echo ""
     echo -e "${GREEN}✅ Copilot installed! Sign in when VSCode prompts.${NC}"
 fi

@@ -5,7 +5,6 @@ RODO-compliant data export and backup management
 """
 
 from flask import Blueprint, jsonify, request, send_file
-
 from src.middleware.security import require_api_key
 
 backup_routes = Blueprint("backup_routes", __name__)

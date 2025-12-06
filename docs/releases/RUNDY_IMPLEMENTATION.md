@@ -135,4 +135,3 @@ A: Sprawdź `src/integrations/monday_client.py` - jest tam metoda `test_connecti
 
 **Q: Gdzie są endpointy analityki?**
 A: W `src/routes/analytics.py` - dostępne pod `/api/analytics/*`.
-

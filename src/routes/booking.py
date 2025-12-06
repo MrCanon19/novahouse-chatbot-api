@@ -1,7 +1,6 @@
 import os
 
 from flask import Blueprint, jsonify, request
-
 from src.integrations.zencal_client import ZencalClient
 from src.models.chatbot import Booking, Lead, db
 

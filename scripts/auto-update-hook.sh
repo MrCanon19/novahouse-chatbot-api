@@ -14,10 +14,10 @@ CHANGED=$(git diff-tree --no-commit-id --name-only -r HEAD | grep -E "${DEPLOY_F
 if [ -n "${CHANGED}" ]; then
     echo "🔍 Wykryto zmiany w plikach deploy'owych"
     echo "🚀 Generuję automatyczną aktualizację..."
-    
+
     # Uruchom generator
     ./generate-update.sh
-    
+
     echo "✅ Aktualizacja wygenerowana!"
 else
     echo "ℹ️  Brak zmian wymagających aktualizacji"

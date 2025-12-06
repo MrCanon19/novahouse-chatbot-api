@@ -2,9 +2,7 @@
 Tests for knowledge base
 """
 
-from src.knowledge.novahouse_info import (
-    PACKAGES,
-)
+from src.knowledge.novahouse_info import PACKAGES
 
 
 class TestPackagesData:
