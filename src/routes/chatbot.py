@@ -1753,12 +1753,38 @@ def extract_context(message, existing_context):
             existing_context["phone"] = phone_match.group(0)
             break
 
-    # Extract city
-    cities = ["gdańsk", "warszawa", "wrocław", "sopot", "gdynia", "kraków", "poznań", "łódź"]
-    for city in cities:
-        if city in message_lower:
-            existing_context["city"] = city.title()
+    # Extract city - use Polish cities utility with declension awareness
+    from src.utils.polish_cities import PolishCities
+
+    polish_cities = PolishCities()
+
+    # Try common Polish cities with their declension forms
+    city_patterns = {
+        "Warszawa": ["warszawa", "warszawy", "warszawie"],
+        "Gdańsk": ["gdańsk", "gdańska", "gdańsku"],
+        "Wrocław": ["wrocław", "wrocławia", "wrocławiu"],
+        "Kraków": ["kraków", "krakowa", "krakowie"],
+        "Poznań": ["poznań", "poznania", "poznaniu"],
+        "Łódź": ["łódź", "łodzi"],
+        "Sopot": ["sopot", "sopotu"],
+        "Gdynia": ["gdynia", "gdyni"],
+    }
+
+    for city, patterns in city_patterns.items():
+        for pattern in patterns:
+            if pattern in message_lower:
+                existing_context["city"] = city
+                break
+        if existing_context.get("city"):
             break
+
+    # Fall back to checking all known Polish cities
+    if not existing_context.get("city"):
+        all_cities = polish_cities.get_all_cities()
+        for city in all_cities:
+            if city.lower() in message_lower:
+                existing_context["city"] = city
+                break
 
     # Extract square meters
     sqm_patterns = [r"(\d+)\s*m²", r"(\d+)\s*metrów", r"(\d+)\s*m2", r"(\d+)\s*mkw"]
@@ -1789,12 +1815,19 @@ def extract_context(message, existing_context):
                 existing_context["budget"] = budget
                 break
 
-    # Extract interested package
+    # Extract interested package - use regex to match word stems
     packages = ["express", "comfort", "premium", "indywidualny"]
     for pkg in packages:
-        if pkg in message_lower:
-            existing_context["package"] = pkg.title()
-            break
+        # Use regex to match word with possible Polish declension endings
+        if pkg == "indywidualny":
+            # Match: indywidualny, indywidualnego, indywidualnej, indywidualnym, indywidualnie, etc.
+            if re.search(r"indywidualne?\w*", message_lower):
+                existing_context["package"] = "Indywidualny"
+                break
+        else:
+            if pkg in message_lower:
+                existing_context["package"] = pkg.title()
+                break
 
     return existing_context
 
