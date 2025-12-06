@@ -13,7 +13,7 @@
 - **`src/routes/`**: Flask Blueprints for all endpoints (chatbot, leads, analytics, booking, etc.)
 - **`src/knowledge/novahouse_info.py`**: Hardcoded business data (packages, FAQ, contact info) - 900+ lines
 - **`src/services/`**: Rate limiting, auto-migration, file uploads, notifications
-- **`src/integrations/`**: Monday.com, Booksy, Twilio, GCS integrations
+- **`src/integrations/`**: ZenCal, Monday.com, Twilio, GCS integrations
 
 ### Key Patterns
 
@@ -239,7 +239,7 @@ src/
 ├── models/          # SQLAlchemy models (chatbot.py, user.py, analytics.py)
 ├── knowledge/       # Hardcoded business data (novahouse_info.py - 929 lines)
 ├── services/        # Rate limiting, auto-migration, notifications
-├── integrations/    # Monday.com, Booksy, Twilio, GCS
+├── integrations/    # ZenCal, Monday.com, Twilio, GCS
 └── main.py          # Flask app init, Blueprint registration, DB config
 
 tests/               # 18 test files (pytest, coverage)

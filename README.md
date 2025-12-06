@@ -57,7 +57,8 @@ python main.py
 - ✅ **5 pakietów wykończeniowych** (Express, Express+, Comfort, Premium, Individual)
 - ✅ Email notifications (lead confirmations, booking confirmations)
 - ✅ Advanced Analytics & A/B Testing
-- ✅ **Monday.com & Booksy** integrations
+- ✅ **ZenCal** integration (booking & availability)
+- ✅ **Monday.com** CRM integration
 - ✅ Multi-language support (PL/EN/DE)
 - ✅ Admin Dashboard with filters
 - ✅ Lead filtering & CSV export
