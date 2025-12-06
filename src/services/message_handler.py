@@ -1401,6 +1401,9 @@ class MessageHandler:
 
             previous_leads = []
 
+            # PRIVACY & SECURITY: Only restore context if user has provided email or phone
+            # Without explicit identifier, user gets fresh start (prevents data leakage to wrong user)
+            
             # Case 1: User has email - find by email
             if existing_email:
                 previous_leads = (
@@ -1416,6 +1419,10 @@ class MessageHandler:
                     .filter(Lead.session_id != session_id)
                     .all()
                 )
+            else:
+                # No email or phone provided - don't restore data from other sessions
+                # User gets fresh start unless they explicitly identify themselves
+                return None
 
             if not previous_leads:
                 return None
