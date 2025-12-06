@@ -9,9 +9,19 @@ from datetime import datetime
 
 from flask import Blueprint, jsonify
 
-from src.services.extraction_validator import get_safeguard, get_validator
 from src.services.monitoring_service import monitoring_service
-from src.services.regression_detector import get_detector
+
+# Try to import new monitoring services (may not be available yet)
+try:
+    from src.services.extraction_validator import get_safeguard, get_validator
+    from src.services.regression_detector import get_detector
+
+    NEW_MONITORING_AVAILABLE = True
+except ImportError:
+    NEW_MONITORING_AVAILABLE = False
+    get_detector = None
+    get_validator = None
+    get_safeguard = None
 
 monitoring_bp = Blueprint("monitoring", __name__, url_prefix="/api/monitoring")
 
@@ -118,6 +128,9 @@ def extraction_quality():
     Get extraction quality metrics
     Monitors extract_context() performance and regression detection
     """
+    if not NEW_MONITORING_AVAILABLE:
+        return jsonify({"error": "Extraction monitoring not yet deployed"}), 503
+
     try:
         detector = get_detector()
         trend = detector.get_trend(last_n=50)
@@ -148,6 +161,9 @@ def extraction_quality():
 @monitoring_bp.route("/regression-history", methods=["GET"])
 def regression_history():
     """Get detailed regression history and trend analysis"""
+    if not NEW_MONITORING_AVAILABLE:
+        return jsonify({"error": "Regression monitoring not yet deployed"}), 503
+
     try:
         detector = get_detector()
 
@@ -169,6 +185,9 @@ def regression_history():
 @monitoring_bp.route("/validation-rules", methods=["GET"])
 def validation_rules():
     """Get current validation rules for data extraction"""
+    if not NEW_MONITORING_AVAILABLE:
+        return jsonify({"error": "Validation rules not yet deployed"}), 503
+
     try:
         validator = get_validator()
 
@@ -199,6 +218,9 @@ def validation_rules():
 @monitoring_bp.route("/extraction-errors", methods=["GET"])
 def extraction_errors():
     """Get summary of extraction errors and safeguard status"""
+    if not NEW_MONITORING_AVAILABLE:
+        return jsonify({"error": "Extraction error tracking not yet deployed"}), 503
+
     try:
         safeguard = get_safeguard()
         detector = get_detector()
