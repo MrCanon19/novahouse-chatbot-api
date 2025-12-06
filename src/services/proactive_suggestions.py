@@ -190,6 +190,20 @@ class ProactiveSuggestionsService:
         """Generate clarification question for unclear input"""
         unclear_lower = unclear_input.lower()
 
+        # Check if asking about packages first
+        if any(word in unclear_lower for word in ["pakiet", "express", "comfort", "premium", "indywidualny"]):
+            return {
+                "type": "clarification",
+                "message": "📦 Pytasz o pakiety wykończeniowe? Mogę powiedzieć o:",
+                "actions": [
+                    {"text": "Express (999 zł/m²)", "payload": "pkg_express"},
+                    {"text": "Express Plus (1199 zł/m²)", "payload": "pkg_express_plus"},
+                    {"text": "Comfort (1499 zł/m²)", "payload": "pkg_comfort"},
+                    {"text": "Premium (1999 zł/m²)", "payload": "pkg_premium"},
+                    {"text": "Porównanie pakietów", "payload": "pkg_compare"},
+                ],
+            }
+
         # Check what they might be asking about
         if any(word in unclear_lower for word in ["cena", "koszt", "ile", "płacę", "price"]):
             return {

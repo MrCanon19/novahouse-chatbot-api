@@ -1859,6 +1859,10 @@ def check_faq(message):
 
     # FAQ patterns with keywords and threshold
     faq_patterns = {
+        "pakiety_roznice": (
+            ["pakiet", "express", "comfort", "premium", "indywidualny", "różnice między"],
+            0.55,
+        ),
         "jak_dlugo_trwa": (
             ["jak długo", "ile trwa", "czas realizacji", "termin", "ile czasu", "czas wykończenia"],
             0.65,
