@@ -9,6 +9,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Dict
 
 from sqlalchemy import func
+
 from src.models.analytics import ChatAnalytics
 from src.models.chatbot import Lead, db
 

@@ -6,6 +6,7 @@ Follow-ups, session cleanup, etc.
 import os
 
 from flask import Blueprint, jsonify, request
+
 from src.services.followup_automation import followup_automation
 from src.services.session_timeout import session_timeout_service
 

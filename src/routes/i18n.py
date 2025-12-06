@@ -5,6 +5,7 @@ Multi-language support endpoints
 """
 
 from flask import Blueprint, jsonify, request
+
 from src.services.i18n_service import I18nService
 
 i18n_bp = Blueprint("i18n", __name__)

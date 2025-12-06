@@ -2,6 +2,7 @@ import logging
 from datetime import datetime, timezone
 
 from flask import Blueprint, jsonify, request
+
 from src.knowledge.novahouse_info import PACKAGES, QUALIFICATION_QUESTIONS
 from src.models.chatbot import Lead, db
 

@@ -12,37 +12,71 @@ class PolishDeclension:
         "Adam": "Adamie",
         "Adrian": "Adrianie",
         "Andrzej": "Andrzeju",
+        "Arkadiusz": "Arkadiuszu",
         "Bartosz": "Bartoszu",
+        "Bogdan": "Bogdanie",
+        "Bolesław": "Bolesławie",
         "Damian": "Damianie",
         "Daniel": "Danielu",
+        "Dariusz": "Dariuszu",
         "Dawid": "Dawidzie",
+        "Dominik": "Dominiku",
+        "Emil": "Emilu",
+        "Ernest": "Erneście",
         "Filip": "Filipie",
+        "Franciszek": "Franciszku",
         "Grzegorz": "Grzegorzu",
+        "Henryk": "Henryku",
         "Hubert": "Hubercie",
+        "Ignacy": "Ignacy",
+        "Igor": "Igorze",
         "Jacek": "Jacku",
         "Jakub": "Jakubie",
         "Jan": "Janie",
         "Janusz": "Januszu",
         "Jarosław": "Jarosławie",
+        "Jerzy": "Jerzy",
+        "Józef": "Józefie",
+        "Kacper": "Kacprze",
         "Kamil": "Kamilu",
         "Karol": "Karolu",
+        "Konrad": "Konradzie",
+        "Krystian": "Krystianie",
         "Krzysztof": "Krzysztofie",
+        "Leszek": "Leszku",
         "Łukasz": "Łukaszu",
         "Maciej": "Macieju",
+        "Maksymilian": "Maksymilianie",
         "Marcin": "Marcinie",
         "Marek": "Marku",
+        "Mariusz": "Mariuszu",
         "Mateusz": "Mateuszu",
         "Michał": "Michale",
+        "Mieczysław": "Mieczysławie",
+        "Mikołaj": "Mikołaju",
+        "Mirosław": "Mirosławie",
+        "Patryk": "Patryku",
         "Paweł": "Pawle",
         "Piotr": "Piotrze",
+        "Przemysław": "Przemysławie",
         "Radosław": "Radosławie",
+        "Rafał": "Rafale",
         "Robert": "Robercie",
+        "Roman": "Romanie",
         "Sebastian": "Sebastianie",
+        "Sławomir": "Sławomirze",
         "Stanisław": "Stanisławie",
+        "Stefan": "Stefanie",
         "Szymon": "Szymonie",
+        "Tadeusz": "Tadeuszu",
         "Tomasz": "Tomaszu",
+        "Waldemar": "Waldemarze",
+        "Wiesław": "Wiesławie",
+        "Witold": "Witoldzie",
+        "Władysław": "Władysławie",
         "Wojciech": "Wojciechu",
         "Zbigniew": "Zbigniewie",
+        "Zdzisław": "Zdzisławie",
     }
 
     # Common Polish female first names - vocative case mapping
@@ -51,30 +85,80 @@ class PolishDeclension:
         "Agnieszka": "Agnieszko",
         "Aleksandra": "Aleksandro",
         "Alicja": "Alicjo",
+        "Amelia": "Amelio",
+        "Angelika": "Angeliko",
         "Anna": "Anno",
+        "Antonina": "Antonino",
         "Barbara": "Barbaro",
         "Beata": "Beato",
+        "Bogna": "Bogno",
+        "Cecylia": "Cecylio",
+        "Dagmara": "Dagmaro",
+        "Danuta": "Danuto",
+        "Dominika": "Dominiko",
         "Dorota": "Doroto",
+        "Edyta": "Edyto",
+        "Eliza": "Elizo",
+        "Elżbieta": "Elżbieto",
+        "Emilia": "Emilio",
         "Ewa": "Ewo",
+        "Gabriela": "Gabrielo",
+        "Grażyna": "Grażyno",
+        "Halina": "Halino",
+        "Hanna": "Hanno",
+        "Helena": "Heleno",
+        "Ilona": "Ilono",
+        "Irena": "Ireno",
         "Iwona": "Iwono",
+        "Izabela": "Izabelo",
+        "Jadwiga": "Jadwigo",
         "Joanna": "Joanno",
+        "Jolanta": "Jolanto",
+        "Julia": "Julio",
         "Justyna": "Justyno",
         "Kamila": "Kamilo",
+        "Karina": "Karino",
         "Karolina": "Karolino",
         "Katarzyna": "Katarzyno",
+        "Kinga": "Kingo",
+        "Klara": "Klaro",
+        "Kornelia": "Kornelio",
         "Krystyna": "Krystyno",
+        "Laura": "Lauro",
+        "Lena": "Leno",
+        "Liliana": "Liliano",
+        "Lucyna": "Lucyno",
         "Magdalena": "Magdaleno",
+        "Maja": "Majo",
         "Małgorzata": "Małgorzato",
+        "Marianna": "Marianno",
         "Maria": "Mario",
+        "Marlena": "Marleno",
         "Marta": "Marto",
+        "Martyna": "Martyno",
+        "Matylda": "Matyldo",
         "Monika": "Moniko",
         "Natalia": "Natalio",
+        "Nikola": "Nikolo",
+        "Nina": "Nino",
+        "Olga": "Olgo",
+        "Oliwia": "Oliwio",
+        "Patrycja": "Patrycjo",
+        "Paula": "Paulo",
         "Paulina": "Paulino",
         "Renata": "Renato",
+        "Roma": "Romo",
+        "Róża": "Różo",
+        "Sandra": "Sandro",
+        "Sara": "Saro",
+        "Sylwia": "Sylwio",
         "Teresa": "Tereso",
         "Urszula": "Urszulo",
         "Wanda": "Wando",
+        "Weronika": "Weroniko",
+        "Wiktoria": "Wiktorio",
         "Zofia": "Zofio",
+        "Zuzanna": "Zuzanno",
     }
 
     # Foreign names - do NOT decline
@@ -134,7 +218,51 @@ class PolishDeclension:
         "Sandra",
         "Sarah",
         "Susan",
-        "Jennifer",
+        # Additional international names
+        "Kevin",
+        "Brian",
+        "Daniel",
+        "Eric",
+        "Jason",
+        "Justin",
+        "Ryan",
+        "Sean",
+        "Timothy",
+        "Brandon",
+        "Christian",
+        "Dylan",
+        "Ethan",
+        "Gabriel",
+        "Isaac",
+        "Jacob",
+        "Joshua",
+        "Nathan",
+        "Oliver",
+        "Sebastian",
+        "Tyler",
+        "Zachary",
+        "Hannah",
+        "Olivia",
+        "Sophia",
+        "Isabella",
+        "Mia",
+        "Charlotte",
+        "Amelia",
+        "Harper",
+        "Evelyn",
+        "Abigail",
+        "Emily",
+        "Madison",
+        "Ella",
+        "Scarlett",
+        "Grace",
+        "Chloe",
+        "Victoria",
+        "Riley",
+        "Aria",
+        "Lily",
+        "Aubrey",
+        "Zoe",
     }
 
     @classmethod
@@ -424,6 +552,34 @@ class PolishDeclension:
 
         name_lower = name.lower()
         return any(name_lower.endswith(ending) for ending in polish_endings)
+
+    @classmethod
+    def detect_gender(cls, first_name: str) -> str:
+        """
+        Detect gender from first name
+
+        Returns:
+            'male' | 'female' | 'unknown'
+        """
+        if not first_name:
+            return "unknown"
+
+        name_title = first_name.strip().title()
+
+        if name_title in cls.MALE_NAMES:
+            return "male"
+        if name_title in cls.FEMALE_NAMES:
+            return "female"
+
+        # Heuristic: Polish female names typically end with -a
+        if name_title.endswith("a") and name_title not in cls.FOREIGN_NAMES:
+            return "female"
+
+        # Heuristic: most consonant-ending Polish names are male
+        if name_title[-1] not in "aeiouyąęó" and name_title not in cls.FOREIGN_NAMES:
+            return "male"
+
+        return "unknown"
 
 
 # Example usage

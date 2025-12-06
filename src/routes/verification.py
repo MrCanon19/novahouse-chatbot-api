@@ -5,6 +5,7 @@ Endpoints for email and phone verification.
 """
 
 from flask import Blueprint, jsonify, request
+
 from src.models.chatbot import Lead
 from src.services.lead_verification_service import lead_verification_service
 

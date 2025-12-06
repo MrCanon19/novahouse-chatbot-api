@@ -32,6 +32,11 @@ class MessageHandler:
         self._gpt_calls_per_window = int(os.getenv("GPT_CALLS_PER_WINDOW", "5"))
         self._gpt_call_tracker: Dict[str, Dict[str, float]] = {}
         self._gpt_enabled = os.getenv("GPT_FALLBACK_ENABLED", "true").lower() == "true"
+        # GPT metrics tracking
+        self._gpt_drop_count = 0
+        self._gpt_success_count = 0
+        self._gpt_rate_limit_drops = 0
+        self._gpt_placeholder_key_drops = 0
 
     def process_message(self, user_message: str, session_id: str) -> Dict:
         """
@@ -422,6 +427,7 @@ class MessageHandler:
         """Get response from OpenAI GPT with retry logic"""
         try:
             from openai import OpenAI
+
             from src.routes.chatbot import SYSTEM_PROMPT
 
             if not self._gpt_enabled:
@@ -972,6 +978,95 @@ class MessageHandler:
             print(f"[Lead Creation] Error: {e}")
             db.session.rollback()
             return None
+
+    def get_gpt_stats(self, session_id: str = None) -> Dict[str, int]:
+        """
+        Get GPT call statistics, optionally for a specific session
+
+        Args:
+            session_id: If provided, returns per-session stats. Otherwise returns aggregate.
+
+        Returns:
+            Dict with keys: total_calls, success_calls, drops, rate_limit_drops,
+                           placeholder_key_drops, drop_rate_percent
+        """
+        if session_id and session_id in self._gpt_call_tracker:
+            # Per-session stats (calls only, no drop tracking per session currently)
+            session_data = self._gpt_call_tracker[session_id]
+            call_times = session_data.get("calls", [])
+            return {
+                "session_id": session_id,
+                "calls_in_window": len(call_times),
+                "window_seconds": self._gpt_call_window_sec,
+                "limit": self._gpt_calls_per_window,
+                "remaining": max(0, self._gpt_calls_per_window - len(call_times)),
+            }
+        else:
+            # Aggregate stats
+            total = self._gpt_success_count + self._gpt_drop_count
+            drop_rate = round((self._gpt_drop_count / total * 100), 2) if total > 0 else 0.0
+            return {
+                "total_calls": total,
+                "success_calls": self._gpt_success_count,
+                "drops": self._gpt_drop_count,
+                "rate_limit_drops": self._gpt_rate_limit_drops,
+                "placeholder_key_drops": self._gpt_placeholder_key_drops,
+                "drop_rate_percent": drop_rate,
+            }
+
+    def log_gpt_success(self, session_id: str):
+        """Log successful GPT call"""
+        self._gpt_success_count += 1
+        # Also track in per-session limiter
+        now = time.time()
+        if session_id not in self._gpt_call_tracker:
+            self._gpt_call_tracker[session_id] = {"calls": []}
+        self._gpt_call_tracker[session_id]["calls"].append(now)
+        # Clean old calls
+        cutoff = now - self._gpt_call_window_sec
+        self._gpt_call_tracker[session_id]["calls"] = [
+            t for t in self._gpt_call_tracker[session_id]["calls"] if t > cutoff
+        ]
+
+    def log_gpt_drop(self, session_id: str, reason: str):
+        """
+        Log dropped GPT call with reason
+
+        Args:
+            session_id: Session identifier
+            reason: One of 'rate_limit', 'placeholder_key', 'other'
+        """
+        self._gpt_drop_count += 1
+        if reason == "rate_limit":
+            self._gpt_rate_limit_drops += 1
+            print(
+                f"[GPT Drop] Rate limit exceeded for {session_id} ({self._gpt_rate_limit_drops} total)"
+            )
+        elif reason == "placeholder_key":
+            self._gpt_placeholder_key_drops += 1
+            print(
+                f"[GPT Drop] Placeholder key detected for {session_id} ({self._gpt_placeholder_key_drops} total)"
+            )
+        else:
+            print(f"[GPT Drop] {reason} for {session_id}")
+
+    def export_aggregate_metrics(self) -> str:
+        """
+        Export aggregate GPT metrics as JSON string for monitoring/dashboard
+
+        Returns:
+            JSON string with all metrics
+        """
+        import json
+
+        metrics = self.get_gpt_stats()
+        metrics["timestamp"] = datetime.now(timezone.utc).isoformat()
+        metrics["gpt_enabled"] = self._gpt_enabled
+        metrics["config"] = {
+            "calls_per_window": self._gpt_calls_per_window,
+            "window_seconds": self._gpt_call_window_sec,
+        }
+        return json.dumps(metrics, indent=2)
 
 
 # Global instance
