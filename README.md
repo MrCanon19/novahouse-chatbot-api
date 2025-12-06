@@ -83,6 +83,18 @@ curl -X POST http://127.0.0.1:5050/chat \
      -d '{"message": "Cześć, sprawdzam Groq lokalnie"}'
    ```
 
+### Offline smoke-test (bez klucza, dummy provider)
+
+Jeśli chcesz tylko sprawdzić routing/chat bez zewnętrznego LLM, ustaw:
+
+```bash
+export LLM_PROVIDER=dummy
+export DUMMY_LLM_RESPONSE="(lokalny dummy response)"
+python main.py
+```
+
+Backend zwróci statyczną odpowiedź z `DUMMY_LLM_RESPONSE`, więc możesz testować /chat bez kluczy API.
+
 ## 🛠️ Tech Stack
 
 - **Backend:** Python 3.13, Flask 3.1, SQLAlchemy 2.0

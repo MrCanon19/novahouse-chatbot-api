@@ -18,6 +18,14 @@ def load_provider() -> Dict:
     provider_name = os.getenv("LLM_PROVIDER", "openai").lower()
     model_default = os.getenv("LLM_MODEL", "gpt-4o-mini")
 
+    if provider_name == "dummy":
+        return {
+            "name": "dummy",
+            "client": None,
+            "model": os.getenv("DUMMY_LLM_MODEL", "dummy"),
+            "disabled_reason": None,
+        }
+
     if provider_name == "groq":
         from groq import Groq
 
@@ -88,6 +96,10 @@ def run_llm(
     """Execute a chat completion against the configured provider."""
 
     provider = load_provider()
+    # Short-circuit dummy provider for zero-cost local development
+    if provider.get("name") == "dummy":
+        return os.getenv("DUMMY_LLM_RESPONSE", "(dummy LLM response)")
+
     client = provider.get("client")
     if client is None:
         reason = provider.get("disabled_reason", "provider client not available")
