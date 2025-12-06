@@ -60,8 +60,24 @@ class MessageHandler:
             # 4. Load and validate context
             context_memory = json.loads(conversation.context_data or "{}")
 
-            # 5. Get message history for multi-turn dialog
+            # 4b. PERSISTENT MEMORY: Check if returning customer
+            returning_customer = self._restore_returning_customer_context(
+                session_id, context_memory
+            )
+            if returning_customer:
+                print(
+                    f"[PersistentMemory] ✓ Returning customer detected: {returning_customer.get('name')}"
+                )
+
+            # 5. Get message history for multi-turn dialog (last 30 messages for context)
+            # Strategy: Keep recent messages for anaphora resolution (a co z tem?, a w warszawie?)
+            # Limit: 30 messages = ~15 user-bot exchanges (enough for most conversations)
+            MAX_HISTORY_SIZE = 30
             messages = ChatMessage.query.filter_by(conversation_id=conversation.id).all()
+            # Keep only last MAX_HISTORY_SIZE messages
+            messages = (
+                messages[-MAX_HISTORY_SIZE:] if len(messages) > MAX_HISTORY_SIZE else messages
+            )
             message_history = [{"sender": m.sender, "message": m.message} for m in messages]
 
             # 6. Resolve references in multi-turn dialog (a srebrnego?, a w warszawie?)
@@ -109,15 +125,21 @@ class MessageHandler:
             )
 
             # 14. Update conversation context with summary
-            messages = ChatMessage.query.filter_by(conversation_id=conversation.id).all()
-            message_history = [{"sender": m.sender, "message": m.message} for m in messages]
+            # Note: For summary, we can use all messages (not limited to MAX_HISTORY_SIZE)
+            # because context_data is stored separately and summary is for analytics
+            messages_for_summary = ChatMessage.query.filter_by(
+                conversation_id=conversation.id
+            ).all()
+            message_history = [
+                {"sender": m.sender, "message": m.message} for m in messages_for_summary
+            ]
 
             # Calculate conversation duration
             duration_seconds = 0
-            if conversation.started_at and messages:
+            if conversation.started_at and messages_for_summary:
                 from datetime import timezone
 
-                latest_message_time = max(m.timestamp for m in messages)
+                latest_message_time = max(m.timestamp for m in messages_for_summary)
                 # Ensure both datetimes are aware
                 started_at = (
                     conversation.started_at.replace(tzinfo=timezone.utc)
@@ -1049,6 +1071,86 @@ class MessageHandler:
             )
         else:
             print(f"[GPT Drop] {reason} for {session_id}")
+
+    def _restore_returning_customer_context(
+        self, session_id: str, context_memory: Dict
+    ) -> Optional[Dict]:
+        """
+        PERSISTENT MEMORY: Restore context from previous conversations
+
+        Checks if user is a returning customer (has previous leads) and loads their context:
+        - Name, email, phone
+        - Previous package interests
+        - Previous property details (size, type, location)
+        - Conversation history context
+
+        Args:
+            session_id: Current session ID
+            context_memory: Current conversation context to restore into
+
+        Returns:
+            Dict with restored customer context or None if not a returning customer
+        """
+        try:
+            from src.models.chatbot import Lead
+
+            # Strategy: Look for leads by email OR phone (most reliable identifiers)
+            # If found in current session_id, don't count as "returning"
+            # If found in different session_id, it's a returning customer
+            # First check: Do we already have identifying info?
+            existing_email = context_memory.get("email")
+            existing_phone = context_memory.get("phone")
+
+            previous_leads = []
+
+            # Case 1: User has email - find by email
+            if existing_email:
+                previous_leads = (
+                    Lead.query.filter_by(email=existing_email)
+                    .filter(Lead.session_id != session_id)
+                    .all()
+                )
+
+            # Case 2: No email yet, but find by phone
+            elif existing_phone:
+                previous_leads = (
+                    Lead.query.filter_by(phone=existing_phone)
+                    .filter(Lead.session_id != session_id)
+                    .all()
+                )
+
+            if not previous_leads:
+                return None
+
+            # Found returning customer! Restore their context
+            latest_lead = max(previous_leads, key=lambda lead: lead.created_at)
+
+            # Restore previous context (but don't overwrite current session data)
+            restored_context = {
+                "name": latest_lead.name or context_memory.get("name"),
+                "email": latest_lead.email or context_memory.get("email"),
+                "phone": latest_lead.phone or context_memory.get("phone"),
+                "location": latest_lead.location or context_memory.get("location"),
+                "property_type": latest_lead.property_type or context_memory.get("property_type"),
+                "square_meters": latest_lead.property_size or context_memory.get("square_meters"),
+                "previous_package_interest": latest_lead.interested_package,
+                "previous_interaction": (
+                    latest_lead.last_interaction.isoformat()
+                    if latest_lead.last_interaction
+                    else None
+                ),
+                "previous_lead_score": latest_lead.lead_score,
+            }
+
+            # Update context_memory with restored data
+            context_memory.update(restored_context)
+
+            print(f"[PersistentMemory] Restored context for {restored_context.get('name')}")
+            return restored_context
+
+        except Exception as e:
+            print(f"[PersistentMemory] Error restoring customer context: {str(e)}")
+            return None
 
     def export_aggregate_metrics(self) -> str:
         """
