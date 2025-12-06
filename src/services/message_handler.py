@@ -151,6 +151,15 @@ class MessageHandler:
             logger.error(f"[MessageHandler] Critical error: {e}", exc_info=True)
             print(f"[MessageHandler] Error: {e}")
             print(f"[MessageHandler] Traceback: {traceback.format_exc()}")
+
+            # Critical: dispose connection pool if DB error
+            if "OperationalError" in str(type(e)) or "server closed" in str(e).lower():
+                try:
+                    logger.warning("🔄 Disposing connection pool due to DB error")
+                    db.engine.dispose()
+                except Exception as dispose_err:
+                    logger.warning(f"Failed to dispose pool: {dispose_err}")
+
             db.session.rollback()
             try:
                 from src.utils.telegram_alert import send_telegram_alert
@@ -190,6 +199,14 @@ class MessageHandler:
 
     def _get_or_create_conversation(self, session_id: str) -> ChatConversation:
         """Find or create conversation"""
+        import logging
+        import time
+
+        from sqlalchemy.exc import OperationalError
+
+        logger = logging.getLogger(__name__)
+        max_retries = 2
+
         conversation = ChatConversation.query.filter_by(session_id=session_id).first()
         if not conversation:
             conversation = ChatConversation(
@@ -197,8 +214,37 @@ class MessageHandler:
                 started_at=datetime.now(timezone.utc),
                 context_data=json.dumps({}),
             )
-            db.session.add(conversation)
-            db.session.flush()
+
+            retry_count = 0
+            while retry_count < max_retries:
+                try:
+                    db.session.add(conversation)
+                    db.session.flush()
+                    return conversation
+                except OperationalError as e:
+                    retry_count += 1
+                    db.session.rollback()
+                    error_msg = str(e).lower()
+
+                    if "server closed" in error_msg or "connection" in error_msg:
+                        if retry_count < max_retries:
+                            wait_time = 1 * retry_count
+                            logger.warning(
+                                f"⚠️ DB error creating conversation (attempt {retry_count}/{max_retries}), "
+                                f"retrying in {wait_time}s"
+                            )
+                            time.sleep(wait_time)
+                            db.engine.dispose()
+                        else:
+                            logger.error(
+                                f"❌ Failed to create conversation after {max_retries} attempts"
+                            )
+                            raise
+                    else:
+                        logger.error(
+                            f"❌ Non-retryable error creating conversation: {str(e)[:150]}"
+                        )
+                        raise
         return conversation
 
     def _extract_and_validate_context(self, message: str, existing_context: Dict) -> Dict:
@@ -499,17 +545,54 @@ class MessageHandler:
                 last_interaction=datetime.now(timezone.utc),
             )
 
-            db.session.add(lead)
-            db.session.flush()
+            # Save lead with retry logic
+            import logging
+            import time
 
-            # Suggest next action
-            next_action = suggest_next_best_action(context_memory, lead_score)
-            lead.notes = f"Next Action: {next_action}"
+            from sqlalchemy.exc import OperationalError
 
-            # Sync with Monday.com (with retry)
-            self._sync_with_monday(lead, context_memory, lead_score, next_action)
+            logger = logging.getLogger(__name__)
+            max_retries = 2
+            retry_count = 0
 
-            db.session.commit()
+            while retry_count < max_retries:
+                try:
+                    db.session.add(lead)
+                    db.session.flush()
+
+                    # Suggest next action
+                    next_action = suggest_next_best_action(context_memory, lead_score)
+                    lead.notes = f"Next Action: {next_action}"
+
+                    # Sync with Monday.com (with retry)
+                    self._sync_with_monday(lead, context_memory, lead_score, next_action)
+
+                    db.session.commit()
+                    break  # Success
+                except OperationalError as e:
+                    retry_count += 1
+                    db.session.rollback()
+                    error_msg = str(e).lower()
+
+                    if "server closed" in error_msg or "connection" in error_msg:
+                        if retry_count < max_retries:
+                            wait_time = 1 * retry_count
+                            logger.warning(
+                                f"⚠️ DB error saving lead (attempt {retry_count}/{max_retries}), "
+                                f"retrying in {wait_time}s"
+                            )
+                            time.sleep(wait_time)
+                            db.engine.dispose()
+                        else:
+                            logger.error(f"❌ Failed to save lead after {max_retries} attempts")
+                            raise
+                    else:
+                        logger.error(f"❌ Non-retryable error saving lead: {str(e)[:150]}")
+                        raise
+                except Exception as e:
+                    logger.error(f"❌ Unexpected error saving lead: {str(e)[:150]}")
+                    db.session.rollback()
+                    raise
 
             return (
                 f"✅ Świetnie! Twoje dane zostały zapisane (Lead Score: {lead_score}/100). "
@@ -576,15 +659,61 @@ class MessageHandler:
             raise  # Re-raise for retry mechanism
 
     def _save_message(self, conversation_id: int, message: str, sender: str):
-        """Save message to database"""
-        msg = ChatMessage(
-            conversation_id=conversation_id,
-            message=message,
-            sender=sender,
-            timestamp=datetime.now(timezone.utc),
-        )
-        db.session.add(msg)
-        db.session.flush()
+        """Save message to database with retry logic for connection failures"""
+        import logging
+        import time
+
+        from sqlalchemy.exc import OperationalError
+
+        logger = logging.getLogger(__name__)
+        max_retries = 2
+        retry_count = 0
+
+        while retry_count < max_retries:
+            try:
+                msg = ChatMessage(
+                    conversation_id=conversation_id,
+                    message=message,
+                    sender=sender,
+                    timestamp=datetime.now(timezone.utc),
+                )
+                db.session.add(msg)
+                db.session.flush()
+                db.session.commit()  # Explicit commit
+                return  # Success
+            except OperationalError as e:
+                retry_count += 1
+                db.session.rollback()
+                error_msg = str(e).lower()
+
+                # Only retry on connection-level errors, not constraint violations
+                if "server closed" in error_msg or "connection" in error_msg:
+                    if retry_count < max_retries:
+                        wait_time = 1 * retry_count  # 1s, then 2s
+                        logger.warning(
+                            f"⚠️ DB connection error (attempt {retry_count}/{max_retries}), "
+                            f"retrying in {wait_time}s: {str(e)[:100]}"
+                        )
+                        time.sleep(wait_time)
+                        # Force reconnect
+                        try:
+                            db.engine.dispose()
+                        except Exception as dispose_err:
+                            logger.warning(f"Failed to dispose connection: {dispose_err}")
+                    else:
+                        logger.error(
+                            f"❌ Failed to save message after {max_retries} attempts: {str(e)[:150]}"
+                        )
+                        raise  # Re-raise after retries exhausted
+                else:
+                    # Non-connection error, don't retry
+                    logger.error(f"❌ Non-retryable DB error: {str(e)[:150]}")
+                    raise
+            except Exception as e:
+                # Other exceptions - don't retry
+                logger.error(f"❌ Unexpected error saving message: {str(e)[:150]}")
+                db.session.rollback()
+                raise
 
     def _calculate_lead_score_ml(
         self, context_memory: Dict, conversation: ChatConversation, messages: list
@@ -696,9 +825,46 @@ class MessageHandler:
                 last_interaction=datetime.now(timezone.utc),
             )
 
-            db.session.add(lead)
-            db.session.flush()
-            print(f"[Lead Creation] Lead created: {lead.id} (score: {lead_score})")
+            # Save lead with retry logic
+            import logging
+            import time
+
+            from sqlalchemy.exc import OperationalError
+
+            logger = logging.getLogger(__name__)
+            max_retries = 2
+            retry_count = 0
+
+            while retry_count < max_retries:
+                try:
+                    db.session.add(lead)
+                    db.session.flush()
+                    print(f"[Lead Creation] Lead created: {lead.id} (score: {lead_score})")
+                    break  # Success
+                except OperationalError as e:
+                    retry_count += 1
+                    db.session.rollback()
+                    error_msg = str(e).lower()
+
+                    if "server closed" in error_msg or "connection" in error_msg:
+                        if retry_count < max_retries:
+                            wait_time = 1 * retry_count
+                            logger.warning(
+                                f"⚠️ DB error creating lead (attempt {retry_count}/{max_retries}), "
+                                f"retrying in {wait_time}s"
+                            )
+                            time.sleep(wait_time)
+                            db.engine.dispose()
+                        else:
+                            logger.error(f"❌ Failed to create lead after {max_retries} attempts")
+                            raise
+                    else:
+                        logger.error(f"❌ Non-retryable error creating lead: {str(e)[:150]}")
+                        raise
+                except Exception as e:
+                    logger.error(f"❌ Unexpected error creating lead: {str(e)[:150]}")
+                    db.session.rollback()
+                    raise
 
             # Try to sync with Monday.com
             try:
