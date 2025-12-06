@@ -56,6 +56,7 @@ from src.models.chatbot import (
     RodoConsent,
     db,
 )
+from src.services.extract_context_safe import extract_context_safe
 
 chatbot_bp = Blueprint("chatbot", __name__)
 
@@ -94,13 +95,7 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
             context_memory = json.loads(conversation.context_data or "{}")
 
             # Extract and update context from user message (with safeguards)
-            try:
-                from src.services.extract_context_safe import extract_context_safe
-
-                context_memory = extract_context_safe(user_message, context_memory)
-            except ImportError:
-                # Fallback to legacy extract_context if safe version not available
-                context_memory = extract_context(user_message, context_memory)
+            context_memory = extract_context_safe(user_message, context_memory)
             conversation.context_data = json.dumps(context_memory)
 
             # Zapisz wiadomość użytkownika

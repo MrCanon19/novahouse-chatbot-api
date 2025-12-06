@@ -18,6 +18,7 @@ from src.services.conversation_state_machine import ConversationStateMachine
 from src.services.multi_turn_dialog import multi_turn_dialog
 from src.services.proactive_suggestions import proactive_suggestions
 from src.services.rate_limiter import conversation_limiter
+from src.services.extract_context_safe import extract_context_safe
 from src.services.retry_handler import failed_operations, retry_monday_api, retry_openai_api
 from src.services.sentiment_service import sentiment_service
 from src.services.session_timeout import session_timeout_service
@@ -490,10 +491,7 @@ class MessageHandler:
 
     def _extract_and_validate_context(self, message: str, existing_context: Dict) -> Dict:
         """Extract context from message and validate"""
-        from src.routes.chatbot import extract_context
-
-        # Extract context
-        updated_context = extract_context(message, existing_context)
+        updated_context = extract_context_safe(message, existing_context)
 
         # Validate and sanitize
         is_valid, sanitized, errors = self.validator.validate_context(updated_context)
