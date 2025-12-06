@@ -35,7 +35,7 @@ cp config/environments/.env.example .env
 python main.py
 ```
 
-📚 Więcej: [DOCKER.md](docs/features/DOCKER.md) | [CONTRIBUTING.md](docs/misc/CONTRIBUTING.md) | **[📚 Pełna dokumentacja](docs/README.md)**
+📚 Więcej: [DOCKER.md](docs/features/DOCKER.md) | [LOCAL AI SETUP](docs/guides/LOCAL_AI_SETUP.md) 🤖 | [CONTRIBUTING.md](docs/misc/CONTRIBUTING.md) | **[📚 Pełna dokumentacja](docs/README.md)**
 
 ## 🛠️ Tech Stack
 
