@@ -11,6 +11,7 @@ class PolishCities:
     # This enables fallback generation for ~700 cities not in hardcoded CITIES dict
     ALL_POLISH_CITIES_GUS = {
         # Voivodeship: Dolnośląskie (56 cities)
+        "Ady",
         "Dzierżoniów",
         "Kłodzko",
         "Ząbkowice Śląskie",
@@ -1837,7 +1838,20 @@ class PolishCities:
         if not city:
             return False
         city_normalized = cls.normalize_city_name(city)
-        return city_normalized in cls.CITIES
+        # Check hardcoded cities first
+        if city_normalized in cls.CITIES:
+            return True
+        # Check GUS list (heuristic-generated cities)
+        if city_normalized in cls.ALL_POLISH_CITIES_GUS:
+            return True
+        # Try case-insensitive match
+        for city_key in cls.CITIES.keys():
+            if city_key.lower() == city_normalized.lower():
+                return True
+        for city_gus in cls.ALL_POLISH_CITIES_GUS:
+            if city_gus.lower() == city_normalized.lower():
+                return True
+        return False
 
     @classmethod
     def get_all_cities(cls) -> list:
@@ -1949,14 +1963,6 @@ if __name__ == "__main__":
             return result
 
         return " ".join(parts)
-
-    @classmethod
-    def is_polish_city(cls, city: str) -> bool:
-        """Check if a city is in the Polish cities database"""
-        normalized = cls.normalize_city_name(city)
-        return normalized in cls.CITIES or any(
-            city_key.lower() == normalized.lower() for city_key in cls.CITIES.keys()
-        )
 
     @classmethod
     def get_all_cities(cls) -> list:
