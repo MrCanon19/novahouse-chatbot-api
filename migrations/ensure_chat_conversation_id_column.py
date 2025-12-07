@@ -23,6 +23,7 @@ import sys
 from typing import Dict, List, Optional, Sequence
 
 from sqlalchemy import create_engine, text
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.engine.url import make_url
 
 # Add project root to path
@@ -218,8 +219,12 @@ def _summarize_needed_actions(
     print("- After aligning the table, redeploy to verify the SQLAlchemy error disappears.")
 
 
-def describe_chat_conversations_table(database_url: str | None = None):
-    """Print the current schema of chat_conversations without modifying it."""
+def describe_chat_conversations_table(database_url: str | None = None) -> bool:
+    """Print the current schema of chat_conversations without modifying it.
+
+    Returns False if the inspection could not be completed (e.g. connection
+    failure, unsupported dialect, or missing table).
+    """
 
     with app.app_context():
         engine = db.engine
@@ -229,22 +234,29 @@ def describe_chat_conversations_table(database_url: str | None = None):
 
         if engine.dialect.name != "postgresql":
             print("⚠️  This diagnostic currently supports only PostgreSQL. Skipping.")
-            return
+            return False
 
-        with engine.begin() as connection:
-            if not _table_exists(connection):
-                print("⚠️  chat_conversations table not found in current schema.")
-                return
+        try:
+            with engine.begin() as connection:
+                if not _table_exists(connection):
+                    print("⚠️  chat_conversations table not found in current schema.")
+                    return False
 
-            columns = _describe_columns(connection)
-            constraints = _describe_constraints(connection)
-            pk_columns = _get_primary_key_columns(connection)
-            pk_name = _get_primary_key_name(connection)
+                columns = _describe_columns(connection)
+                constraints = _describe_constraints(connection)
+                pk_columns = _get_primary_key_columns(connection)
+                pk_name = _get_primary_key_name(connection)
 
-        if columns:
-            _summarize_needed_actions(columns, pk_columns, constraints, pk_name)
+            if columns:
+                _summarize_needed_actions(columns, pk_columns, constraints, pk_name)
 
-        print("✅ Inspection complete. Review the above output and plan the exact migration.")
+            print(
+                "✅ Inspection complete. Review the above output and plan the exact migration."
+            )
+            return True
+        except SQLAlchemyError as exc:  # pragma: no cover - defensive logging
+            print(f"❌ Inspection failed: {exc}")
+            return False
 
 
 def _parse_args(argv: Sequence[str]):
@@ -262,4 +274,5 @@ def _parse_args(argv: Sequence[str]):
 
 if __name__ == "__main__":
     args = _parse_args(sys.argv[1:])
-    describe_chat_conversations_table(args.database_url)
+    success = describe_chat_conversations_table(args.database_url)
+    sys.exit(0 if success else 1)
