@@ -6,6 +6,38 @@ from typing import Dict, List, Optional
 
 ProviderConfig = Dict[str, Optional[str]]
 
+DEV_ASSISTANT_SYSTEM_PROMPT = """
+You are a senior software engineer and code assistant.
+You work in a local development environment for the NovaHouse chatbot backend.
+
+Rules:
+- Answer concisely and practically.
+- When editing code, always return the FULL final version of the file.
+- Wrap code in a single fenced code block, for example:
+  ```python
+  # full file content here
+  ```
+- Prefer concrete solutions over abstract theory.
+- If something is ambiguous, make a reasonable assumption and continue.
+- You can refactor, rename, split functions, but keep the code runnable.
+"""
+
+
+def _apply_dev_assistant_prompt(messages: List[Dict[str, str]]) -> List[Dict[str, str]]:
+    """Insert the developer assistant system prompt when enabled via env.
+
+    This keeps user/assistant content intact while ensuring the system message
+    is first in the list. Existing system prompts are removed to avoid mixing
+    roles when dev-assistant mode is on.
+    """
+
+    dev_mode = os.getenv("DEV_ASSISTANT_MODE", "false").lower() == "true"
+    if not dev_mode:
+        return messages
+
+    user_and_assistant = [m for m in messages if m.get("role") != "system"]
+    return [{"role": "system", "content": DEV_ASSISTANT_SYSTEM_PROMPT}, *user_and_assistant]
+
 
 def load_provider() -> Dict:
     """Load configured LLM provider and client.
@@ -108,6 +140,8 @@ def run_llm(
     max_tokens: int = 500,
 ) -> Optional[str]:
     """Execute a chat completion against the configured provider."""
+
+    messages = _apply_dev_assistant_prompt(messages)
 
     provider = load_provider()
     # Short-circuit dummy provider for zero-cost local development
