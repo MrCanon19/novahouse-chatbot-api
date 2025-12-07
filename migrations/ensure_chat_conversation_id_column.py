@@ -13,12 +13,13 @@ decide the correct manual or Alembic migration.
 
 Run with: `python migrations/ensure_chat_conversation_id_column.py`
 This prints the column list and constraints for `chat_conversations` using the
-current DATABASE_URL configuration.
+current DATABASE_URL configuration and suggests the **manual SQL** you should
+apply to make the table match the model (`id` integer PK, unique `session_id`).
 """
 
 import os
 import sys
-from typing import List
+from typing import Dict, List, Optional, Sequence
 
 from sqlalchemy import text
 
@@ -77,7 +78,7 @@ def _get_primary_key_name(connection) -> str | None:
     return result[0] if result else None
 
 
-def _describe_columns(connection):
+def _describe_columns(connection) -> Sequence[Dict[str, Optional[str]]]:
     columns_query = text(
         """
         SELECT column_name, data_type, is_nullable, column_default
@@ -90,14 +91,24 @@ def _describe_columns(connection):
     rows = connection.execute(columns_query).fetchall()
     if not rows:
         print("⚠️  chat_conversations table does not exist in this schema.")
-        return
+        return []
 
     print("📋 Columns:")
+    column_dicts: List[Dict[str, Optional[str]]] = []
     for name, dtype, nullable, default in rows:
         print(f"- {name}: {dtype}, nullable={nullable}, default={default}")
+        column_dicts.append(
+            {
+                "name": name,
+                "data_type": dtype,
+                "is_nullable": nullable,
+                "column_default": default,
+            }
+        )
+    return column_dicts
 
 
-def _describe_constraints(connection):
+def _describe_constraints(connection) -> Sequence[Dict[str, str]]:
     constraints_query = text(
         """
         SELECT tc.constraint_name, tc.constraint_type, kcu.column_name
@@ -113,11 +124,72 @@ def _describe_constraints(connection):
     rows = connection.execute(constraints_query).fetchall()
     if not rows:
         print("(no constraints found)")
-        return
+        return []
 
     print("🔐 Constraints:")
+    constraint_dicts: List[Dict[str, str]] = []
     for name, ctype, column in rows:
         print(f"- {ctype}: {name} on {column}")
+        constraint_dicts.append({"name": name, "type": ctype, "column": column})
+    return constraint_dicts
+
+
+def _has_unique_session_id(constraints: Sequence[Dict[str, str]]) -> bool:
+    return any(
+        c["type"] in {"UNIQUE", "PRIMARY KEY"} and c["column"] == "session_id"
+        for c in constraints
+    )
+
+
+def _summarize_needed_actions(
+    columns: Sequence[Dict[str, Optional[str]]],
+    pk_columns: Sequence[str],
+    constraints: Sequence[Dict[str, str]],
+):
+    print("\n🧭 Suggested actions to align with the ORM model (id PK, unique session_id):")
+
+    column_names = {col["name"] for col in columns}
+    has_id_column = "id" in column_names
+    has_session_id = "session_id" in column_names
+    has_pk_on_id = pk_columns == ["id"]
+    has_any_pk = bool(pk_columns)
+    has_unique_session = _has_unique_session_id(constraints)
+
+    if not has_id_column:
+        print("- Add id column and primary key:")
+        print("    ALTER TABLE chat_conversations ADD COLUMN id BIGSERIAL;")
+        if has_any_pk:
+            print("    -- Drop existing PK before adding a new one")
+            print("    ALTER TABLE chat_conversations DROP CONSTRAINT <current_pkey_name>;")
+        print(
+            "    ALTER TABLE chat_conversations ADD CONSTRAINT chat_conversations_pkey PRIMARY KEY (id);"
+        )
+    elif not has_pk_on_id:
+        if has_any_pk:
+            print("- Move primary key onto id:")
+            print("    ALTER TABLE chat_conversations DROP CONSTRAINT <current_pkey_name>;")
+        else:
+            print("- Add primary key on existing id column:")
+        print(
+            "    ALTER TABLE chat_conversations ADD CONSTRAINT chat_conversations_pkey PRIMARY KEY (id);"
+        )
+    else:
+        print("- ✅ id column already present and set as primary key.")
+
+    if not has_session_id:
+        print("- ⚠️ session_id column missing; add it to match the model if required.")
+    elif not has_unique_session:
+        print("- Add uniqueness on session_id (if required by your code):")
+        print(
+            "    ALTER TABLE chat_conversations ADD CONSTRAINT chat_conversations_session_id_key UNIQUE (session_id);"
+        )
+    else:
+        print("- ✅ session_id already unique (via UNIQUE constraint or PK).")
+
+    print("\nNotes:")
+    print("- Replace <current_pkey_name> with the actual constraint name from above output.")
+    print("- Run these statements manually (psql/Cloud SQL) before creating a migration.")
+    print("- After aligning the table, redeploy to verify the SQLAlchemy error disappears.")
 
 
 def describe_chat_conversations_table():
@@ -133,8 +205,12 @@ def describe_chat_conversations_table():
                 print("⚠️  chat_conversations table not found in current schema.")
                 return
 
-            _describe_columns(connection)
-            _describe_constraints(connection)
+            columns = _describe_columns(connection)
+            constraints = _describe_constraints(connection)
+            pk_columns = _get_primary_key_columns(connection)
+
+        if columns:
+            _summarize_needed_actions(columns, pk_columns, constraints)
 
         print("✅ Inspection complete. Review the above output and plan the exact migration.")
 
