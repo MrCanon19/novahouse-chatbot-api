@@ -17,16 +17,27 @@ current DATABASE_URL configuration and suggests the **manual SQL** you should
 apply to make the table match the model (`id` integer PK, unique `session_id`).
 """
 
+import argparse
 import os
 import sys
 from typing import Dict, List, Optional, Sequence
 
-from sqlalchemy import text
+from sqlalchemy import create_engine, text
+from sqlalchemy.engine.url import make_url
 
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.main import app, db  # noqa: E402
+
+
+def _mask_url(url: str) -> str:
+    """Return a URL string with the password redacted for logging."""
+
+    parsed = make_url(url)
+    if parsed.password is None:
+        return str(parsed)
+    return str(parsed.set(password="***"))
 
 
 def _table_exists(connection) -> bool:
@@ -207,15 +218,20 @@ def _summarize_needed_actions(
     print("- After aligning the table, redeploy to verify the SQLAlchemy error disappears.")
 
 
-def describe_chat_conversations_table():
+def describe_chat_conversations_table(database_url: str | None = None):
     """Print the current schema of chat_conversations without modifying it."""
 
     with app.app_context():
-        if db.engine.dialect.name != "postgresql":
+        engine = db.engine
+        if database_url:
+            print(f"ℹ️ Using database override: {_mask_url(database_url)}")
+            engine = create_engine(database_url, future=True)
+
+        if engine.dialect.name != "postgresql":
             print("⚠️  This diagnostic currently supports only PostgreSQL. Skipping.")
             return
 
-        with db.engine.begin() as connection:
+        with engine.begin() as connection:
             if not _table_exists(connection):
                 print("⚠️  chat_conversations table not found in current schema.")
                 return
@@ -231,5 +247,19 @@ def describe_chat_conversations_table():
         print("✅ Inspection complete. Review the above output and plan the exact migration.")
 
 
+def _parse_args(argv: Sequence[str]):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--database-url",
+        dest="database_url",
+        help=(
+            "Optional SQLAlchemy URL to override the app's configured database. "
+            "Use this to point directly at Cloud SQL when running the diagnostic."
+        ),
+    )
+    return parser.parse_args(argv)
+
+
 if __name__ == "__main__":
-    describe_chat_conversations_table()
+    args = _parse_args(sys.argv[1:])
+    describe_chat_conversations_table(args.database_url)
