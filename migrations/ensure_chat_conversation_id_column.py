@@ -11,10 +11,18 @@ Blindly applying ALTERs without knowing the live schema risks data loss or
 locks. This script therefore performs **read-only** inspection so that you can
 decide the correct manual or Alembic migration.
 
-Run with: `python migrations/ensure_chat_conversation_id_column.py`
+Run with:
+
+```
+python migrations/ensure_chat_conversation_id_column.py
+# or explicitly target a database:
+python migrations/ensure_chat_conversation_id_column.py --db "postgresql+psycopg2://user:pass@host:port/db"
+```
+
 This prints the column list and constraints for `chat_conversations` using the
-current DATABASE_URL configuration and suggests the **manual SQL** you should
-apply to make the table match the model (`id` integer PK, unique `session_id`).
+current DATABASE_URL configuration (or the provided `--db`/`--database-url`)
+and suggests the **manual SQL** you should apply to make the table match the
+model (`id` integer PK, unique `session_id`).
 """
 
 import argparse
@@ -262,6 +270,7 @@ def describe_chat_conversations_table(database_url: str | None = None) -> bool:
 def _parse_args(argv: Sequence[str]):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
+        "--db",
         "--database-url",
         dest="database_url",
         help=(

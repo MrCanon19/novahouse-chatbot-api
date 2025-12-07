@@ -1,1 +1,20 @@
 Generic single-database configuration.
+
+## Chat conversation schema diagnostic (read-only)
+
+Use `migrations/ensure_chat_conversation_id_column.py` to inspect the live
+`chat_conversations` table before applying any structural migration. The script
+is **read-only** and will exit non-zero if it cannot connect or the table is
+missing.
+
+Examples:
+
+```bash
+python migrations/ensure_chat_conversation_id_column.py
+python migrations/ensure_chat_conversation_id_column.py --db "postgresql+psycopg2://user:pass@host:port/db"
+```
+
+The output lists columns and constraints and prints the exact SQL to align the
+table with the ORM model (`id` primary key, unique `session_id`). Run those SQL
+statements manually (psql/Cloud SQL) once you have reviewed them for the target
+environment.
