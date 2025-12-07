@@ -18,3 +18,36 @@ The output lists columns and constraints and prints the exact SQL to align the
 table with the ORM model (`id` primary key, unique `session_id`). Run those SQL
 statements manually (psql/Cloud SQL) once you have reviewed them for the target
 environment.
+
+### Running against Cloud SQL via the proxy (recommended)
+
+1. List your Cloud SQL instances and capture the `CONNECTION_NAME`:
+
+   ```bash
+   gcloud sql instances list
+   ```
+
+2. Start the proxy in a separate terminal. Substitute the instance name from
+   the previous command (the last segment of `CONNECTION_NAME`), and keep the
+   proxy running:
+
+   ```bash
+   cloud-sql-proxy glass-core-467907-e9:europe-west3:<INSTANCE_NAME> --port 5432
+   ```
+
+3. In your project terminal, activate your virtual environment and run the
+   diagnostic against `127.0.0.1:5432` using the credentials from your
+   `DATABASE_URL` (e.g. from `app.yaml.secret`). The password will be redacted
+   in the script output, but you can manually replace it with `***` before
+   sharing logs:
+
+   ```bash
+   source venv/bin/activate
+   python migrations/ensure_chat_conversation_id_column.py \
+     --db "postgresql+psycopg2://chatbot_user:<PASSWORD>@127.0.0.1:5432/chatbot"
+   ```
+
+4. Copy the **full** diagnostic output (columns, constraints, and suggested
+   SQL). Use it to perform the necessary `ALTER TABLE` statements manually in
+   psql or the Cloud SQL console. Do **not** apply speculative migrations until
+   the live schema has been verified.

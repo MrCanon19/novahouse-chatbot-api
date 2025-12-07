@@ -15,14 +15,15 @@ Run with:
 
 ```
 python migrations/ensure_chat_conversation_id_column.py
-# or explicitly target a database:
+# or explicitly target a database (e.g. via Cloud SQL Proxy on 127.0.0.1):
 python migrations/ensure_chat_conversation_id_column.py --db "postgresql+psycopg2://user:pass@host:port/db"
 ```
 
-This prints the column list and constraints for `chat_conversations` using the
-current DATABASE_URL configuration (or the provided `--db`/`--database-url`)
-and suggests the **manual SQL** you should apply to make the table match the
-model (`id` integer PK, unique `session_id`).
+The script prints the column list and constraints for `chat_conversations`
+using the current DATABASE_URL configuration (or the provided `--db`/
+`--database-url`). Credentials are redacted when echoed. See migrations/README
+for Cloud SQL proxy steps. The output suggests the **manual SQL** you should
+apply to make the table match the model (`id` integer PK, unique `session_id`).
 """
 
 import argparse
