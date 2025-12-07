@@ -95,6 +95,31 @@ python main.py
 
 Backend zwróci statyczną odpowiedź z `DUMMY_LLM_RESPONSE`, więc możesz testować /chat bez kluczy API.
 
+### Tryb asystenta programistycznego (DEV_ASSISTANT_MODE)
+
+Szybki setup lokalnego „Copilota” korzystającego z `/chat`:
+
+1. W `.env` włącz tryb dev-asystenta i wybierz providera (dummy lub Groq):
+   ```bash
+   DEV_ASSISTANT_MODE=true
+   LLM_PROVIDER=dummy        # albo groq jeśli masz klucz
+   ```
+2. Odpal backend (np. Groq helperem lub dummy):
+   ```bash
+   ./run_local_groq.sh
+   # lub
+   export LLM_PROVIDER=dummy && python main.py
+   ```
+3. W drugim terminalu uruchom klienta terminalowego z komendami `/file` i `/apply`:
+   ```bash
+   python chat_client.py
+   ```
+4. Przykładowy flow:
+   - `/file src/services/llm/engine.py` – bot zwraca pełny plik z poprawkami.
+   - `/apply src/services/llm/engine.py` – plik zostaje nadpisany, a `.bak` jest tworzony automatycznie.
+
+DEV_ASSISTANT_MODE wstrzykuje system prompt inżynieryjny do każdego wywołania LLM, więc model zachowuje się jak asystent do kodu.
+
 ## 🛠️ Tech Stack
 
 - **Backend:** Python 3.13, Flask 3.1, SQLAlchemy 2.0

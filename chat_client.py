@@ -1,4 +1,16 @@
+"""Lokalny klient terminalowy dla NovaHouse chatbota.
+
+Użycie (w drugim terminalu po odpaleniu backendu):
+    python chat_client.py
+
+Komendy:
+    /file <ścieżka>  – wyślij plik do analizy
+    /apply <ścieżka> – nadpisz plik kodem z ostatniej odpowiedzi (tworzy .bak)
+    /exit            – zakończ
+"""
+
 import json
+import shutil
 from pathlib import Path
 import requests
 
@@ -63,6 +75,10 @@ def write_file_from_reply(path_str: str, reply: str) -> None:
     code = "\n".join(lines).strip("\n") + "\n"
 
     path = Path(path_str).expanduser().resolve()
+    if path.exists():
+        backup_path = path.with_suffix(path.suffix + ".bak")
+        shutil.copy2(path, backup_path)
+
     path.write_text(code, encoding="utf-8")
 
 
@@ -77,7 +93,8 @@ def print_help() -> None:
 
 def main() -> None:
     print("Lokalny asystent programistyczny")
-    print("Napisz /exit aby zakończyć, /help po listę komend.\n")
+    print_help()
+    print("Napisz /exit aby zakończyć.\n")
 
     conversation_id = DEFAULT_CONVERSATION_ID
     last_reply: str | None = None
