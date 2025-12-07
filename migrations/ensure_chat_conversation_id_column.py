@@ -145,29 +145,42 @@ def _summarize_needed_actions(
     columns: Sequence[Dict[str, Optional[str]]],
     pk_columns: Sequence[str],
     constraints: Sequence[Dict[str, str]],
+    pk_name: str | None,
 ):
     print("\n🧭 Suggested actions to align with the ORM model (id PK, unique session_id):")
 
     column_names = {col["name"] for col in columns}
     has_id_column = "id" in column_names
+    has_conversation_id = "conversation_id" in column_names
     has_session_id = "session_id" in column_names
     has_pk_on_id = pk_columns == ["id"]
+    has_pk_on_conversation_id = pk_columns == ["conversation_id"]
     has_any_pk = bool(pk_columns)
     has_unique_session = _has_unique_session_id(constraints)
 
+    printable_pk = pk_name or "<current_pkey_name>"
+
     if not has_id_column:
-        print("- Add id column and primary key:")
-        print("    ALTER TABLE chat_conversations ADD COLUMN id BIGSERIAL;")
-        if has_any_pk:
-            print("    -- Drop existing PK before adding a new one")
-            print("    ALTER TABLE chat_conversations DROP CONSTRAINT <current_pkey_name>;")
-        print(
-            "    ALTER TABLE chat_conversations ADD CONSTRAINT chat_conversations_pkey PRIMARY KEY (id);"
-        )
+        if has_conversation_id and has_pk_on_conversation_id:
+            print("- Rename existing primary key column conversation_id -> id and rebuild PK:")
+            print(f"    ALTER TABLE chat_conversations DROP CONSTRAINT {printable_pk};")
+            print("    ALTER TABLE chat_conversations RENAME COLUMN conversation_id TO id;")
+            print(
+                "    ALTER TABLE chat_conversations ADD CONSTRAINT chat_conversations_pkey PRIMARY KEY (id);"
+            )
+        else:
+            print("- Add id column and primary key:")
+            print("    ALTER TABLE chat_conversations ADD COLUMN id BIGSERIAL;")
+            if has_any_pk:
+                print("    -- Drop existing PK before adding a new one")
+                print(f"    ALTER TABLE chat_conversations DROP CONSTRAINT {printable_pk};")
+            print(
+                "    ALTER TABLE chat_conversations ADD CONSTRAINT chat_conversations_pkey PRIMARY KEY (id);"
+            )
     elif not has_pk_on_id:
         if has_any_pk:
             print("- Move primary key onto id:")
-            print("    ALTER TABLE chat_conversations DROP CONSTRAINT <current_pkey_name>;")
+            print(f"    ALTER TABLE chat_conversations DROP CONSTRAINT {printable_pk};")
         else:
             print("- Add primary key on existing id column:")
         print(
@@ -187,7 +200,9 @@ def _summarize_needed_actions(
         print("- ✅ session_id already unique (via UNIQUE constraint or PK).")
 
     print("\nNotes:")
-    print("- Replace <current_pkey_name> with the actual constraint name from above output.")
+    print(
+        "- Replace <current_pkey_name> with the actual constraint name from above output if it did not auto-fill."
+    )
     print("- Run these statements manually (psql/Cloud SQL) before creating a migration.")
     print("- After aligning the table, redeploy to verify the SQLAlchemy error disappears.")
 
@@ -208,9 +223,10 @@ def describe_chat_conversations_table():
             columns = _describe_columns(connection)
             constraints = _describe_constraints(connection)
             pk_columns = _get_primary_key_columns(connection)
+            pk_name = _get_primary_key_name(connection)
 
         if columns:
-            _summarize_needed_actions(columns, pk_columns, constraints)
+            _summarize_needed_actions(columns, pk_columns, constraints, pk_name)
 
         print("✅ Inspection complete. Review the above output and plan the exact migration.")
 
