@@ -31,11 +31,19 @@ def send_message(message: str, conversation_id: str | None = None) -> dict:
 
 
 def extract_reply(data: dict) -> str:
+    """Spróbuj wydobyć odpowiedź tekstową z kilku typowych kluczy."""
+
+    if isinstance(data, dict):
+        resp = data.get("response")
+        if isinstance(resp, str):
+            return resp
+
     # Dopasowane do typowych struktur odpowiedzi
     for key in ["assistant_message", "reply", "message", "content"]:
-        value = data.get(key)
+        value = data.get(key) if isinstance(data, dict) else None
         if isinstance(value, str):
             return value
+
     return json.dumps(data, ensure_ascii=False, indent=2)
 
 
