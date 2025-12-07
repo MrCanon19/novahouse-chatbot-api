@@ -1,5 +1,6 @@
 """Tests for the unified LLM engine providers."""
 
+import importlib.util
 import sys
 import types
 
@@ -24,7 +25,7 @@ def test_groq_without_key_is_disabled(monkeypatch, capsys):
     monkeypatch.setitem(
         sys.modules,
         "groq",
-        types.SimpleNamespace(Groq=lambda **_: None),
+        types.SimpleNamespace(Groq=lambda **_: None, __spec__=types.SimpleNamespace()),
     )
 
     monkeypatch.setenv("LLM_PROVIDER", "groq")
@@ -36,3 +37,17 @@ def test_groq_without_key_is_disabled(monkeypatch, capsys):
 
     assert response is None
     assert "GROQ_API_KEY" in captured.out
+
+
+def test_groq_package_missing_disables_provider(monkeypatch, capsys):
+    """Groq provider should disable cleanly when dependency is absent."""
+
+    monkeypatch.setattr(importlib.util, "find_spec", lambda _: None)
+    monkeypatch.setenv("LLM_PROVIDER", "groq")
+
+    response = run_llm([{"role": "user", "content": "hi"}])
+
+    captured = capsys.readouterr()
+
+    assert response is None
+    assert "groq package not installed" in captured.out

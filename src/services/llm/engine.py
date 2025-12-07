@@ -1,5 +1,6 @@
 """Unified LLM engine with pluggable providers."""
 
+import importlib.util
 import os
 from typing import Dict, List, Optional
 
@@ -27,6 +28,19 @@ def load_provider() -> Dict:
         }
 
     if provider_name == "groq":
+        groq_available = False
+        try:
+            groq_available = importlib.util.find_spec("groq") is not None
+        except ValueError:
+            groq_available = False
+        if not groq_available:
+            return {
+                "name": "groq",
+                "client": None,
+                "model": os.getenv("GROQ_MODEL", "llama3-8b-8192"),
+                "disabled_reason": "groq package not installed",
+            }
+
         from groq import Groq
 
         api_key = os.getenv("GROQ_API_KEY")
