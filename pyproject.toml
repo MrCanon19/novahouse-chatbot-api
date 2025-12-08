@@ -53,7 +53,7 @@ dependencies = [
     "Whoosh==2.7.4",
     "python-dotenv==1.0.1",
     "alembic==1.13.2",
-    "flask-migrate==4.0.5",
+    "flask-migrate==4.1.0",
 ]
 
 [project.optional-dependencies]
