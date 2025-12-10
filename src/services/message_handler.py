@@ -1145,8 +1145,9 @@ class MessageHandler:
                     timestamp=datetime.now(timezone.utc),
                 )
                 db.session.add(msg)
+                # Flush to get the record visible in the current transaction;
+                # final commit nastąpi wyżej w process_message (jeden commit na całą procedurę).
                 db.session.flush()
-                db.session.commit()  # Explicit commit
                 return  # Success
             except OperationalError as e:
                 retry_count += 1
