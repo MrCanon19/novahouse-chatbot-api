@@ -8,7 +8,6 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.engine.url import make_url
 from sqlalchemy.exc import SQLAlchemyError
 
-
 TABLE_NAME = "chat_conversations"
 
 
@@ -172,10 +171,7 @@ ON {TABLE_NAME} (session_id);
         print("Proponowany SQL (dopasuj nazwę constraintu jeśli inna):")
         drop_clause = ""
         if pk_name:
-            drop_clause = (
-                f"ALTER TABLE {TABLE_NAME}\n"
-                f"DROP CONSTRAINT {pk_name};\n\n"
-            )
+            drop_clause = f"ALTER TABLE {TABLE_NAME}\n" f"DROP CONSTRAINT {pk_name};\n\n"
 
         print(
             f"""
@@ -233,4 +229,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-

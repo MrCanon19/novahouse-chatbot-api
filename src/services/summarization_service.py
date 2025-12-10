@@ -3,7 +3,68 @@ Context Summarization Service
 Generates concise conversation summaries for Monday.com and lead records
 """
 
+from dataclasses import dataclass
 from typing import Dict, List, Optional
+
+
+@dataclass
+class ContextMemory:
+    """
+    Typed container for conversation context data.
+
+    Provides type safety and IDE autocomplete for context attributes.
+    Use this instead of raw Dict for better maintainability.
+    """
+
+    # Personal info
+    name: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+
+    # Property details
+    city: Optional[str] = None
+    square_meters: Optional[int] = None
+    rooms: Optional[int] = None
+    property_type: Optional[str] = None  # "mieszkanie", "dom"
+
+    # Requirements
+    package: Optional[str] = None  # Express, Comfort, Premium, etc.
+    budget: Optional[int] = None
+    timeline: Optional[str] = None  # "pilne", "do 3 miesięcy", "planowanie"
+
+    # Booking
+    booking_intent: bool = False
+    preferred_contact: Optional[str] = None  # "email", "phone", "whatsapp"
+
+    # RODO
+    rodo_consent: bool = False
+    marketing_consent: bool = False
+
+    def to_dict(self) -> Dict:
+        """Convert to dictionary for legacy compatibility"""
+        from dataclasses import asdict
+
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: Dict) -> "ContextMemory":
+        """Create from dictionary with safe defaults"""
+        return cls(
+            name=data.get("name"),
+            email=data.get("email"),
+            phone=data.get("phone"),
+            city=data.get("city"),
+            square_meters=data.get("square_meters"),
+            rooms=data.get("rooms"),
+            property_type=data.get("property_type"),
+            package=data.get("package"),
+            budget=data.get("budget"),
+            timeline=data.get("timeline"),
+            booking_intent=data.get("booking_intent", False),
+            preferred_contact=data.get("preferred_contact"),
+            rodo_consent=data.get("rodo_consent", False),
+            marketing_consent=data.get("marketing_consent", False),
+        )
 
 
 class ContextSummarizationService:
@@ -11,7 +72,7 @@ class ContextSummarizationService:
 
     def generate_summary(
         self,
-        context_memory: Dict,
+        context_memory: ContextMemory | Dict,
         message_history: List[Dict],
         conversation_duration_minutes: float = 0,
     ) -> str:
@@ -19,29 +80,35 @@ class ContextSummarizationService:
         Generate one-sentence conversation summary
 
         Args:
-            context_memory: Collected context data
+            context_memory: Collected context data (ContextMemory or Dict for legacy)
             message_history: List of messages with 'sender' and 'message' keys
             conversation_duration_minutes: Duration of conversation
 
         Returns:
             Concise summary string
         """
+        # Convert to dict if ContextMemory for unified access
+        if isinstance(context_memory, ContextMemory):
+            ctx = context_memory.to_dict()
+        else:
+            ctx = context_memory
+
         parts = []
 
         # 1. Location
-        city = context_memory.get("city")
+        city = ctx.get("city")
         if city:
             parts.append(f"Klient z {city}")
         else:
             parts.append("Klient")
 
         # 2. Property size
-        sqm = context_memory.get("square_meters")
+        sqm = ctx.get("square_meters")
         if sqm:
             parts.append(f"mieszkanie {sqm}m²")
 
         # 3. Package interest
-        package = context_memory.get("package")
+        package = ctx.get("package")
         if package:
             parts.append(f"interesuje pakiet {package}")
 
@@ -56,7 +123,7 @@ class ContextSummarizationService:
             parts.append(timeline)
 
         # 6. Contact preference
-        contact = self._get_contact_preference(context_memory)
+        contact = self._get_contact_preference(ctx)
         if contact:
             parts.append(contact)
 

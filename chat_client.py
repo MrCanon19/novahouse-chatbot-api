@@ -1,7 +1,8 @@
-import requests
 import json
-from pathlib import Path
 import shutil
+from pathlib import Path
+
+import requests
 
 API_URL = "http://127.0.0.1:5050/api/chatbot/chat"
 DEFAULT_CONVERSATION_ID = "local-dev-session"
@@ -51,7 +52,7 @@ def write_file_from_reply(path_str, reply):
     if end == -1:
         raise ValueError("Znaleziono otwarcie ``` ale brak zamknięcia")
 
-    code_block = reply[start + 3:end]
+    code_block = reply[start + 3 : end]
     lines = code_block.splitlines()
     if lines and lines[0].strip().startswith(("python", "py")):
         lines = lines[1:]
@@ -102,7 +103,7 @@ def main():
             continue
 
         if user_input.startswith("/file "):
-            path_str = user_input[len("/file "):].strip()
+            path_str = user_input[len("/file ") :].strip()
             if not path_str:
                 print("Podaj ścieżkę do pliku, np. /file src/services/llm/engine.py\n")
                 continue
@@ -127,7 +128,7 @@ def main():
             continue
 
         if user_input.startswith("/apply "):
-            path_str = user_input[len("/apply "):].strip()
+            path_str = user_input[len("/apply ") :].strip()
             if not path_str:
                 print("Podaj ścieżkę do pliku, np. /apply src/services/llm/engine.py\n")
                 continue

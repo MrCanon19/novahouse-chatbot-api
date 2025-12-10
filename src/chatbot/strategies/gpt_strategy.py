@@ -1,6 +1,4 @@
-import json
-import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from openai import OpenAI
 from sqlalchemy.orm import Session

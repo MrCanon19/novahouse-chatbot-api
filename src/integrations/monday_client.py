@@ -4,12 +4,24 @@ Handles all interactions with Monday.com boards
 """
 
 import json
+import logging
 import os
 from typing import Dict, Optional
 
 import requests
+from pybreaker import CircuitBreaker
 
 from src.services.slow_query_logger import log_slow_query
+
+logger = logging.getLogger(__name__)
+
+# Circuit breaker for Monday.com API (fail-fast on repeated failures)
+monday_breaker = CircuitBreaker(
+    fail_max=5,  # Open after 5 failures
+    reset_timeout=60,  # Wait 60 seconds before attempting recovery
+    listeners=[],
+)
+logger.info("✅ Monday.com circuit breaker initialized (fail_max=5, reset_timeout=60s)")
 
 
 class MondayClient:
@@ -29,7 +41,12 @@ class MondayClient:
 
     @log_slow_query(threshold_ms=500, query_type="monday")
     def _make_request(self, query: str, variables: Optional[Dict] = None) -> Dict:
-        """Make a GraphQL request to Monday.com API"""
+        """
+        Make a GraphQL request to Monday.com API (WITH CIRCUIT BREAKER)
+
+        Circuit breaker opens after 5 consecutive failures, preventing cascading
+        failures when Monday.com API is down or rate-limited.
+        """
 
         headers = {"Authorization": self.api_key, "Content-Type": "application/json"}
 
@@ -39,12 +56,17 @@ class MondayClient:
             data["variables"] = variables
 
         try:
-            response = requests.post(self.api_url, json=data, headers=headers, timeout=10)
+
+            @monday_breaker
+            def call_monday():
+                return requests.post(self.api_url, json=data, headers=headers, timeout=10)
+
+            response = call_monday()
             response.raise_for_status()
             return response.json()
 
-        except requests.exceptions.RequestException as e:
-            print(f"Monday.com API Error: {e}")
+        except Exception as e:
+            logger.warning(f"⚠️  Monday.com API Error: {e} (circuit breaker may be open)")
             return {"errors": [str(e)]}
 
     def create_lead_item(self, lead_data: Dict) -> Optional[str]:

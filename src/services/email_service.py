@@ -1,6 +1,3 @@
-import os
-
-
 class EmailService:
     """
     A dummy email service for sending notifications.

@@ -445,3 +445,237 @@ def train_ml_model():
 
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+@migration_bp.route("/api/migration/create-consent-audit-log", methods=["POST"])
+def create_consent_audit_log_table():
+    """
+    Create consent_audit_log table for RODO/GDPR compliance tracking.
+
+    Logs all consent changes (unsubscribe, revoke, opt-in) with IP, timestamp,
+    and reason for audit trail and regulatory compliance.
+
+    Requires admin authentication.
+    """
+    import os
+
+    admin_key = os.getenv("API_KEY") or os.getenv("ADMIN_API_KEY")
+    if not admin_key:
+        return jsonify({"error": "Admin key not configured"}), 500
+
+    provided_key = request.headers.get("X-ADMIN-API-KEY") or request.headers.get("X-API-KEY")
+    if provided_key != admin_key:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        inspector = inspect(db.engine)
+        existing_tables = inspector.get_table_names()
+
+        if "consent_audit_log" in existing_tables:
+            return (
+                jsonify(
+                    {
+                        "success": True,
+                        "message": "consent_audit_log table already exists",
+                        "skipped": True,
+                    }
+                ),
+                200,
+            )
+
+        # Create table for audit trail
+        db.session.execute(
+            text(
+                """
+                CREATE TABLE consent_audit_log (
+                    id SERIAL PRIMARY KEY,
+                    conversation_id INTEGER,
+                    lead_id INTEGER,
+                    email VARCHAR(255),
+                    action VARCHAR(50) NOT NULL,
+                    timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    ip_address VARCHAR(50),
+                    user_agent TEXT,
+                    reason TEXT,
+                    notes TEXT
+                );
+
+                CREATE INDEX idx_consent_audit_email ON consent_audit_log(email);
+                CREATE INDEX idx_consent_audit_conversation ON consent_audit_log(conversation_id);
+                CREATE INDEX idx_consent_audit_lead ON consent_audit_log(lead_id);
+                CREATE INDEX idx_consent_audit_timestamp ON consent_audit_log(timestamp);
+                CREATE INDEX idx_consent_audit_action ON consent_audit_log(action);
+                """
+            )
+        )
+        db.session.commit()
+
+        return (
+            jsonify(
+                {
+                    "success": True,
+                    "message": "✅ consent_audit_log table created for RODO compliance",
+                    "indexes": ["email", "conversation_id", "lead_id", "timestamp", "action"],
+                }
+            ),
+            200,
+        )
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@migration_bp.route("/api/migration/create-followup-events", methods=["POST"])
+def create_followup_events_table():
+    """
+    Create followup_events table for idempotent follow-up delivery.
+
+    IDEMPOTENCY: UNIQUE(conversation_id, followup_number) prevents duplicate sends.
+    Requires admin authentication.
+    """
+    import os
+
+    admin_key = os.getenv("API_KEY") or os.getenv("ADMIN_API_KEY")
+    if not admin_key:
+        return jsonify({"error": "Admin key not configured"}), 500
+
+    provided_key = request.headers.get("X-ADMIN-API-KEY") or request.headers.get("X-API-KEY")
+    if provided_key != admin_key:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        inspector = inspect(db.engine)
+        existing_tables = inspector.get_table_names()
+
+        if "followup_events" in existing_tables:
+            return (
+                jsonify(
+                    {
+                        "success": True,
+                        "message": "followup_events table already exists",
+                        "skipped": True,
+                    }
+                ),
+                200,
+            )
+
+        # Create table with UNIQUE constraint for idempotency
+        db.session.execute(
+            text(
+                """
+                CREATE TABLE followup_events (
+                    id SERIAL PRIMARY KEY,
+                    conversation_id INTEGER NOT NULL,
+                    followup_number INTEGER NOT NULL,
+                    sent_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    status VARCHAR(20) NOT NULL DEFAULT 'sent',
+                    CONSTRAINT uq_conversation_followup UNIQUE (conversation_id, followup_number)
+                );
+
+                CREATE INDEX idx_followup_events_conversation ON followup_events(conversation_id);
+                CREATE INDEX idx_followup_events_sent_at ON followup_events(sent_at);
+                """
+            )
+        )
+        db.session.commit()
+
+        return (
+            jsonify(
+                {
+                    "success": True,
+                    "message": "✅ followup_events table created with idempotency constraint",
+                    "constraint": "UNIQUE(conversation_id, followup_number)",
+                    "indexes": ["conversation_id", "sent_at"],
+                }
+            ),
+            200,
+        )
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@migration_bp.route("/api/migration/create-dead-letter-queue", methods=["POST"])
+def create_dead_letter_queue():
+    """
+    Create dead-letter queue table for failed alerts and notifications
+    Requires admin authentication
+    """
+    import os
+
+    admin_key = os.getenv("API_KEY") or os.getenv("ADMIN_API_KEY")
+    if not admin_key:
+        return jsonify({"error": "Admin key not configured"}), 500
+
+    provided_key = request.headers.get("X-ADMIN-API-KEY") or request.headers.get("X-API-KEY")
+    if provided_key != admin_key:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        inspector = inspect(db.engine)
+        existing_tables = inspector.get_table_names()
+
+        if "dead_letter_queue" not in existing_tables:
+            db.session.execute(
+                text(
+                    """
+                CREATE TABLE dead_letter_queue (
+                    id SERIAL PRIMARY KEY,
+                    event_type VARCHAR(50) NOT NULL,
+                    target VARCHAR(255) NOT NULL,
+                    payload TEXT NOT NULL,
+                    error_message TEXT,
+                    retry_count INTEGER DEFAULT 0,
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    last_retry_at TIMESTAMP,
+                    status VARCHAR(20) DEFAULT 'pending'
+                )
+                """
+                )
+            )
+            # Create indexes for querying
+            db.session.execute(
+                text("CREATE INDEX idx_dlq_status_created ON dead_letter_queue(status, created_at)")
+            )
+            db.session.execute(
+                text("CREATE INDEX idx_dlq_created ON dead_letter_queue(created_at)")
+            )
+        else:
+            # Check if email column needs to be added
+            columns = [col.name for col in inspector.get_columns("dead_letter_queue")]
+            if "email" not in columns:
+                db.session.execute(
+                    text("ALTER TABLE dead_letter_queue ADD COLUMN email VARCHAR(255)")
+                )
+
+        # Also add email column to chat_conversations if missing
+        chat_conv_columns = [col.name for col in inspector.get_columns("chat_conversations")]
+        if "email" not in chat_conv_columns:
+            db.session.execute(text("ALTER TABLE chat_conversations ADD COLUMN email VARCHAR(255)"))
+            db.session.execute(
+                text("CREATE INDEX idx_chat_conversations_email ON chat_conversations(email)")
+            )
+
+        db.session.commit()
+
+        return (
+            jsonify(
+                {
+                    "success": True,
+                    "message": "✅ Dead-letter queue and indexes created",
+                    "tables": ["dead_letter_queue"],
+                    "indexes": [
+                        "idx_dlq_status_created",
+                        "idx_dlq_created",
+                        "idx_chat_conversations_email",
+                    ],
+                }
+            ),
+            200,
+        )
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500

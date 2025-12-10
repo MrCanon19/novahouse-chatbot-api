@@ -1,6 +1,9 @@
 """
 Session Timeout & Reengagement Service
 Gentle nudges when user goes inactive during conversation
+
+Uses Redis TTL for production (scalable across instances).
+Falls back to in-memory dict for development.
 """
 
 import logging
@@ -18,12 +21,54 @@ class SessionTimeoutService:
     SESSION_TIMEOUT_MINUTES = 30  # After 30 minutes, consider session ended
 
     def __init__(self):
-        self.active_sessions = {}  # Track last activity per session
-        self.nudge_sent = {}  # Track sent nudges per session
+        # Fallback for dev (replaced by Redis in production)
+        self._fallback_sessions = {}
+        self._fallback_nudges = {}
+
+        # Lazy-load Redis cache
+        self._cache = None
+
+    @property
+    def cache(self):
+        """Lazy-load Redis cache to avoid import deadlock"""
+        if self._cache is None:
+            from src.services.redis_service import get_redis_cache
+
+            self._cache = get_redis_cache()
+        return self._cache
+
+    # Backward-compatible properties for tests
+    @property
+    def active_sessions(self):
+        """Backward compatibility: expose fallback sessions"""
+        return self._fallback_sessions
+
+    @property
+    def nudge_sent(self):
+        """Backward compatibility: expose fallback nudges"""
+        return self._fallback_nudges
 
     def update_activity(self, session_id: str):
-        """Update last activity timestamp for session"""
-        self.active_sessions[session_id] = datetime.now(timezone.utc)
+        """
+        Update last activity timestamp for session
+
+        Uses Redis with TTL = SESSION_TIMEOUT_MINUTES for automatic cleanup.
+        Stores ISO timestamp string for easy deserialization.
+        Also updates fallback for backward compatibility with tests.
+        """
+        now_dt = datetime.now(timezone.utc)
+        now = now_dt.isoformat()
+        key = f"session:activity:{session_id}"
+        ttl_seconds = self.SESSION_TIMEOUT_MINUTES * 60
+
+        # Always update fallback for backward compatibility
+        self._fallback_sessions[session_id] = now_dt
+
+        # Try Redis (will use internal fallback if Redis unavailable)
+        try:
+            self.cache.set(key, now, ttl=ttl_seconds)
+        except Exception as e:
+            logger.warning(f"Redis update failed: {e}")
 
     def check_inactivity(self, session_id: str) -> Optional[Dict]:
         """
@@ -32,10 +77,23 @@ class SessionTimeoutService:
         Returns:
             dict with nudge message or None
         """
-        if session_id not in self.active_sessions:
-            return None
+        key = f"session:activity:{session_id}"
 
-        last_activity = self.active_sessions[session_id]
+        try:
+            last_activity_str = self.cache.get(key)
+            if not last_activity_str:
+                # Try fallback
+                if session_id not in self._fallback_sessions:
+                    return None
+                last_activity = self._fallback_sessions[session_id]
+            else:
+                last_activity = datetime.fromisoformat(last_activity_str)
+        except Exception as e:
+            logger.warning(f"Redis get failed, using fallback: {e}")
+            if session_id not in self._fallback_sessions:
+                return None
+            last_activity = self._fallback_sessions[session_id]
+
         now = datetime.now(timezone.utc)
         minutes_inactive = (now - last_activity).total_seconds() / 60
 
@@ -60,21 +118,40 @@ class SessionTimeoutService:
         return None
 
     def _nudge_already_sent(self, session_id: str) -> bool:
-        """Check if nudge was already sent for this inactivity period"""
-        if session_id not in self.nudge_sent:
-            self.nudge_sent[session_id] = datetime.now(timezone.utc)
-            return False
+        """
+        Check if nudge was already sent for this inactivity period
 
-        # Check if nudge was sent recently (within last 5 minutes)
-        time_since_nudge = (
-            datetime.now(timezone.utc) - self.nudge_sent[session_id]
-        ).total_seconds() / 60
-        if time_since_nudge < 5:
+        Uses Redis with 5-minute TTL to prevent duplicate nudges.
+        Also syncs with _fallback_nudges for backward compatibility.
+        """
+        key = f"session:nudge:{session_id}"
+        now_dt = datetime.now(timezone.utc)
+
+        try:
+            existing_nudge = self.cache.get(key)
+            if not existing_nudge:
+                # No nudge sent recently - mark as sent with 5 min TTL
+                self.cache.set(key, now_dt.isoformat(), ttl=300)
+                # Also update fallback for consistency
+                self._fallback_nudges[session_id] = now_dt
+                return False
+
+            # Nudge was sent recently
             return True
+        except Exception as e:
+            logger.warning(f"Redis nudge check failed, using fallback: {e}")
 
-        # Update timestamp and allow new nudge
-        self.nudge_sent[session_id] = datetime.now(timezone.utc)
-        return False
+            # Fallback logic
+            if session_id not in self._fallback_nudges:
+                self._fallback_nudges[session_id] = now_dt
+                return False
+
+            time_since_nudge = (now_dt - self._fallback_nudges[session_id]).total_seconds() / 60
+            if time_since_nudge < 5:
+                return True
+
+            self._fallback_nudges[session_id] = now_dt
+            return False
 
     def _get_nudge_message(self, session_id: str) -> str:
         """Get gentle reengagement message"""
@@ -99,14 +176,32 @@ class SessionTimeoutService:
         )
 
     def is_session_active(self, session_id: str) -> bool:
-        """Check if session is still considered active"""
-        if session_id not in self.active_sessions:
-            return False
+        """
+        Check if session is still considered active
 
-        last_activity = self.active_sessions[session_id]
+        Leverages Redis TTL: if key exists, session is active.
+        """
+        key = f"session:activity:{session_id}"
+
+        try:
+            last_activity_str = self.cache.get(key)
+            if not last_activity_str:
+                # Try fallback
+                if session_id not in self._fallback_sessions:
+                    return False
+                last_activity = self._fallback_sessions[session_id]
+            else:
+                # If Redis has key, session is active (TTL not expired)
+                return True
+        except Exception as e:
+            logger.warning(f"Redis check failed, using fallback: {e}")
+            if session_id not in self._fallback_sessions:
+                return False
+            last_activity = self._fallback_sessions[session_id]
+
+        # Fallback calculation
         now = datetime.now(timezone.utc)
         minutes_inactive = (now - last_activity).total_seconds() / 60
-
         return minutes_inactive < self.SESSION_TIMEOUT_MINUTES
 
     def get_reengagement_suggestion(self, context_memory: Dict) -> Optional[str]:
@@ -135,21 +230,32 @@ class SessionTimeoutService:
         return "🏠 Mogę pomóc w wyborze pakietu wykończenia. Co Cię najbardziej interesuje?"
 
     def cleanup_old_sessions(self):
-        """Remove sessions older than timeout"""
+        """
+        Remove sessions older than timeout
+
+        Redis: Auto-cleanup via TTL (no manual cleanup needed).
+        Fallback: Manual cleanup for in-memory dict.
+        """
+        # Redis handles TTL automatically - only clean fallback
+        if not self._fallback_sessions:
+            return
+
         now = datetime.now(timezone.utc)
         timeout = timedelta(minutes=self.SESSION_TIMEOUT_MINUTES)
 
         to_remove = [
             sid
-            for sid, last_activity in self.active_sessions.items()
+            for sid, last_activity in self._fallback_sessions.items()
             if now - last_activity > timeout
         ]
 
         for sid in to_remove:
-            del self.active_sessions[sid]
+            del self._fallback_sessions[sid]
+            if sid in self._fallback_nudges:
+                del self._fallback_nudges[sid]
 
         if to_remove:
-            logger.info(f"Cleaned up {len(to_remove)} inactive sessions")
+            logger.info(f"Cleaned up {len(to_remove)} inactive sessions from fallback storage")
 
 
 # Global instance

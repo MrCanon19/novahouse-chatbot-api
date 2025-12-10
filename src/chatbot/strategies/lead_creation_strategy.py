@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from sqlalchemy.orm import Session
 
@@ -16,22 +16,25 @@ def calculate_lead_score(context_memory: Dict[str, Any], message_count: int) -> 
     (PLACEHOLDER - TO BE MOVED TO DEDICATED LEAD SCORING SERVICE)
     Calculates a lead score based on extracted context and conversation length.
     """
-    score = 0
+    base_score = 0
     if context_memory.get("name"):
-        score += 10
-    if context_memory.get("email") or context_memory.get("phone"):
-        score += 20
+        base_score += 10
+    if context_memory.get("email"):
+        base_score += 10
+    if context_memory.get("phone"):
+        base_score += 10
     if context_memory.get("city"):
-        score += 5
+        base_score += 10
     if context_memory.get("square_meters"):
-        score += 10
+        base_score += 10
     if context_memory.get("package"):
-        score += 15
+        base_score += 15
 
-    # More messages could indicate higher engagement
-    score += min(message_count // 5, 10)  # Max 10 points for message count
+    score = base_score
+    if base_score > 0:
+        score += min(message_count * 2, 10)
 
-    return min(score, 100)  # Cap at 100
+    return min(score, 100)
 
 
 def generate_conversation_summary(
@@ -43,7 +46,9 @@ def generate_conversation_summary(
     """
     summary = "Konwersacja z chatbotem:\n"
     for msg in messages:
-        summary += f"{msg.sender.capitalize()}: {msg.message}\n"
+        text = getattr(msg, "message", getattr(msg, "text", ""))
+        sender = getattr(msg, "sender", "user") or "user"
+        summary += f"{sender.capitalize()}: {text}\n"
     summary += "\nZebrane dane:\n"
     for key, value in context_memory.items():
         summary += f"- {key}: {value}\n"
@@ -56,11 +61,10 @@ def suggest_next_best_action(context_memory: Dict[str, Any], lead_score: int) ->
     Suggests the next best action for a lead based on score and context.
     """
     if lead_score >= 70 and (context_memory.get("email") or context_memory.get("phone")):
-        return "Pilny kontakt telefoniczny/mailowy - wysoki potencjał."
-    elif lead_score >= 50:
-        return "Standardowy kontakt mailowy z ofertą."
-    else:
-        return "Monitorowanie, ewentualnie mail z podstawowymi informacjami."
+        return "HIGH PRIORITY: Call within 1 hour and send tailored offer via email."
+    if lead_score >= 50:
+        return "Follow-up via email within 24h with a tailored proposal."
+    return "Nurture via newsletter and light touch follow-ups."
 
 
 class LeadCreationStrategy(ChatStrategy):
