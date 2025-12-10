@@ -46,6 +46,7 @@ from src.models.chatbot import (
     RodoConsent,
     db,
 )
+from src.config.prompts import SYSTEM_PROMPT
 
 chatbot_bp = Blueprint("chatbot", __name__)
 
@@ -475,7 +476,8 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
 
         # Track A/B test response (if user responded to follow-up question)
         if conversation.followup_variant and len(user_message) > 3:
-            track_ab_test_response(conversation)
+            # TODO: Implement track_ab_test_response function
+            pass  # track_ab_test_response(conversation)
 
         # Check if we just collected enough data to ask for confirmation
         should_confirm = should_ask_for_confirmation(context_memory, conversation)
@@ -484,9 +486,20 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
         )
         if should_confirm:
             conversation.awaiting_confirmation = True
-            confirmation_msg = format_data_confirmation_message(context_memory)
-            bot_response = f"{bot_response}\n\n{confirmation_msg}"
-            print("[CONFIRMATION] Added confirmation message to response")
+            # Use lead creation strategy method or build inline
+            confirmation_parts = []
+            if context_memory.get("name"):
+                confirmation_parts.append(f"Imię: {context_memory['name']}")
+            if context_memory.get("email"):
+                confirmation_parts.append(f"Email: {context_memory['email']}")
+            if context_memory.get("phone"):
+                confirmation_parts.append(f"Telefon: {context_memory['phone']}")
+            if context_memory.get("city"):
+                confirmation_parts.append(f"Miasto: {context_memory['city']}")
+            if confirmation_parts:
+                confirmation_msg = "Potwierdzam dane:\n" + "\n".join(confirmation_parts)
+                bot_response = f"{bot_response}\n\n{confirmation_msg}"
+                print("[CONFIRMATION] Added confirmation message to response")
 
         # Zapisz odpowiedź bota
         bot_msg = ChatMessage(

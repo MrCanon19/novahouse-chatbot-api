@@ -1,5 +1,5 @@
 import os
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from openai import OpenAI
 from sqlalchemy.orm import Session

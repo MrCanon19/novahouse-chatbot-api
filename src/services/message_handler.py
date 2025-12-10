@@ -681,6 +681,8 @@ class MessageHandler:
 
         # 5. Learned FAQ (as fallback)
         if not bot_response:
+            # check_learned_faq is defined in src/routes/chatbot.py
+            from src.routes.chatbot import check_learned_faq
             bot_response = check_learned_faq(user_message)
 
         # 6. Final fallback with clarification and targeted ask
