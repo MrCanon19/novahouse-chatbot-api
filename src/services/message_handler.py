@@ -15,6 +15,7 @@ from typing import Dict, Optional, Tuple
 from src.models.chatbot import ChatConversation, ChatMessage, CompetitiveIntel, Lead, db
 from src.services.context_validator import ContextValidator
 from src.services.conversation_state_machine import ConversationStateMachine
+from src.services.faq_service import faq_service
 from src.services.multi_turn_dialog import multi_turn_dialog
 from src.services.proactive_suggestions import proactive_suggestions
 from src.services.rate_limiter import conversation_limiter
@@ -63,6 +64,7 @@ class MessageHandler:
             session_timeout_service.update_activity(session_id)
 
             # 4. Load and validate context
+            print("context", conversation.context_data)
             context_memory = json.loads(conversation.context_data or "{}")
 
             # 4b. PERSISTENT MEMORY: Check if returning customer
@@ -543,8 +545,6 @@ class MessageHandler:
         from src.routes.chatbot import (
             check_booking_intent,
             check_data_confirmation_intent,
-            check_faq,
-            check_learned_faq,
             generate_follow_up_question,
         )
 
@@ -605,7 +605,7 @@ class MessageHandler:
             is_short_confirmation and has_basic_context
         ):
             # User wants to see packages - trigger package FAQ
-            bot_response = check_faq("jakie pakiety macie")
+            bot_response = faq_service.check_faq("jakie pakiety macie")
             if bot_response:
                 context_memory["asked_about_packages"] = False  # Reset any flag
 
@@ -641,7 +641,7 @@ class MessageHandler:
 
         # 3. Standard FAQ (for simple, factual questions without context)
         if not bot_response:
-            bot_response = check_faq(user_message)
+            bot_response = faq_service.check_faq(user_message)
 
         # 4. Check if message is unclear - offer clarification (skip if greeting or has useful data)
         # Don't show confusion if user just provided name, city, sqm, etc.
