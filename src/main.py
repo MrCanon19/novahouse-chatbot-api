@@ -100,6 +100,23 @@ def set_security_headers(response):
     return response
 
 
+def is_rate_limit_disabled() -> bool:
+    """Return True when rate limiting should be skipped (e.g., during local CI runs)."""
+
+    flag = os.getenv("DISABLE_RATE_LIMITS", "").lower()
+    return flag in {"1", "true", "yes", "on"}
+
+
+class NoopLimiter:
+    """Minimal stub used when limits are intentionally disabled."""
+
+    def limit(self, *_args, **_kwargs):
+        def decorator(func):
+            return func
+
+        return decorator
+
+
 # Initialize rate limiter (Redis backend or memory fallback)
 # Configuration from environment variables for flexibility
 chat_rate_limit = os.getenv("CHAT_RATE_LIMIT", "30 per minute")
@@ -108,18 +125,23 @@ default_rate_limits = [
     os.getenv("API_RATE_LIMIT_MINUTE", "50 per minute"),
 ]
 
-limiter = Limiter(
-    app=app,
-    key_func=get_remote_address,
-    default_limits=default_rate_limits,
-    storage_uri=os.getenv("REDIS_URL", "memory://"),
-    strategy="fixed-window",
-)
-logger.info(
-    f"✅ Rate limiter initialized (backend: {'Redis' if os.getenv('REDIS_URL') else 'memory'})"
-)
-logger.info(f"   Chat endpoint limit: {chat_rate_limit}")
-logger.info(f"   Default limits: {', '.join(default_rate_limits)}")
+if is_rate_limit_disabled():
+    limiter = NoopLimiter()
+    logger.warning("⚠️ Rate limiting disabled via DISABLE_RATE_LIMITS")
+    app.extensions["limiter"] = limiter
+else:
+    limiter = Limiter(
+        app=app,
+        key_func=get_remote_address,
+        default_limits=default_rate_limits,
+        storage_uri=os.getenv("REDIS_URL", "memory://"),
+        strategy="fixed-window",
+    )
+    logger.info(
+        f"✅ Rate limiter initialized (backend: {'Redis' if os.getenv('REDIS_URL') else 'memory'})"
+    )
+    logger.info(f"   Chat endpoint limit: {chat_rate_limit}")
+    logger.info(f"   Default limits: {', '.join(default_rate_limits)}")
 
 # SECURITY: Secret key from environment (NEVER hardcode!)
 # Fail-fast if critical secrets missing in production
