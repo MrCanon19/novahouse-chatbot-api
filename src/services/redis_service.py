@@ -5,9 +5,11 @@ Production-ready caching with Redis
 Replaces in-memory SimpleCache
 """
 
+import hashlib
 import json
 import logging
 import os
+import time
 from functools import wraps
 from typing import Any, Optional
 
@@ -48,8 +50,15 @@ class RedisCache:
                     return json.loads(value)
                 return None
             else:
-                # Fallback to in-memory
-                return self._fallback_cache.get(key)
+                # Fallback with TTL support
+                if key in self._fallback_cache:
+                    value, expiry = self._fallback_cache[key]
+                    if time.time() < expiry:
+                        return value
+                    else:
+                        # Expired - clean up
+                        del self._fallback_cache[key]
+                return None
         except (json.JSONDecodeError, TypeError) as e:
             logger.error(f"Redis GET decode error: {e}")
             return None
@@ -64,8 +73,8 @@ class RedisCache:
                 serialized = json.dumps(value)
                 self.redis_client.setex(key, ttl, serialized)
             else:
-                # Fallback to in-memory (without TTL for simplicity)
-                self._fallback_cache[key] = value
+                # Fallback with TTL: store (value, expiry_timestamp) tuple
+                self._fallback_cache[key] = (value, time.time() + ttl)
         except (TypeError, ValueError) as e:
             print(f"Redis SET serialization error: {e}")
         except Exception as e:
@@ -165,6 +174,27 @@ class RedisCache:
             print(f"Redis STATS error: {e}")
             return {"enabled": False, "error": str(e)}
 
+    def cleanup_expired_fallback(self) -> int:
+        """
+        Remove expired entries from fallback cache
+
+        Should be called periodically (every 10 minutes) to prevent memory leaks.
+        Returns number of purged entries.
+        """
+        if not self._fallback_cache:
+            return 0
+
+        now = time.time()
+        expired = [k for k, (v, expiry) in self._fallback_cache.items() if expiry < now]
+
+        for key in expired:
+            del self._fallback_cache[key]
+
+        if expired:
+            logger.info(f"✅ Purged {len(expired)} expired fallback cache entries")
+
+        return len(expired)
+
 
 # Global cache instance - lazy loaded to avoid import deadlock on App Engine
 redis_cache = None
@@ -195,8 +225,11 @@ def cached_redis(ttl: int = 300, key_prefix: str = "cache"):
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
-            # Generate cache key from function name and args
-            cache_key = f"{key_prefix}:{func.__name__}:{str(args)}:{str(kwargs)}"
+            # Generate deterministic cache key using MD5 hash
+            key_parts = {"func": func.__name__, "args": args, "kwargs": kwargs}
+            key_json = json.dumps(key_parts, sort_keys=True, default=str)
+            key_hash = hashlib.md5(key_json.encode("utf-8")).hexdigest()
+            cache_key = f"{key_prefix}:{func.__name__}:{key_hash}"
 
             # Try to get from cache
             cache = get_redis_cache()
@@ -215,14 +248,6 @@ def cached_redis(ttl: int = 300, key_prefix: str = "cache"):
         return wrapper
 
     return decorator
-
-
-def get_redis_cache():
-    """Lazy load redis_cache to avoid import deadlock on App Engine"""
-    global redis_cache
-    if redis_cache is None:
-        redis_cache = RedisCache()
-    return redis_cache
 
 
 def warm_redis_cache():

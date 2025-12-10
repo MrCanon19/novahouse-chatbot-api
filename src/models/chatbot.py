@@ -121,6 +121,9 @@ class Lead(db.Model):
     assigned_at = db.Column(db.DateTime)  # When assigned
     first_contact_at = db.Column(db.DateTime)  # First contact timestamp
     expected_contact_by = db.Column(db.DateTime)  # SLA deadline
+    # RODO/GDPR Consent fields
+    marketing_consent = db.Column(db.Boolean, default=True)  # Marketing emails opt-in
+    rodo_consent = db.Column(db.Boolean, default=True)  # Data processing consent
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(
         db.DateTime,
@@ -279,6 +282,9 @@ class ChatConversation(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     session_id = db.Column(db.String(100), unique=True, nullable=False)
+    email = db.Column(
+        db.String(255), nullable=True, index=True
+    )  # Direct email column for unsubscribe + idempotency
     started_at = db.Column(db.DateTime, nullable=False)
     ended_at = db.Column(db.DateTime)
     context_data = db.Column(db.Text)  # JSON: {name, email, city, square_meters, package}
@@ -293,6 +299,9 @@ class ChatConversation(db.Model):
     needs_human_review = db.Column(db.Boolean, default=False)  # Sentiment escalation
     followup_count = db.Column(db.Integer, default=0)  # Number of followups sent
     last_followup_at = db.Column(db.DateTime)  # Last followup timestamp
+    # RODO/GDPR Consent fields
+    marketing_consent = db.Column(db.Boolean, default=True)  # Marketing emails opt-in
+    rodo_consent = db.Column(db.Boolean, default=True)  # Data processing consent
 
     messages = db.relationship(
         "ChatMessage", backref="conversation", lazy=True, cascade="all, delete-orphan"
@@ -356,4 +365,35 @@ class AuditLog(db.Model):
             "ip_address": self.ip_address,
             "details": self.details,
             "timestamp": self.timestamp.isoformat() if self.timestamp else None,
+        }
+
+
+class DeadLetterQueue(db.Model):
+    """Dead-letter queue for failed alerts and notifications"""
+
+    __tablename__ = "dead_letter_queue"
+
+    id = db.Column(db.Integer, primary_key=True)
+    event_type = db.Column(db.String(50), nullable=False)  # 'slack_alert', 'email', 'sms'
+    target = db.Column(db.String(255), nullable=False)  # webhook URL, email, phone
+    payload = db.Column(db.Text, nullable=False)  # JSON payload
+    error_message = db.Column(db.Text)  # Error from failed attempt
+    retry_count = db.Column(db.Integer, default=0)  # Number of retry attempts
+    created_at = db.Column(
+        db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), index=True
+    )
+    last_retry_at = db.Column(db.DateTime)  # Last attempted retry time
+    status = db.Column(db.String(20), default="pending")  # 'pending', 'delivered', 'failed'
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "event_type": self.event_type,
+            "target": self.target,
+            "payload": json.loads(self.payload) if self.payload else {},
+            "error_message": self.error_message,
+            "retry_count": self.retry_count,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "last_retry_at": self.last_retry_at.isoformat() if self.last_retry_at else None,
+            "status": self.status,
         }

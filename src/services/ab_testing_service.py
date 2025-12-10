@@ -35,10 +35,29 @@ class ABTestingService:
             description: Experiment description
             experiment_type: Type (prompt, greeting, cta, etc.)
             variants: List of variants [{"id": "A", "name": "Control", "content": "..."}, ...]
+                      MAXIMUM 2 VARIANTS (A vs B) - no multi-variant testing
             traffic_allocation: Percentage of traffic to include (0.0-1.0)
             primary_metric: conversion_rate, engagement_rate, satisfaction_rate
             min_sample_size: Minimum participants per variant before declaring winner
+
+        Raises:
+            ValueError: If variants count != 2 (only A/B testing supported)
         """
+        # Hard limit: exactly 2 variants
+        if len(variants) != 2:
+            raise ValueError(
+                f"A/B testing requires exactly 2 variants (A vs B). Got {len(variants)} variants. "
+                f"Multi-variant testing not supported due to statistical complexity."
+            )
+
+        # Validate variant structure
+        required_keys = {"id", "name", "content"}
+        for variant in variants:
+            if not all(key in variant for key in required_keys):
+                raise ValueError(
+                    f"Each variant must have 'id', 'name', and 'content'. Got: {variant.keys()}"
+                )
+
         experiment = Experiment(
             name=name,
             description=description,

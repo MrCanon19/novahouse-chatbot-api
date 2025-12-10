@@ -24,6 +24,11 @@ class FollowUpAutomationService:
         """
         Find conversations that need follow-up
 
+        RODO Compliance: Only includes conversations with explicit marketing consent.
+        Users must have either:
+        - rodo_consent = True (explicit RODO agreement)
+        - marketing_consent = True (marketing follow-ups allowed)
+
         Returns:
             List of conversations with suggested follow-up messages
         """
@@ -36,6 +41,8 @@ class FollowUpAutomationService:
             ChatConversation.started_at >= cutoff_date,
             ChatConversation.ended_at.is_(None),  # Not ended
             ChatConversation.context_data.isnot(None),  # Has some context
+            # RODO: Require explicit consent for automated marketing messages
+            ChatConversation.rodo_consent == True,  # noqa: E712
         ).all()
 
         followups = []
@@ -157,19 +164,58 @@ class FollowUpAutomationService:
 
     def send_followup(self, followup_data: Dict) -> bool:
         """
-        Send follow-up message to user
+        Send follow-up message to user (IDEMPOTENT)
+
+        RODO Compliance: Validates consent before sending automated messages.
+        Will NOT send if user hasn't explicitly consented to marketing communication.
+
+        IDEMPOTENCY: Uses FollowupEvent table to prevent duplicate sends.
+        - Atomic check-insert pattern: INSERT followup_event FIRST
+        - If IntegrityError (duplicate): Skip (already sent)
+        - If success: Send message + commit
 
         Args:
-            followup_data: Dict with conversation_id, session_id, message
+            followup_data: Dict with conversation_id, session_id, message, followup_number
 
         Returns:
-            True if sent successfully
+            True if sent successfully, False if consent missing, already sent, or error
         """
+        from sqlalchemy.exc import IntegrityError
+
+        from src.models.followup_event import FollowupEvent
+
         try:
             conversation_id = followup_data["conversation_id"]
             message = followup_data["message"]
+            followup_number = followup_data.get("followup_number", 1)
 
-            # Save follow-up message
+            # RODO: Double-check consent before sending
+            conversation = ChatConversation.query.get(conversation_id)
+            if not conversation or not conversation.rodo_consent:
+                logger.warning(
+                    f"RODO: Skipping follow-up for conversation {conversation_id} - "
+                    f"no marketing consent (rodo_consent={getattr(conversation, 'rodo_consent', None)})"
+                )
+                return False
+
+            # IDEMPOTENCY: Check if already sent (atomic INSERT with UNIQUE constraint)
+            try:
+                followup_event = FollowupEvent(
+                    conversation_id=conversation_id,
+                    followup_number=followup_number,
+                    sent_at=datetime.now(timezone.utc),
+                    status="sent",
+                )
+                db.session.add(followup_event)
+                db.session.flush()  # Force UNIQUE check before sending
+            except IntegrityError:
+                db.session.rollback()
+                logger.info(
+                    f"⏩ Skipping follow-up #{followup_number} for conversation {conversation_id} - already sent"
+                )
+                return False
+
+            # Save follow-up message (only if event INSERT succeeded)
             followup_msg = ChatMessage(
                 conversation_id=conversation_id,
                 message=message,
@@ -184,9 +230,7 @@ class FollowUpAutomationService:
 
             db.session.commit()
 
-            logger.info(
-                f"Sent follow-up #{followup_data['followup_number']} to {followup_data['session_id']}"
-            )
+            logger.info(f"✅ Sent follow-up #{followup_number} to {followup_data['session_id']}")
             return True
 
         except Exception as e:

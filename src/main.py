@@ -1,13 +1,23 @@
+import logging
 import os
 import sys
 from datetime import datetime, timezone
+
+# Configure logging early so logger is available
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
 
 # Load environment variables from .env file
 from dotenv import load_dotenv
 
 load_dotenv()
 
+from apscheduler.schedulers.background import BackgroundScheduler
 from flask import Flask, render_template, request, send_from_directory
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 # Inicjalizacja aplikacji Flask na samym początku
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), "static"))
@@ -89,6 +99,27 @@ def set_security_headers(response):
         response.headers["Content-Security-Policy"] = csp_min
     return response
 
+
+# Initialize rate limiter (Redis backend or memory fallback)
+# Configuration from environment variables for flexibility
+chat_rate_limit = os.getenv("CHAT_RATE_LIMIT", "30 per minute")
+default_rate_limits = [
+    os.getenv("API_RATE_LIMIT_HOUR", "200 per hour"),
+    os.getenv("API_RATE_LIMIT_MINUTE", "50 per minute"),
+]
+
+limiter = Limiter(
+    app=app,
+    key_func=get_remote_address,
+    default_limits=default_rate_limits,
+    storage_uri=os.getenv("REDIS_URL", "memory://"),
+    strategy="fixed-window",
+)
+logger.info(
+    f"✅ Rate limiter initialized (backend: {'Redis' if os.getenv('REDIS_URL') else 'memory'})"
+)
+logger.info(f"   Chat endpoint limit: {chat_rate_limit}")
+logger.info(f"   Default limits: {', '.join(default_rate_limits)}")
 
 # SECURITY: Secret key from environment (NEVER hardcode!)
 # Fail-fast if critical secrets missing in production
@@ -261,6 +292,11 @@ from src.routes.migration import migration_bp
 
 app.register_blueprint(migration_bp)
 
+# Register unsubscribe routes (RODO/GDPR compliance)
+from src.routes.unsubscribe import unsubscribe_bp
+
+app.register_blueprint(unsubscribe_bp)
+
 # Register cron routes (v2.4)
 from src.routes.cron import cron_bp
 from src.routes.migrations import migration_bp as migrations_bp
@@ -367,6 +403,48 @@ with app.app_context():
 
     except Exception as e:
         logger.warning(f"Background initialization failed: {e}")
+
+    # Schedule periodic cleanup of fallback cache (prevent memory leaks)
+    try:
+        from src.services.dead_letter_queue import DeadLetterQueueService
+        from src.services.redis_service import get_redis_cache
+
+        scheduler = BackgroundScheduler(daemon=True)
+
+        # Job 1: Cache cleanup (every 10 minutes)
+        scheduler.add_job(
+            func=lambda: get_redis_cache().cleanup_expired_fallback(),
+            trigger="interval",
+            minutes=10,
+            id="cache_cleanup",
+            name="Cleanup expired fallback cache entries",
+        )
+
+        # Job 2: Dead-letter queue retry (every 5 minutes)
+        scheduler.add_job(
+            func=DeadLetterQueueService.retry_pending_alerts,
+            trigger="interval",
+            minutes=5,
+            id="dlq_retry",
+            name="Retry pending alerts in dead-letter queue",
+        )
+
+        # Job 3: Clean up old delivered alerts (daily)
+        scheduler.add_job(
+            func=lambda: DeadLetterQueueService.clear_delivered_alerts(older_than_hours=24),
+            trigger="interval",
+            hours=24,
+            id="dlq_cleanup",
+            name="Clean up old delivered alerts from dead-letter queue",
+        )
+
+        scheduler.start()
+        logger.info("✅ APScheduler started: 3 background jobs configured")
+        logger.info("   - Cache cleanup every 10 minutes")
+        logger.info("   - Dead-letter queue retry every 5 minutes")
+        logger.info("   - Old alert cleanup daily")
+    except Exception as e:
+        logger.warning(f"APScheduler initialization failed: {e}")
 
 # ═══════════════════════════════════════════════════════════════
 # GLOBAL ERROR HANDLERS

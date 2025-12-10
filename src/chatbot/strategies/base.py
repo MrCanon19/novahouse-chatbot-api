@@ -24,4 +24,3 @@ class ChatStrategy(ABC):
         Returns:
             An updated context dictionary.
         """
-        pass
