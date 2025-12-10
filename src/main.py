@@ -108,18 +108,22 @@ default_rate_limits = [
     os.getenv("API_RATE_LIMIT_MINUTE", "50 per minute"),
 ]
 
-limiter = Limiter(
-    app=app,
-    key_func=get_remote_address,
-    default_limits=default_rate_limits,
-    storage_uri=os.getenv("REDIS_URL", "memory://"),
-    strategy="fixed-window",
-)
-logger.info(
-    f"✅ Rate limiter initialized (backend: {'Redis' if os.getenv('REDIS_URL') else 'memory'})"
-)
-logger.info(f"   Chat endpoint limit: {chat_rate_limit}")
-logger.info(f"   Default limits: {', '.join(default_rate_limits)}")
+if is_rate_limit_disabled():
+    limiter = DummyLimiter()
+    logger.info("✅ Rate limiter disabled via RATE_LIMIT_ENABLED=false")
+else:
+    limiter = Limiter(
+        app=app,
+        key_func=get_remote_address,
+        default_limits=default_rate_limits,
+        storage_uri=os.getenv("REDIS_URL", "memory://"),
+        strategy="fixed-window",
+    )
+    logger.info(
+        f"✅ Rate limiter initialized (backend: {'Redis' if os.getenv('REDIS_URL') else 'memory'})"
+    )
+    logger.info(f"   Chat endpoint limit: {chat_rate_limit}")
+    logger.info(f"   Default limits: {', '.join(default_rate_limits)}")
 
 # SECURITY: Secret key from environment (NEVER hardcode!)
 # Fail-fast if critical secrets missing in production
@@ -231,6 +235,7 @@ def after_cursor_execute(conn, cursor, statement, parameters, context, executema
         logger.warning(f"Slow query ({total:.3f}s): {statement[:200]}")
 
 
+from src.middleware.rate_limiting import DummyLimiter, is_rate_limit_disabled
 from src.routes.ab_testing import ab_testing_bp
 from src.routes.analytics import analytics_bp
 from src.routes.backup import backup_routes
