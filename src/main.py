@@ -119,18 +119,24 @@ class NoopLimiter:
 
 # Initialize rate limiter (Redis backend or memory fallback)
 # Configuration from environment variables for flexibility
-chat_rate_limit = os.getenv("CHAT_RATE_LIMIT", "30 per minute")
-default_rate_limits = [
-    os.getenv("API_RATE_LIMIT_HOUR", "200 per hour"),
-    os.getenv("API_RATE_LIMIT_MINUTE", "50 per minute"),
-]
 
-if is_rate_limit_disabled():
-    limiter = NoopLimiter()
-    logger.warning("⚠️ Rate limiting disabled via DISABLE_RATE_LIMITS")
-    app.extensions["limiter"] = limiter
-else:
-    limiter = Limiter(
+
+def configure_rate_limiter(app: Flask):
+    """Attach a limiter instance to the Flask app, respecting DISABLE_RATE_LIMITS."""
+
+    chat_rate_limit = os.getenv("CHAT_RATE_LIMIT", "30 per minute")
+    default_rate_limits = [
+        os.getenv("API_RATE_LIMIT_HOUR", "200 per hour"),
+        os.getenv("API_RATE_LIMIT_MINUTE", "50 per minute"),
+    ]
+
+    if is_rate_limit_disabled():
+        limiter_instance = NoopLimiter()
+        logger.warning("⚠️ Rate limiting disabled via DISABLE_RATE_LIMITS")
+        app.extensions["limiter"] = limiter_instance
+        return limiter_instance
+
+    limiter_instance = Limiter(
         app=app,
         key_func=get_remote_address,
         default_limits=default_rate_limits,
@@ -142,6 +148,10 @@ else:
     )
     logger.info(f"   Chat endpoint limit: {chat_rate_limit}")
     logger.info(f"   Default limits: {', '.join(default_rate_limits)}")
+    return limiter_instance
+
+
+limiter = configure_rate_limiter(app)
 
 # SECURITY: Secret key from environment (NEVER hardcode!)
 # Fail-fast if critical secrets missing in production
