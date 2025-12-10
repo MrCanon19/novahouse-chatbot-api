@@ -563,58 +563,57 @@ def chat():
             if header != admin_key:
                 return jsonify({"error": "Unauthorized"}), 401
 
-        try:
-            # Get active conversations (started in last 2 hours, not ended)
-            from datetime import timedelta
+        # Get active conversations (started in last 2 hours, not ended)
+        from datetime import timedelta
 
-            two_hours_ago = datetime.now(timezone.utc) - timedelta(hours=2)
+        two_hours_ago = datetime.now(timezone.utc) - timedelta(hours=2)
 
-            active_conversations = (
-                ChatConversation.query.options(db.joinedload(ChatConversation.messages))
-                .filter(
-                    ChatConversation.started_at >= two_hours_ago,
-                    ChatConversation.ended_at.is_(None),
-                )
-                .order_by(ChatConversation.started_at.desc())
-                .all()
+        active_conversations = (
+            ChatConversation.query.options(db.joinedload(ChatConversation.messages))
+            .filter(
+                ChatConversation.started_at >= two_hours_ago,
+                ChatConversation.ended_at.is_(None),
             )
+            .order_by(ChatConversation.started_at.desc())
+            .all()
+        )
 
-            alerts = []
-            for conv in active_conversations:
-                context = json.loads(conv.context_data or "{}")
-                risk_level, reason = detect_abandonment_risk(conv, context)
+        alerts = []
+        for conv in active_conversations:
+            context = json.loads(conv.context_data or "{}")
+            risk_level, reason = detect_abandonment_risk(conv, context)
 
-                if risk_level in ["high", "medium"]:
-                    alerts.append(
-                        {
-                            "session_id": conv.session_id,
-                            "risk_level": risk_level,
-                            "reason": reason,
-                            "started_at": conv.started_at.isoformat(),
-                            "context": {
-                                "name": context.get("name"),
-                                "email": context.get("email"),
-                                "phone": context.get("phone"),
-                                "package": context.get("package"),
-                                "square_meters": context.get("square_meters"),
-                            },
-                            "message_count": ChatMessage.query.filter_by(
-                                conversation_id=conv.id
-                            ).count(),
-                        }
-                    )
-
-            return (
-                jsonify(
+            if risk_level in ["high", "medium"]:
+                alerts.append(
                     {
-                        "total_at_risk": len(alerts),
-                        "high_risk": len([a for a in alerts if a["risk_level"] == "high"]),
-                        "medium_risk": len([a for a in alerts if a["risk_level"] == "medium"]),
-                        "alerts": alerts,
+                        "session_id": conv.session_id,
+                        "risk_level": risk_level,
+                        "reason": reason,
+                        "started_at": conv.started_at.isoformat(),
+                        "context": {
+                            "name": context.get("name"),
+                            "email": context.get("email"),
+                            "phone": context.get("phone"),
+                            "package": context.get("package"),
+                            "square_meters": context.get("square_meters"),
+                        },
+                        "message_count": ChatMessage.query.filter_by(
+                            conversation_id=conv.id
+                        ).count(),
                     }
-                ),
-                200,
-            )
+                )
+
+        return (
+            jsonify(
+                {
+                    "total_at_risk": len(alerts),
+                    "high_risk": len([a for a in alerts if a["risk_level"] == "high"]),
+                    "medium_risk": len([a for a in alerts if a["risk_level"] == "medium"]),
+                    "alerts": alerts,
+                }
+            ),
+            200,
+        )
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
