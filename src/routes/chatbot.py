@@ -67,6 +67,36 @@ def calculate_lead_score(context_memory, message_count):
     return _calc(context_memory, message_count)
 
 
+def check_booking_intent(user_message: str, context_memory: dict):
+    """Detect booking intent and return a booking prompt with link when matched."""
+    message_lower = (user_message or "").lower()
+    keywords = [
+        "umów",
+        "spotkan",
+        "termin",
+        "rezerw",
+        "konsult",
+        "wizy",
+        "booking",
+    ]
+
+    if not any(k in message_lower for k in keywords):
+        return None
+
+    try:
+        from src.integrations.zencal_client import ZencalClient
+
+        zencal = ZencalClient()
+        booking_link = zencal.get_booking_link(
+            context_memory.get("name"), context_memory.get("email")
+        )
+    except Exception:
+        booking_link = "https://booking.zencal.io"
+
+    context_memory["booking_intent_detected"] = True
+    return f"Super, zarezerwuj spotkanie tutaj: {booking_link}"
+
+
 @chatbot_bp.route("/health", methods=["GET"])
 def chatbot_health():
     """Health check endpoint for chatbot service"""
