@@ -8,7 +8,7 @@ import re
 import uuid
 from datetime import datetime, timedelta, timezone
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, current_app, jsonify, request
 from sqlalchemy.exc import SQLAlchemyError
 
 # Lazy load OpenAI to optimize cold start
@@ -50,8 +50,24 @@ from src.config.prompts import SYSTEM_PROMPT
 
 chatbot_bp = Blueprint("chatbot", __name__)
 
-# Import limiter (initialized in main.py, decorated here)
-from src.main import limiter
+
+def _get_rate_limiter(app=None):
+    """Fetch the Flask-Limiter instance without importing src.main (avoids circular imports)."""
+    try:
+        target_app = app or current_app
+        limiter = target_app.extensions.get("limiter")
+        if limiter and hasattr(limiter, "limit"):
+            return limiter
+    except Exception:
+        pass
+
+    try:
+        from src.main import limiter as main_limiter
+
+        if hasattr(main_limiter, "limit"):
+            return main_limiter
+    except Exception:
+        return None
 
 
 def calculate_lead_score(context_memory, message_count):
@@ -829,7 +845,6 @@ else:
 
 
 @chatbot_bp.route("/chat", methods=["POST"])
-@limiter.limit(lambda: os.getenv("CHAT_RATE_LIMIT", "30 per minute"))
 def chat():
     """Handle chat messages via REST API (NEW: with state machine, validation, rate limiting)"""
     payload = request.get_json(silent=True) or {}
@@ -862,6 +877,16 @@ def chat():
             "alerts": response_data.get("alerts", []),
         }
     )
+
+
+@chatbot_bp.record_once
+def _configure_rate_limits(setup_state):
+    limiter = _get_rate_limiter(setup_state.app)
+    if not limiter:
+        logging.warning("⚠️ Limiter not configured; skipping chat route rate limiting")
+        return
+
+    limiter.limit(lambda: os.getenv("CHAT_RATE_LIMIT", "30 per minute"))(chat)
 
 
 @chatbot_bp.route("/history/<session_id>", methods=["GET"])
