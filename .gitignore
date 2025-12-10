@@ -94,3 +94,12 @@ app.yaml.prod
 
 # Sensitive backups (API keys, secrets)
 backups/secrets/
+
+# Session logs & temporary documentation (not for repo)
+*_COMPLETE.md
+*_STATUS*.md
+*_SUMMARY.md
+QUICK_REFERENCE.md
+DEPLOYMENT_STATUS.txt
+AUTOMATION_*.md
+AUDIT_EXECUTION_*.md
