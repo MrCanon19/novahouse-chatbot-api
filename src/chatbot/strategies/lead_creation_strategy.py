@@ -1,5 +1,3 @@
-import json
-import os
 from datetime import datetime, timezone
 from typing import Any, Dict, List
 
@@ -7,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from src.integrations.monday_client import MondayClient
 from src.models.chatbot import ChatConversation, ChatMessage, CompetitiveIntel, Lead
-
+from src.services.email_service import EmailService
 
 from .base import ChatStrategy
 
