@@ -1,13 +1,25 @@
 """Add email column to chat_conversations with safety checks."""
 
-from sqlalchemy import text
+import os
+import sys
 
-from src.models.chatbot import db
+from sqlalchemy import create_engine, text
+from sqlalchemy.exc import SQLAlchemyError
+
+
+def get_db_url() -> str:
+    db_url = os.getenv("DATABASE_URL") or os.getenv("SQLALCHEMY_DATABASE_URI")
+    if not db_url:
+        raise RuntimeError(
+            "Brak konfiguracji bazy. Ustaw DATABASE_URL lub SQLALCHEMY_DATABASE_URI."
+        )
+    return db_url
 
 
 def add_email_column():
     try:
-        with db.engine.connect() as conn:
+        engine = create_engine(get_db_url())
+        with engine.begin() as conn:
             exists = conn.execute(
                 text(
                     """
@@ -41,13 +53,13 @@ def add_email_column():
                     """
                 )
             )
-            conn.commit()
+
             msg = "✅ email column added with index"
             print(msg)
             return msg
-    except Exception as exc:  # pragma: no cover
+    except (SQLAlchemyError, RuntimeError) as exc:  # pragma: no cover
         msg = f"❌ Error adding email column: {exc}"
-        print(msg)
+        print(msg, file=sys.stderr)
         return msg
 
 
