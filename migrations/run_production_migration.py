@@ -104,12 +104,36 @@ try:
 
         if result.fetchone() is None:
             session.execute(
-                text("ALTER TABLE chat_conversations ADD COLUMN email VARCHAR(255)")
+                text(
+                    "ALTER TABLE chat_conversations ADD COLUMN IF NOT EXISTS email VARCHAR(255)"
+                )
             )
             session.commit()
             print("   ✅ email column added")
         else:
             print("   ⚠️  email already exists, skipping")
+
+        index_result = session.execute(
+            text(
+                """
+            SELECT indexname
+            FROM pg_indexes
+            WHERE tablename='chat_conversations'
+            AND indexname='ix_chat_conversations_email'
+        """
+            )
+        )
+
+        if index_result.fetchone() is None:
+            session.execute(
+                text(
+                    "CREATE INDEX IF NOT EXISTS ix_chat_conversations_email ON chat_conversations(email)"
+                )
+            )
+            session.commit()
+            print("   ✅ email index created")
+        else:
+            print("   ⚠️  email index already exists, skipping")
     except Exception as e:
         print(f"   ❌ Error: {e}")
         session.rollback()
