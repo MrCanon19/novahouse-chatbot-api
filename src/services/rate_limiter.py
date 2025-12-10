@@ -3,6 +3,7 @@ Rate Limiting Middleware
 Prevents spam and abuse
 """
 
+import os
 import time
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
@@ -80,12 +81,17 @@ class RateLimiter:
 # Global rate limiter instance with Redis fallback
 def get_rate_limiter():
     """Lazy load rate limiter to avoid import deadlock"""
+    # Force in-memory limiter when REDIS_URL is not configured (GAE cost-saving mode)
+    redis_url = os.getenv("REDIS_URL")
+    if not redis_url:
+        return RateLimiter()
+
     try:
         from src.services.redis_rate_limiter import RedisRateLimiter
         from src.services.redis_service import get_redis_cache
 
         cache = get_redis_cache()
-        if cache and cache.redis_client and cache.enabled:
+        if cache and getattr(cache, "redis_client", None) and cache.enabled:
             # Use Redis-based rate limiter for production (multi-instance safe)
             return RedisRateLimiter()
         else:
