@@ -91,8 +91,8 @@ def get_rate_limiter():
         else:
             # Fallback to in-memory for development
             return RateLimiter()
-    except Exception as e:
-        # Fallback if Redis unavailable or import fails
+    except BaseException as e:
+        # Fallback if Redis unavailable or import fails (including SystemExit/KeyboardInterrupt)
         import traceback
 
         print(f"Warning: Failed to load Redis rate limiter: {e}")
@@ -109,8 +109,8 @@ def ensure_rate_limiter():
     if rate_limiter is None:
         try:
             rate_limiter = get_rate_limiter()
-        except Exception as e:
-            # Emergency fallback
+        except BaseException as e:
+            # Emergency fallback even on SystemExit to keep app alive
             import traceback
 
             print(f"ERROR: Failed to ensure rate limiter: {e}")
