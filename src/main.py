@@ -101,10 +101,19 @@ def set_security_headers(response):
 
 
 def is_rate_limit_disabled() -> bool:
-    """Return True when rate limiting should be skipped (e.g., during local CI runs)."""
+    """Return True when rate limiting should be skipped (e.g., during local CI runs).
 
-    flag = os.getenv("DISABLE_RATE_LIMITS", "").lower()
-    return flag in {"1", "true", "yes", "on"}
+    Supports two environment variables for flexibility across CI jobs:
+    - `RATE_LIMIT_ENABLED=false` (preferred)
+    - `DISABLE_RATE_LIMITS=1` (legacy)
+    """
+
+    enabled_flag = os.getenv("RATE_LIMIT_ENABLED")
+    if enabled_flag is not None:
+        return enabled_flag.lower() not in {"1", "true", "yes", "on"}
+
+    disabled_flag = os.getenv("DISABLE_RATE_LIMITS", "").lower()
+    return disabled_flag in {"1", "true", "yes", "on"}
 
 
 class NoopLimiter:
