@@ -67,6 +67,31 @@ def calculate_lead_score(context_memory, message_count):
     return _calc(context_memory, message_count)
 
 
+def extract_context(message: str, existing_context: dict | None = None):
+    """Proxy to the safer context extractor used in strategies/services."""
+    from src.services.extract_context_safe import extract_context_safe
+
+    return extract_context_safe(message, existing_context)
+
+
+def generate_conversation_summary(messages, context_memory):
+    """Re-export summary helper for tests and services."""
+    from src.chatbot.strategies.lead_creation_strategy import (
+        generate_conversation_summary as _summarize,
+    )
+
+    return _summarize(messages, context_memory)
+
+
+def suggest_next_best_action(context_memory, lead_score):
+    """Re-export NBA helper for tests and services."""
+    from src.chatbot.strategies.lead_creation_strategy import (
+        suggest_next_best_action as _nba,
+    )
+
+    return _nba(context_memory, lead_score)
+
+
 def check_booking_intent(user_message: str, context_memory: dict):
     """Detect booking intent and return a booking prompt with link when matched."""
     message_lower = (user_message or "").lower()
