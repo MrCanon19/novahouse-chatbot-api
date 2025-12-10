@@ -20,6 +20,7 @@ class RedisCache:
     """Redis-based cache with TTL support"""
 
     def __init__(self):
+        self.redis_client = None  # Always set for safe getattr usage
         redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
         try:
             self.redis_client = redis.from_url(
