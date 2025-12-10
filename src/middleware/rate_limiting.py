@@ -11,6 +11,11 @@ from datetime import datetime, timedelta
 from flask import jsonify, request
 from redis import Redis
 
+# Env toggle helpers
+def is_rate_limit_disabled() -> bool:
+    return os.getenv("RATE_LIMIT_ENABLED", "true").lower() == "false"
+
+
 # Redis connection
 redis_client = None
 try:
@@ -26,6 +31,16 @@ _memory_store = {}
 
 class RateLimitExceeded(Exception):
     """Exception raised when rate limit is exceeded"""
+
+
+class DummyLimiter:
+    """No-op limiter used when RATE_LIMIT_ENABLED=false"""
+
+    def limit(self, *args, **kwargs):
+        def decorator(f):
+            return f
+
+        return decorator
 
 
 def get_rate_limit_key(identifier, endpoint):
