@@ -89,8 +89,34 @@ if "competitive_intel" not in existing_tables:
 else:
     print("   ⚠️  competitive_intel already exists, skipping")
 
-# 3. Add followup_variant column to chat_conversations
-print("\n3️⃣  Adding followup_variant to chat_conversations...")
+# 3. Add email column to chat_conversations
+print("\n3️⃣  Adding email to chat_conversations...")
+try:
+    result = session.execute(
+        text(
+            """
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_name='chat_conversations'
+        AND column_name='email'
+    """
+        )
+    )
+
+    if result.fetchone() is None:
+        session.execute(
+            text("ALTER TABLE chat_conversations ADD COLUMN email VARCHAR(255)")
+        )
+        session.commit()
+        print("   ✅ email column added")
+    else:
+        print("   ⚠️  email already exists, skipping")
+except Exception as e:
+    print(f"   ❌ Error: {e}")
+    session.rollback()
+
+# 4. Add followup_variant column to chat_conversations
+print("\n4️⃣  Adding followup_variant to chat_conversations...")
 try:
     result = session.execute(
         text(
@@ -115,8 +141,8 @@ except Exception as e:
     print(f"   ❌ Error: {e}")
     session.rollback()
 
-# 4. Insert default A/B tests
-print("\n4️⃣  Adding default A/B tests...")
+# 5. Insert default A/B tests
+print("\n5️⃣  Adding default A/B tests...")
 
 default_tests = [
     {
