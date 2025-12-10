@@ -31,6 +31,7 @@ def app():
     os.environ["TESTING"] = "true"
     os.environ["DATABASE_URL"] = "sqlite:///:memory:"
     os.environ["SECRET_KEY"] = "test-secret-key-for-testing-only"
+    os.environ["RATE_LIMIT_ENABLED"] = "false"  # Disable rate limiting in tests
     # Mock secrets to avoid accidental prod usage
     os.environ.setdefault("API_KEY", "test_api_key")
     os.environ.setdefault("ADMIN_API_KEY", "test_admin_api_key")

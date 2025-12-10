@@ -18,6 +18,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from flask import Flask, render_template, request, send_from_directory
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from src.middleware.rate_limiting import DummyLimiter, is_rate_limit_disabled
 
 # Inicjalizacja aplikacji Flask na samym początku
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), "static"))
