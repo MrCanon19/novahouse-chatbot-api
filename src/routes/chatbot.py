@@ -60,6 +60,13 @@ from src.models.chatbot import (
 chatbot_bp = Blueprint("chatbot", __name__)
 
 
+def calculate_lead_score(context_memory, message_count):
+    """Shim to keep tests importing from routes.chatbot while using strategy logic."""
+    from src.chatbot.strategies.lead_creation_strategy import calculate_lead_score as _calc
+
+    return _calc(context_memory, message_count)
+
+
 @chatbot_bp.route("/health", methods=["GET"])
 def chatbot_health():
     """Health check endpoint for chatbot service"""
