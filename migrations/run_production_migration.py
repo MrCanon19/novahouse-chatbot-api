@@ -1,238 +1,252 @@
 #!/usr/bin/env python3
-"""
-Production Migration Script - Run A/B Testing & Competitive Intelligence migration
-Connects directly to production database via Cloud SQL Proxy
-"""
+"""Production migration script for A/B Testing & Competitive Intelligence."""
 
 import os
 import sys
-
-# Production DATABASE_URL from app.yaml
-DATABASE_URL = "postgresql://chatbot_user:vicNRNoO3TpLZzQ_BkAVbz886dW_J0Yo@/chatbot?host=/cloudsql/glass-core-467907-e9:europe-west1:novahouse-chatbot-db"
-
-# Override environment
-os.environ["DATABASE_URL"] = DATABASE_URL
-
-# Add project root to path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from typing import Optional
 
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import sessionmaker
 
-print("=" * 70)
-print("🚀 PRODUCTION MIGRATION: A/B Testing & Competitive Intelligence")
-print("=" * 70)
-print("📦 Database: glass-core-467907-e9:europe-west1:novahouse-chatbot-db")
-print()
+DEFAULT_DATABASE_URL = (
+    "postgresql://chatbot_user:vicNRNoO3TpLZzQ_BkAVbz886dW_J0Yo@/chatbot?host=/cloudsql/"
+    "glass-core-467907-e9:europe-west1:novahouse-chatbot-db"
+)
 
-try:
-    # Create engine
-    engine = create_engine(DATABASE_URL)
-    Session = sessionmaker(bind=engine)
-    session = Session()
 
-    inspector = inspect(engine)
-    existing_tables = inspector.get_table_names()
+def run_migration(database_url: Optional[str] = None) -> int:
+    """Execute production migration without side effects at import time."""
 
-    print(f"✅ Connected! Found {len(existing_tables)} existing tables")
+    # Add project root to path lazily
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+    db_url = database_url or os.getenv("DATABASE_URL") or DEFAULT_DATABASE_URL
+    if not db_url:
+        print("❌ DATABASE_URL not set!")
+        return 1
+
+    os.environ["DATABASE_URL"] = db_url
+
+    print("=" * 70)
+    print("🚀 PRODUCTION MIGRATION: A/B Testing & Competitive Intelligence")
+    print("=" * 70)
+    print("📦 Database: glass-core-467907-e9:europe-west1:novahouse-chatbot-db")
     print()
 
-    # 1. Create followup_tests table
-    print("1️⃣  Creating followup_tests table...")
-    if "followup_tests" not in existing_tables:
-        session.execute(
-            text(
-                """
-            CREATE TABLE followup_tests (
-                id SERIAL PRIMARY KEY,
-                question_type VARCHAR(100) NOT NULL,
-                variant_a TEXT NOT NULL,
-                variant_b TEXT NOT NULL,
-                variant_a_shown INTEGER DEFAULT 0,
-                variant_b_shown INTEGER DEFAULT 0,
-                variant_a_responses INTEGER DEFAULT 0,
-                variant_b_responses INTEGER DEFAULT 0,
-                is_active BOOLEAN DEFAULT true,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """
-            )
-        )
-        session.commit()
-        print("   ✅ followup_tests table created")
-    else:
-        print("   ⚠️  followup_tests already exists, skipping")
-
-    # 2. Create competitive_intel table
-    print("\n2️⃣  Creating competitive_intel table...")
-    if "competitive_intel" not in existing_tables:
-        session.execute(
-            text(
-                """
-            CREATE TABLE competitive_intel (
-                id SERIAL PRIMARY KEY,
-                session_id VARCHAR(100) NOT NULL,
-                intel_type VARCHAR(50) NOT NULL,
-                competitor_name VARCHAR(100),
-                user_message TEXT NOT NULL,
-                context TEXT,
-                sentiment VARCHAR(20),
-                priority VARCHAR(20) DEFAULT 'medium',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """
-            )
-        )
-        session.commit()
-        print("   ✅ competitive_intel table created")
-    else:
-        print("   ⚠️  competitive_intel already exists, skipping")
-
-    # 3. Add email column to chat_conversations
-    print("\n3️⃣  Adding email to chat_conversations...")
+    session = None
     try:
-        result = session.execute(
-            text(
-                """
-            SELECT column_name
-            FROM information_schema.columns
-            WHERE table_name='chat_conversations'
-            AND column_name='email'
-        """
-            )
-        )
+        engine = create_engine(db_url)
+        Session = sessionmaker(bind=engine)
+        session = Session()
 
-        if result.fetchone() is None:
-            session.execute(
-                text(
-                    "ALTER TABLE chat_conversations ADD COLUMN IF NOT EXISTS email VARCHAR(255)"
-                )
-            )
-            session.commit()
-            print("   ✅ email column added")
-        else:
-            print("   ⚠️  email already exists, skipping")
+        inspector = inspect(engine)
+        existing_tables = inspector.get_table_names()
 
-        index_result = session.execute(
-            text(
-                """
-            SELECT indexname
-            FROM pg_indexes
-            WHERE tablename='chat_conversations'
-            AND indexname='ix_chat_conversations_email'
-        """
-            )
-        )
+        print(f"✅ Connected! Found {len(existing_tables)} existing tables")
+        print()
 
-        if index_result.fetchone() is None:
-            session.execute(
-                text(
-                    "CREATE INDEX IF NOT EXISTS ix_chat_conversations_email ON chat_conversations(email)"
-                )
-            )
-            session.commit()
-            print("   ✅ email index created")
-        else:
-            print("   ⚠️  email index already exists, skipping")
-    except Exception as e:
-        print(f"   ❌ Error: {e}")
-        session.rollback()
-
-    # 4. Add followup_variant column to chat_conversations
-    print("\n4️⃣  Adding followup_variant to chat_conversations...")
-    try:
-        result = session.execute(
-            text(
-                """
-            SELECT column_name
-            FROM information_schema.columns
-            WHERE table_name='chat_conversations'
-            AND column_name='followup_variant'
-        """
-            )
-        )
-
-        if result.fetchone() is None:
-            session.execute(
-                text("ALTER TABLE chat_conversations ADD COLUMN followup_variant VARCHAR(10)")
-            )
-            session.commit()
-            print("   ✅ followup_variant column added")
-        else:
-            print("   ⚠️  followup_variant already exists, skipping")
-    except Exception as e:
-        print(f"   ❌ Error: {e}")
-        session.rollback()
-
-    # 5. Insert default A/B tests
-    print("\n5️⃣  Adding default A/B tests...")
-
-    default_tests = [
-        {
-            "type": "package_to_sqm",
-            "a": "💡 **A jaki jest mniej więcej metraż Twojego mieszkania?** To pomoże mi lepiej dopasować ofertę.",
-            "b": "📐 **Ile metrów kwadratowych ma Twoje mieszkanie?** Na tej podstawie przygotuję dokładną wycenę.",
-        },
-        {
-            "type": "sqm_to_location",
-            "a": "📍 **W jakim mieście szukasz wykonawcy?** Mamy zespoły w całej Polsce.",
-            "b": "🗺️ **Gdzie znajduje się Twoje mieszkanie?** Sprawdzę dostępność naszych ekip w Twojej okolicy.",
-        },
-        {
-            "type": "price_to_budget",
-            "a": "💰 **Masz już określony budżet? Mogę pokazać opcje finansowania i rozłożenia płatności.**",
-            "b": "💵 **Jaki budżet planujesz przeznaczyć na wykończenie?** Dopasuję najlepszą opcję dla Ciebie.",
-        },
-    ]
-
-    for test in default_tests:
-        # Check if exists
-        result = session.execute(
-            text("SELECT id FROM followup_tests WHERE question_type = :qtype"),
-            {"qtype": test["type"]},
-        )
-
-        if result.fetchone() is None:
+        # 1. Create followup_tests table
+        print("1️⃣  Creating followup_tests table...")
+        if "followup_tests" not in existing_tables:
             session.execute(
                 text(
                     """
-                INSERT INTO followup_tests (question_type, variant_a, variant_b, is_active)
-                VALUES (:qtype, :variant_a, :variant_b, true)
+                CREATE TABLE followup_tests (
+                    id SERIAL PRIMARY KEY,
+                    question_type VARCHAR(100) NOT NULL,
+                    variant_a TEXT NOT NULL,
+                    variant_b TEXT NOT NULL,
+                    variant_a_shown INTEGER DEFAULT 0,
+                    variant_b_shown INTEGER DEFAULT 0,
+                    variant_a_responses INTEGER DEFAULT 0,
+                    variant_b_responses INTEGER DEFAULT 0,
+                    is_active BOOLEAN DEFAULT true,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
             """
-                ),
-                {"qtype": test["type"], "variant_a": test["a"], "variant_b": test["b"]},
+                )
             )
             session.commit()
-            print(f"   ✅ Added A/B test: {test['type']}")
+            print("   ✅ followup_tests table created")
         else:
-            print(f"   ⚠️  Test already exists: {test['type']}")
+            print("   ⚠️  followup_tests already exists, skipping")
 
-    # 6. Verify migration
-    print("\n6️⃣  Verifying migration...")
-    test_count = session.execute(text("SELECT COUNT(*) FROM followup_tests")).scalar()
-    print(f"   ✅ followup_tests: {test_count} tests")
+        # 2. Create competitive_intel table
+        print("\n2️⃣  Creating competitive_intel table...")
+        if "competitive_intel" not in existing_tables:
+            session.execute(
+                text(
+                    """
+                CREATE TABLE competitive_intel (
+                    id SERIAL PRIMARY KEY,
+                    session_id VARCHAR(100) NOT NULL,
+                    intel_type VARCHAR(50) NOT NULL,
+                    competitor_name VARCHAR(100),
+                    user_message TEXT NOT NULL,
+                    context TEXT,
+                    sentiment VARCHAR(20),
+                    priority VARCHAR(20) DEFAULT 'medium',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """
+                )
+            )
+            session.commit()
+            print("   ✅ competitive_intel table created")
+        else:
+            print("   ⚠️  competitive_intel already exists, skipping")
 
-    intel_count = session.execute(text("SELECT COUNT(*) FROM competitive_intel")).scalar()
-    print(f"   ✅ competitive_intel: {intel_count} records")
+        # 3. Add email column to chat_conversations
+        print("\n3️⃣  Adding email to chat_conversations...")
+        try:
+            result = session.execute(
+                text(
+                    """
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_name='chat_conversations'
+                AND column_name='email'
+            """
+                )
+            )
 
-    print("\n" + "=" * 70)
-    print("✅ PRODUCTION MIGRATION COMPLETED SUCCESSFULLY!")
-    print("=" * 70)
-    print()
-    print("Next steps:")
-    print("1. Add Monday.com columns: lead_score, competitor_mentioned, next_action")
-    print("2. Test A/B endpoint: /api/chatbot/ab-tests/results")
-    print("3. Test competitive intel: /api/chatbot/competitive-intelligence")
-    print()
+            if result.fetchone() is None:
+                session.execute(
+                    text(
+                        "ALTER TABLE chat_conversations ADD COLUMN IF NOT EXISTS email VARCHAR(255)"
+                    )
+                )
+                session.commit()
+                print("   ✅ email column added")
+            else:
+                print("   ⚠️  email already exists, skipping")
 
-    session.close()
+            index_result = session.execute(
+                text(
+                    """
+                SELECT indexname
+                FROM pg_indexes
+                WHERE tablename='chat_conversations'
+                AND indexname='ix_chat_conversations_email'
+            """
+                )
+            )
 
-except Exception as e:
-    print("\n❌ MIGRATION FAILED!")
-    print(f"Error: {e}")
-    print()
-    print("Troubleshooting:")
-    print("1. Check if Cloud SQL Proxy is running")
-    print("2. Verify DATABASE_URL is correct")
-    print("3. Check database permissions")
-    sys.exit(1)
+            if index_result.fetchone() is None:
+                session.execute(
+                    text(
+                        "CREATE INDEX IF NOT EXISTS ix_chat_conversations_email ON chat_conversations(email)"
+                    )
+                )
+                session.commit()
+                print("   ✅ email index created")
+            else:
+                print("   ⚠️  email index already exists, skipping")
+        except Exception as e:
+            print(f"   ❌ Error: {e}")
+            session.rollback()
+
+        # 4. Add followup_variant column to chat_conversations
+        print("\n4️⃣  Adding followup_variant to chat_conversations...")
+        try:
+            result = session.execute(
+                text(
+                    """
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_name='chat_conversations'
+                AND column_name='followup_variant'
+            """
+                )
+            )
+
+            if result.fetchone() is None:
+                session.execute(
+                    text("ALTER TABLE chat_conversations ADD COLUMN followup_variant VARCHAR(10)")
+                )
+                session.commit()
+                print("   ✅ followup_variant column added")
+            else:
+                print("   ⚠️  followup_variant already exists, skipping")
+        except Exception as e:
+            print(f"   ❌ Error: {e}")
+            session.rollback()
+
+        # 5. Insert default A/B tests
+        print("\n5️⃣  Adding default A/B tests...")
+
+        default_tests = [
+            {
+                "type": "package_to_sqm",
+                "a": "💡 **A jaki jest mniej więcej metraż Twojego mieszkania?** To pomoże mi lepiej dopasować ofertę.",
+                "b": "📐 **Ile metrów kwadratowych ma Twoje mieszkanie?** Na tej podstawie przygotuję dokładną wycenę.",
+            },
+            {
+                "type": "sqm_to_location",
+                "a": "📍 **W jakim mieście szukasz wykonawcy?** Mamy zespoły w całej Polsce.",
+                "b": "🗺️ **Gdzie znajduje się Twoje mieszkanie?** Sprawdzę dostępność naszych ekip w Twojej okolicy.",
+            },
+            {
+                "type": "price_to_budget",
+                "a": "💰 **Masz już określony budżet? Mogę pokazać opcje finansowania i rozłożenia płatności.**",
+                "b": "💵 **Jaki budżet planujesz przeznaczyć na wykończenie?** Dopasuję najlepszą opcję dla Ciebie.",
+            },
+        ]
+
+        for test in default_tests:
+            result = session.execute(
+                text("SELECT id FROM followup_tests WHERE question_type = :qtype"),
+                {"qtype": test["type"]},
+            )
+
+            if result.fetchone() is None:
+                session.execute(
+                    text(
+                        """
+                    INSERT INTO followup_tests (question_type, variant_a, variant_b, is_active)
+                    VALUES (:qtype, :variant_a, :variant_b, true)
+                """
+                    ),
+                    {"qtype": test["type"], "variant_a": test["a"], "variant_b": test["b"]},
+                )
+                session.commit()
+                print(f"   ✅ Added A/B test: {test['type']}")
+            else:
+                print(f"   ⚠️  Test already exists: {test['type']}")
+
+        # 6. Verify migration
+        print("\n6️⃣  Verifying migration...")
+        test_count = session.execute(text("SELECT COUNT(*) FROM followup_tests")).scalar()
+        print(f"   ✅ followup_tests: {test_count} tests")
+
+        intel_count = session.execute(text("SELECT COUNT(*) FROM competitive_intel")).scalar()
+        print(f"   ✅ competitive_intel: {intel_count} records")
+
+        print("\n" + "=" * 70)
+        print("✅ PRODUCTION MIGRATION COMPLETED SUCCESSFULLY!")
+        print("=" * 70)
+        print()
+        print("Next steps:")
+        print("1. Add Monday.com columns: lead_score, competitor_mentioned, next_action")
+        print("2. Test A/B endpoint: /api/chatbot/ab-tests/results")
+        print("3. Test competitive intel: /api/chatbot/competitive-intelligence")
+        print()
+
+    except Exception as e:  # pragma: no cover - defensive
+        print("\n❌ MIGRATION FAILED!")
+        print(f"Error: {e}")
+        print()
+        print("Troubleshooting:")
+        print("1. Check if Cloud SQL Proxy is running")
+        print("2. Verify DATABASE_URL is correct")
+        print("3. Check database permissions")
+        return 1
+    finally:
+        if session:
+            session.close()
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(run_migration())
