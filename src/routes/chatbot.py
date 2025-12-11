@@ -11,6 +11,8 @@ from datetime import datetime, timedelta, timezone
 from flask import Blueprint, jsonify, request
 from sqlalchemy.exc import SQLAlchemyError
 
+from src.exceptions import ValidationError, ChatMessageTooLongError, BusinessException
+
 # Lazy load OpenAI to optimize cold start
 OPENAI_AVAILABLE = False
 _openai_client = None
@@ -367,8 +369,6 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
         except ImportError:
             # Fallback to legacy extract_context if safe version not available
             context_memory = extract_context(user_message, context_memory)
-        # Always run lightweight regex fallback to fill gaps (city, phone, etc.)
-        context_memory = extract_context(user_message, context_memory)
         conversation.context_data = json.dumps(context_memory)
 
         # Zapisz wiadomość użytkownika
@@ -380,6 +380,13 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
         )
         db.session.add(user_msg)
         db.session.commit()
+        
+        # Update session activity
+        try:
+            from src.services.session_timeout import session_timeout_service
+            session_timeout_service.update_activity(session_id)
+        except Exception as e:
+            logging.warning(f"Failed to update session activity: {e}")
 
         # Detect if the current message is an introduction (to prioritize GPT routing)
         intro_keywords = ["jestem", "nazywam się", "mam na imię", "to ja", "cześć jestem"]
@@ -401,11 +408,12 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
             client = ensure_openai_client()
             if client:
                 try:
-                    # Pobierz historię konwersacji
+                    # Pobierz historię konwersacji (limit zwiększony do 20)
+                    message_history_limit = int(os.getenv("MESSAGE_HISTORY_LIMIT", "20"))
                     history = (
                         ChatMessage.query.filter_by(conversation_id=conversation.id)
                         .order_by(ChatMessage.timestamp.desc())
-                        .limit(10)
+                        .limit(message_history_limit)
                         .all()
                     )
 
@@ -832,24 +840,77 @@ else:
 @limiter.limit(lambda: os.getenv("CHAT_RATE_LIMIT", "30 per minute"))
 def chat():
     """Handle chat messages via REST API (NEW: with state machine, validation, rate limiting)"""
+    # Check IP blacklist
+    from src.services.ip_blacklist import ip_blacklist
+    
+    ip_address = request.remote_addr or "unknown"
+    if ip_blacklist.is_blacklisted(ip_address):
+        return jsonify({
+            "error": "ip_blacklisted",
+            "message": "Your IP has been temporarily blocked due to rate limit violations"
+        }), 403
+    
+    # Check minimum interval between messages
+    from src.services.rate_limiter import ensure_rate_limiter
+    
+    payload = request.get_json(silent=True) or {}
+    session_id = payload.get("session_id") or "unknown"
+    
+    try:
+        limiter = ensure_rate_limiter()
+        min_interval = int(os.getenv("MIN_MESSAGE_INTERVAL_SECONDS", "1"))
+        allowed, wait_seconds = limiter.check_minimum_interval(
+            f"session:{session_id}",
+            min_interval
+        )
+        if not allowed:
+            return jsonify({
+                "error": "message_too_fast",
+                "message": f"Please wait {wait_seconds} seconds before sending another message",
+                "retry_after": wait_seconds
+            }), 429
+    except Exception as e:
+        # Fail open if limiter unavailable
+        logging.warning(f"Minimum interval check failed: {e}")
+    
     payload = request.get_json(silent=True) or {}
 
-    # Basic validation for tests and safety
-    raw_message = payload.get("message")
-    if not isinstance(raw_message, str) or not raw_message.strip():
-        return jsonify({"error": "Message must be a non-empty string"}), 400
-
-    user_message = raw_message.strip()
-    if len(user_message) > 4000:
-        return jsonify({"error": "message too long"}), 413
-
-    session_id = payload.get("session_id") or str(uuid.uuid4())
+    # Validate payload using validator
+    from src.utils.validators import validate_chat_payload
+    
+    try:
+        user_message, session_id = validate_chat_payload(payload)
+    except (ValidationError, ChatMessageTooLongError) as e:
+        # These are business errors, will be handled by global error handler
+        raise
+    
+    # Generate session_id if not provided
+    if not session_id:
+        session_id = str(uuid.uuid4())
 
     try:
-        response_data = process_chat_message(user_message, session_id)
+        from src.services.monitoring import track_request, MetricsService, capture_exception
+        
+        with track_request("/chat"):
+            response_data = process_chat_message(user_message, session_id)
+            MetricsService.increment_conversation("success")
     except Exception as e:  # pragma: no cover - defensive
+        # Let business exceptions propagate to global handler
+        from src.exceptions import BusinessException
+        if isinstance(e, BusinessException):
+            raise
+        
+        from src.services.monitoring import MetricsService, capture_exception
+        from flask import g
+        
+        MetricsService.increment_error(500)
+        MetricsService.increment_conversation("error")
+        capture_exception(e, extra={"session_id": session_id})
+        
         logging.exception("Error in chat endpoint")
-        return jsonify({"error": str(e)}), 500
+        
+        # Re-raise to be caught by global handler
+        raise
 
     return jsonify(
         {

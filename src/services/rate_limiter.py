@@ -30,6 +30,36 @@ class RateLimiter:
         cutoff = time.time() - window_seconds
         return [entry for entry in entries if entry[0] > cutoff]
 
+    def check_minimum_interval(
+        self,
+        identifier: str,
+        min_interval_seconds: int = 1,
+    ) -> tuple[bool, Optional[int]]:
+        """
+        Check if minimum interval between messages has passed.
+        
+        Args:
+            identifier: session_id or ip_address
+            min_interval_seconds: Minimum seconds between messages
+            
+        Returns:
+            (is_allowed, seconds_until_allowed)
+        """
+        storage = self.session_limits if identifier.startswith("session:") else self.ip_limits
+        key = identifier.replace("session:", "").replace("ip:", "")
+        
+        if key not in storage or not storage[key]:
+            return True, None
+        
+        # Get last request time
+        last_request_time = storage[key][-1][0]
+        elapsed = time.time() - last_request_time
+        
+        if elapsed < min_interval_seconds:
+            return False, int(min_interval_seconds - elapsed)
+        
+        return True, None
+
     def check_rate_limit(
         self,
         identifier: str,

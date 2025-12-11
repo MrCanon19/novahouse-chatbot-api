@@ -1,262 +1,297 @@
 """
-Session Timeout & Reengagement Service
-Gentle nudges when user goes inactive during conversation
-
-Uses Redis TTL for production (scalable across instances).
-Falls back to in-memory dict for development.
+Session Timeout Service
+Handles session inactivity, nudges, and cleanup.
+Redis is used as cache, but DB is the source of truth.
 """
-
+import os
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import Dict, Optional
+from typing import Optional, List, Dict
+
+import json
+from src.models.chatbot import ChatConversation, ChatMessage, db
 
 logger = logging.getLogger(__name__)
 
+# Configuration from environment
+INACTIVITY_MINUTES_BEFORE_NUDGE = int(os.getenv("INACTIVITY_MINUTES_BEFORE_NUDGE", "15"))  # 15 min
+INACTIVITY_MINUTES_BEFORE_TIMEOUT = int(os.getenv("INACTIVITY_MINUTES_BEFORE_TIMEOUT", "30"))  # 30 min
+
 
 class SessionTimeoutService:
-    """Handle session timeouts and reengagement"""
-
-    # Timeout thresholds
-    GENTLE_NUDGE_MINUTES = 3  # After 3 minutes of silence
-    SESSION_TIMEOUT_MINUTES = 30  # After 30 minutes, consider session ended
-
+    """
+    Service for managing session timeouts, nudges, and cleanup.
+    Uses DB as source of truth, Redis only as cache.
+    """
+    
+    # Configuration
+    INACTIVITY_MINUTES_BEFORE_NUDGE = INACTIVITY_MINUTES_BEFORE_NUDGE
+    INACTIVITY_MINUTES_BEFORE_TIMEOUT = INACTIVITY_MINUTES_BEFORE_TIMEOUT
+    
     def __init__(self):
-        # Fallback for dev (replaced by Redis in production)
-        self._fallback_sessions = {}
-        self._fallback_nudges = {}
-
-        # Lazy-load Redis cache
-        self._cache = None
-
-    @property
-    def cache(self):
-        """Lazy-load Redis cache to avoid import deadlock"""
-        if self._cache is None:
-            from src.services.redis_service import get_redis_cache
-
-            self._cache = get_redis_cache()
-        return self._cache
-
-    # Backward-compatible properties for tests
-    @property
-    def active_sessions(self):
-        """Backward compatibility: expose fallback sessions"""
-        return self._fallback_sessions
-
-    @property
-    def nudge_sent(self):
-        """Backward compatibility: expose fallback nudges"""
-        return self._fallback_nudges
-
+        self.redis_client = None
+        self._init_redis()
+    
+    def _init_redis(self):
+        """Initialize Redis client (optional, for caching)"""
+        redis_url = os.getenv("REDIS_URL")
+        if redis_url:
+            try:
+                import redis
+                self.redis_client = redis.from_url(
+                    redis_url,
+                    decode_responses=True,
+                    socket_connect_timeout=2,
+                    socket_timeout=2,
+                )
+                self.redis_client.ping()
+                logger.info("✅ SessionTimeoutService using Redis cache")
+            except Exception as e:
+                logger.warning(f"⚠️  Redis unavailable for session timeout, using DB only: {e}")
+                self.redis_client = None
+        else:
+            logger.info("ℹ️  Redis not configured, using DB only")
+    
+    def get_last_activity(self, session_id: str) -> Optional[datetime]:
+        """
+        Get last activity timestamp for session.
+        Checks Redis cache first, then DB.
+        """
+        # Try Redis cache
+        if self.redis_client:
+            try:
+                cached = self.redis_client.get(f"session:last_activity:{session_id}")
+                if cached:
+                    return datetime.fromisoformat(cached)
+            except Exception as e:
+                logger.warning(f"Redis cache read failed: {e}")
+        
+        # Fallback to DB
+        try:
+            last_message = (
+                db.session.query(ChatMessage)
+                .join(ChatConversation)
+                .filter(ChatConversation.session_id == session_id)
+                .order_by(ChatMessage.timestamp.desc())
+                .first()
+            )
+            
+            if last_message:
+                last_activity = last_message.timestamp
+                # Cache in Redis
+                if self.redis_client:
+                    try:
+                        self.redis_client.setex(
+                            f"session:last_activity:{session_id}",
+                            3600,  # 1 hour cache
+                            last_activity.isoformat()
+                        )
+                    except Exception:
+                        pass
+                return last_activity
+            
+            # Check conversation start time
+            conversation = ChatConversation.query.filter_by(session_id=session_id).first()
+            if conversation:
+                return conversation.started_at
+            
+            return None
+        except Exception as e:
+            logger.error(f"Error getting last activity for session {session_id}: {e}")
+            return None
+    
     def update_activity(self, session_id: str):
-        """
-        Update last activity timestamp for session
-
-        Uses Redis with TTL = SESSION_TIMEOUT_MINUTES for automatic cleanup.
-        Stores ISO timestamp string for easy deserialization.
-        Also updates fallback for backward compatibility with tests.
-        """
-        now_dt = datetime.now(timezone.utc)
-        now = now_dt.isoformat()
-        key = f"session:activity:{session_id}"
-        ttl_seconds = self.SESSION_TIMEOUT_MINUTES * 60
-
-        # Always update fallback for backward compatibility
-        self._fallback_sessions[session_id] = now_dt
-
-        # Try Redis (will use internal fallback if Redis unavailable)
-        try:
-            self.cache.set(key, now, ttl=ttl_seconds)
-        except Exception as e:
-            logger.warning(f"Redis update failed: {e}")
-
-    def check_inactivity(self, session_id: str) -> Optional[Dict]:
-        """
-        Check if session is inactive and needs nudge
-
-        Returns:
-            dict with nudge message or None
-        """
-        key = f"session:activity:{session_id}"
-
-        try:
-            last_activity_str = self.cache.get(key)
-            if not last_activity_str:
-                # Try fallback
-                if session_id not in self._fallback_sessions:
-                    return None
-                last_activity = self._fallback_sessions[session_id]
-            else:
-                last_activity = datetime.fromisoformat(last_activity_str)
-        except Exception as e:
-            logger.warning(f"Redis get failed, using fallback: {e}")
-            if session_id not in self._fallback_sessions:
-                return None
-            last_activity = self._fallback_sessions[session_id]
-
+        """Update last activity timestamp (called on each message)"""
         now = datetime.now(timezone.utc)
-        minutes_inactive = (now - last_activity).total_seconds() / 60
-
-        # Gentle nudge after 3 minutes
-        if self.GENTLE_NUDGE_MINUTES <= minutes_inactive < self.SESSION_TIMEOUT_MINUTES:
-            # Check if nudge already sent
-            if not self._nudge_already_sent(session_id):
-                return {
-                    "type": "gentle_nudge",
-                    "message": self._get_nudge_message(session_id),
-                    "minutes_inactive": minutes_inactive,
-                }
-
-        # Session timeout
-        if minutes_inactive >= self.SESSION_TIMEOUT_MINUTES:
-            return {
-                "type": "session_timeout",
-                "message": self._get_timeout_message(session_id),
-                "minutes_inactive": minutes_inactive,
-            }
-
-        return None
-
-    def _nudge_already_sent(self, session_id: str) -> bool:
+        
+        # Update Redis cache
+        if self.redis_client:
+            try:
+                self.redis_client.setex(
+                    f"session:last_activity:{session_id}",
+                    3600,
+                    now.isoformat()
+                )
+            except Exception as e:
+                logger.warning(f"Redis cache update failed: {e}")
+        
+        # DB is updated automatically when message is saved
+        # This is just for cache invalidation
+    
+    def should_send_nudge(self, session_id: str) -> bool:
         """
-        Check if nudge was already sent for this inactivity period
-
-        Uses Redis with 5-minute TTL to prevent duplicate nudges.
-        Also syncs with _fallback_nudges for backward compatibility.
+        Check if nudge should be sent (inactive for X minutes, not yet nudged).
+        Returns True if session is inactive and hasn't been nudged yet.
         """
-        key = f"session:nudge:{session_id}"
-        now_dt = datetime.now(timezone.utc)
-
-        try:
-            existing_nudge = self.cache.get(key)
-            if not existing_nudge:
-                # No nudge sent recently - mark as sent with 5 min TTL
-                self.cache.set(key, now_dt.isoformat(), ttl=300)
-                # Also update fallback for consistency
-                self._fallback_nudges[session_id] = now_dt
-                return False
-
-            # Nudge was sent recently
-            return True
-        except Exception as e:
-            logger.warning(f"Redis nudge check failed, using fallback: {e}")
-
-            # Fallback logic
-            if session_id not in self._fallback_nudges:
-                self._fallback_nudges[session_id] = now_dt
-                return False
-
-            time_since_nudge = (now_dt - self._fallback_nudges[session_id]).total_seconds() / 60
-            if time_since_nudge < 5:
-                return True
-
-            self._fallback_nudges[session_id] = now_dt
+        last_activity = self.get_last_activity(session_id)
+        if not last_activity:
             return False
-
-    def _get_nudge_message(self, session_id: str) -> str:
-        """Get gentle reengagement message"""
-        messages = [
-            "Jesteś jeszcze tam? 😊",
-            "Mogę coś jeszcze wyjaśnić?",
-            "Masz jakieś pytania? Chętnie pomogę! 💬",
-            "Czy wszystko jasne? Daj znać jeśli potrzebujesz pomocy!",
-            "Wciąż tu jestem jeśli chcesz porozmawiać 👋",
-        ]
-
-        # Simple rotation based on session
-        index = hash(session_id) % len(messages)
-        return messages[index]
-
-    def _get_timeout_message(self, session_id: str) -> str:
-        """Get session timeout message"""
-        return (
-            "Rozumiem że potrzebujesz czasu na przemyślenie 😊\n\n"
-            "Gdy będziesz gotowy do rozmowy, napisz - chętnie pomogę!\n\n"
-            "Możesz też od razu umówić się na konsultację: NovaHouse.pl/kontakt"
-        )
-
-    def is_session_active(self, session_id: str) -> bool:
-        """
-        Check if session is still considered active
-
-        Leverages Redis TTL: if key exists, session is active.
-        """
-        key = f"session:activity:{session_id}"
-
-        try:
-            last_activity_str = self.cache.get(key)
-            if not last_activity_str:
-                # Try fallback
-                if session_id not in self._fallback_sessions:
-                    return False
-                last_activity = self._fallback_sessions[session_id]
-            else:
-                # If Redis has key, session is active (TTL not expired)
-                return True
-        except Exception as e:
-            logger.warning(f"Redis check failed, using fallback: {e}")
-            if session_id not in self._fallback_sessions:
+        
+        inactive_minutes = (datetime.now(timezone.utc) - last_activity).total_seconds() / 60
+        
+        if inactive_minutes < INACTIVITY_MINUTES_BEFORE_NUDGE:
+            return False
+        
+        # Check if already nudged (check in context_data or last bot message)
+        conversation = ChatConversation.query.filter_by(session_id=session_id).first()
+        if conversation:
+            context_data = json.loads(conversation.context_data or "{}")
+            if context_data.get("nudge_sent"):
                 return False
-            last_activity = self._fallback_sessions[session_id]
-
-        # Fallback calculation
-        now = datetime.now(timezone.utc)
-        minutes_inactive = (now - last_activity).total_seconds() / 60
-        return minutes_inactive < self.SESSION_TIMEOUT_MINUTES
-
-    def get_reengagement_suggestion(self, context_memory: Dict) -> Optional[str]:
+            
+            # Also check if last bot message was a nudge
+            last_bot_message = (
+                db.session.query(ChatMessage)
+                .filter_by(conversation_id=conversation.id, sender="bot")
+                .order_by(ChatMessage.timestamp.desc())
+                .first()
+            )
+            if last_bot_message and "przerwałeś rozmowę" in last_bot_message.message.lower():
+                return False
+        
+        return True
+    
+    def send_nudge(self, session_id: str) -> bool:
         """
-        Get smart reengagement suggestion based on conversation state
-
+        Send nudge message to inactive session.
+        Returns True if nudge was sent successfully.
+        """
+        try:
+            conversation = ChatConversation.query.filter_by(session_id=session_id).first()
+            if not conversation:
+                return False
+            
+            # Mark as nudged in context_data
+            context_data = json.loads(conversation.context_data or "{}")
+            context_data["nudge_sent"] = True
+            context_data["nudge_sent_at"] = datetime.now(timezone.utc).isoformat()
+            conversation.context_data = json.dumps(context_data)
+            
+            # Create nudge message
+            nudge_message = ChatMessage(
+                conversation_id=conversation.id,
+                message="Cześć! Widzę, że przerwałeś rozmowę. Czy mogę jeszcze w czymś pomóc? 😊",
+                sender="bot",
+                timestamp=datetime.now(timezone.utc),
+            )
+            
+            db.session.add(nudge_message)
+            db.session.commit()
+            
+            logger.info(f"✅ Nudge sent to session {session_id}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error sending nudge to session {session_id}: {e}")
+            db.session.rollback()
+            return False
+    
+    def is_timed_out(self, session_id: str) -> bool:
+        """Check if session has timed out (inactive for X minutes)"""
+        last_activity = self.get_last_activity(session_id)
+        if not last_activity:
+            return False
+        
+        inactive_minutes = (datetime.now(timezone.utc) - last_activity).total_seconds() / 60
+        return inactive_minutes >= INACTIVITY_MINUTES_BEFORE_TIMEOUT
+    
+    def cleanup_old_sessions(self, older_than_hours: int = 24) -> Dict:
+        """
+        Clean up old inactive sessions from DB.
+        Marks them as ended for analytics.
+        
+        Args:
+            older_than_hours: Clean up sessions inactive for more than X hours
+            
         Returns:
-            Contextual nudge message
+            Dict with cleanup stats
         """
-        # If had package interest
-        if context_memory.get("package"):
-            package = context_memory["package"]
-            return f"💎 Widzę że interesuje Cię pakiet {package}. Mogę wysłać szczegółową wycenę na email?"
-
-        # If had sqm but no package
-        if context_memory.get("square_meters") and not context_memory.get("package"):
-            sqm = context_memory["square_meters"]
-            return f"📐 Dla {sqm}m² mogę polecić kilka pakietów. Chcesz poznać opcje?"
-
-        # If had city but nothing else
-        if context_memory.get("city") and not context_memory.get("square_meters"):
-            city = context_memory["city"]
-            return f"📍 Świetnie że jesteś z {city}! Jaki metraż ma Twoje mieszkanie?"
-
-        # Generic
-        return "🏠 Mogę pomóc w wyborze pakietu wykończenia. Co Cię najbardziej interesuje?"
-
-    def cleanup_old_sessions(self):
-        """
-        Remove sessions older than timeout
-
-        Redis: Auto-cleanup via TTL (no manual cleanup needed).
-        Fallback: Manual cleanup for in-memory dict.
-        """
-        # Redis handles TTL automatically - only clean fallback
-        if not self._fallback_sessions:
-            return
-
-        now = datetime.now(timezone.utc)
-        timeout = timedelta(minutes=self.SESSION_TIMEOUT_MINUTES)
-
-        to_remove = [
-            sid
-            for sid, last_activity in self._fallback_sessions.items()
-            if now - last_activity > timeout
-        ]
-
-        for sid in to_remove:
-            del self._fallback_sessions[sid]
-            if sid in self._fallback_nudges:
-                del self._fallback_nudges[sid]
-
-        if to_remove:
-            logger.info(f"Cleaned up {len(to_remove)} inactive sessions from fallback storage")
+        try:
+            cutoff_time = datetime.now(timezone.utc) - timedelta(hours=older_than_hours)
+            
+            # Find inactive sessions
+            inactive_sessions = (
+                db.session.query(ChatConversation)
+                .filter(
+                    ChatConversation.ended_at.is_(None),
+                    ChatConversation.started_at < cutoff_time
+                )
+                .all()
+            )
+            
+            cleaned_count = 0
+            for session in inactive_sessions:
+                # Check if really inactive (no recent messages)
+                last_message = (
+                    db.session.query(ChatMessage)
+                    .filter_by(conversation_id=session.id)
+                    .order_by(ChatMessage.timestamp.desc())
+                    .first()
+                )
+                
+                if last_message and last_message.timestamp < cutoff_time:
+                    session.ended_at = datetime.now(timezone.utc)
+                    # Update context_data with status
+                    context_data = json.loads(session.context_data or "{}")
+                    context_data["status"] = "timeout"
+                    session.context_data = json.dumps(context_data)
+                    cleaned_count += 1
+                    
+                    # Clear Redis cache
+                    if self.redis_client:
+                        try:
+                            self.redis_client.delete(f"session:last_activity:{session.session_id}")
+                        except Exception:
+                            pass
+            
+            db.session.commit()
+            
+            logger.info(f"✅ Cleaned up {cleaned_count} old sessions")
+            
+            return {
+                "cleaned_count": cleaned_count,
+                "cutoff_time": cutoff_time.isoformat(),
+                "older_than_hours": older_than_hours,
+            }
+            
+        except Exception as e:
+            logger.error(f"Error cleaning up sessions: {e}")
+            db.session.rollback()
+            return {
+                "cleaned_count": 0,
+                "error": str(e),
+            }
+    
+    def get_inactive_sessions_needing_nudge(self) -> List[Dict]:
+        """Get list of sessions that need nudge"""
+        try:
+            # Get all active sessions
+            active_sessions = (
+                db.session.query(ChatConversation)
+                .filter(ChatConversation.ended_at.is_(None))
+                .all()
+            )
+            
+            sessions_needing_nudge = []
+            for session in active_sessions:
+                if self.should_send_nudge(session.session_id):
+                    last_activity = self.get_last_activity(session.session_id)
+                    sessions_needing_nudge.append({
+                        "session_id": session.session_id,
+                        "last_activity": last_activity.isoformat() if last_activity else None,
+                        "inactive_minutes": (
+                            (datetime.now(timezone.utc) - last_activity).total_seconds() / 60
+                            if last_activity else 0
+                        ),
+                    })
+            
+            return sessions_needing_nudge
+            
+        except Exception as e:
+            logger.error(f"Error getting sessions needing nudge: {e}")
+            return []
 
 
 # Global instance
 session_timeout_service = SessionTimeoutService()
+
