@@ -651,12 +651,28 @@ def create_dead_letter_queue():
                 )
 
         # Also add email column to chat_conversations if missing
-        chat_conv_columns = [col.name for col in inspector.get_columns("chat_conversations")]
-        if "email" not in chat_conv_columns:
-            db.session.execute(text("ALTER TABLE chat_conversations ADD COLUMN email VARCHAR(255)"))
-            db.session.execute(
-                text("CREATE INDEX idx_chat_conversations_email ON chat_conversations(email)")
-            )
+        try:
+            chat_conv_columns = [col.name for col in inspector.get_columns("chat_conversations")]
+            if "email" not in chat_conv_columns:
+                db.session.execute(text("ALTER TABLE chat_conversations ADD COLUMN email VARCHAR(255)"))
+                db.session.execute(
+                    text("CREATE INDEX IF NOT EXISTS idx_chat_conversations_email ON chat_conversations(email)")
+                )
+                # Migrate existing email data from context_data JSON to email column
+                try:
+                    db.session.execute(text("""
+                        UPDATE chat_conversations 
+                        SET email = (context_data::json->>'email')::text
+                        WHERE email IS NULL
+                        AND context_data IS NOT NULL
+                        AND context_data::json->>'email' IS NOT NULL
+                    """))
+                except Exception as migrate_err:
+                    # Non-critical - column added, data migration can fail
+                    pass
+        except Exception as email_col_err:
+            # Log but don't fail - email column is optional (fallback to context_data)
+            pass
 
         db.session.commit()
 
