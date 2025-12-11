@@ -679,7 +679,9 @@ def deep_health_check():
 # Reszta kodu do serwowania plików statycznych pozostaje bez zmian.
 @app.route("/admin")
 def admin_page():
-    return app.send_static_file("admin-dashboard.html")
+    # Redirect to admin dashboard template
+    from flask import redirect
+    return redirect("/admin/dashboard")
 
 
 @app.route("/qualification")

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NovaHouse Chatbot Widget - Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background: #f5f7fa;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 60px 40px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .hero h1 {
+            margin: 0 0 20px 0;
+            font-size: 42px;
+        }
+
+        .hero p {
+            font-size: 18px;
+            opacity: 0.9;
+        }
+
+        .content {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <h1>🏠 NovaHouse Chatbot Widget</h1>
+        <p>Inteligentny asystent dla Twoich klientów - dostępny 24/7</p>
+    </div>
+
+    <div class="content">
+        <h2>Jak używać widgetu?</h2>
+        <p>Dodaj poniższą linię kodu przed zamykającym tagiem &lt;/body&gt; na swojej stronie:</p>
+
+        <div class="code-block">
+&lt;script&gt;
+    window.NOVAHOUSE_API_URL = 'https://glass-core-467907-e9.ey.r.appspot.com';
+&lt;/script&gt;
+&lt;script src="https://glass-core-467907-e9.ey.r.appspot.com/static/widget.js"&gt;&lt;/script&gt;
+        </div>
+
+        <h3 style="margin-top: 40px;">Funkcje widgetu:</h3>
+        <ul>
+            <li>✅ Responsywny design (mobile & desktop)</li>
+            <li>✅ Automatyczne zapisywanie historii rozmów</li>
+            <li>✅ Integracja z systemem analytics</li>
+            <li>✅ Tworzenie leadów bezpośrednio z chatu</li>
+            <li>✅ Konfigurowalne kolory i pozycja</li>
+        </ul>
+
+        <p style="margin-top: 40px;">
+            <strong>Spróbuj teraz!</strong> Kliknij ikonę czatu w prawym dolnym rogu ekranu. 💬
+        </p>
+    </div>
+
+    <!-- Widget Code -->
+    <script>
+        window.NOVAHOUSE_API_URL = window.location.origin;
+    </script>
+    <script src="/static/widget.js"></script>
+</body>
+</html>
+
