@@ -1,0 +1,34 @@
+blinker==1.9.0
+click==8.3.1
+Flask==3.1.2
+flask-cors==6.0.0
+Flask-SQLAlchemy==3.1.1
+gunicorn==22.0.0
+itsdangerous==2.2.0
+Jinja2==3.1.6
+MarkupSafe==3.0.2
+requests==2.32.5
+SQLAlchemy==2.0.44
+typing_extensions==4.14.1
+Werkzeug==3.1.3
+psycopg2-binary==2.9.11
+pytest==9.0.1
+pytest-cov==5.0.0
+PyYAML==6.0.2
+langdetect==1.0.9
+redis==5.2.0
+Flask-SocketIO==5.3.7
+python-socketio==5.14.0
+eventlet==0.40.3
+Pillow==11.1.0
+google-cloud-storage==2.19.0
+twilio==9.4.1
+APScheduler==3.11.0
+Whoosh==2.7.4
+python-dotenv==1.0.1
+locust==2.32.3
+snakeviz==2.2.0
+coverage-badge==1.1.2
+openai>=1.0.0
+# numpy>=1.24.0  # DISABLED: Not compatible with GAE standard environment
+# scikit-learn>=1.3.0  # DISABLED: Not compatible with GAE standard environment
