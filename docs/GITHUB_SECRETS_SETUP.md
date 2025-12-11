@@ -60,7 +60,7 @@ API_KEY            - Admin API key dla backupów/dashboardów
 ## 🚀 Jak Dodać Sekrety
 
 ### Metoda 1: Web UI (Zalecana)
-1. Otwórz: https://github.com/MrCanon19/novahouse-chatbot-api/settings/secrets/actions
+1. Otwórz: https://github.com/MrCanon19/chatbot-api/settings/secrets/actions
 2. Kliknij **"New repository secret"**
 3. Wpisz nazwę (np. `OPENAI_API_KEY`)
 4. Wklej wartość
@@ -149,7 +149,7 @@ Po dodaniu wszystkich sekretów:
    ```
 
 3. **Sprawdź GitHub Actions:**
-   https://github.com/MrCanon19/novahouse-chatbot-api/actions
+   https://github.com/MrCanon19/chatbot-api/actions
 
    Pipeline powinien:
    - ✅ Pass tests

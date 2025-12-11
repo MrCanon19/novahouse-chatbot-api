@@ -19,7 +19,7 @@ git push origin backup-before-purge
 
 ### Krok 2: Uruchom Skrypt Czyszczący
 ```bash
-cd /Users/michalmarini/Projects/manus/novahouse-chatbot-api
+cd /Users/michalmarini/Projects/manus/chatbot-api
 ./scripts/purge_secrets_from_history.sh
 ```
 
@@ -56,8 +56,8 @@ git pull
 
 # Poprawny sposób:
 cd ..
-rm -rf novahouse-chatbot-api
-git clone git@github.com:OWNER/novahouse-chatbot-api.git
+rm -rf chatbot-api
+git clone git@github.com:OWNER/chatbot-api.git
 ```
 
 ## 📋 Jakie Commity Zawierają Sekrety

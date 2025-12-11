@@ -365,7 +365,7 @@ except:
 
 ### Action 1: Database Optimization (DO NOW - 2 minutes)
 ```bash
-cd /Users/michalmarini/Projects/manus/novahouse-chatbot-api
+cd /Users/michalmarini/Projects/manus/chatbot-api
 python migrations/add_missing_indexes.py
 git add migrations/
 git commit -m "perf: Add database indexes for 60-80% query speedup"

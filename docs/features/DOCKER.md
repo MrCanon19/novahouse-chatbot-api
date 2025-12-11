@@ -6,8 +6,8 @@
 
 ```bash
 # Sklonuj repo
-git clone https://github.com/MrCanon19/novahouse-chatbot-api.git
-cd novahouse-chatbot-api
+git clone https://github.com/MrCanon19/chatbot-api.git
+cd chatbot-api
 
 # Skopiuj przykładowy config
 cp .env.example .env

@@ -86,7 +86,7 @@
 **Dlaczego:** Sekrety publicznie dostępne w historii GitHub  
 **Jak:**
 ```bash
-cd /Users/michalmarini/Projects/manus/novahouse-chatbot-api
+cd /Users/michalmarini/Projects/manus/chatbot-api
 ./scripts/purge_secrets_from_history.sh
 # Potwierdź wpisując "YES"
 # Następnie:

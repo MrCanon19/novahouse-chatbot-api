@@ -2,7 +2,7 @@
 
 **Data analizy:** 3 grudnia 2025  
 **Ostatnia optymalizacja:** 3 grudnia 2025 14:40  
-**Projekt:** novahouse-chatbot-api  
+**Projekt:** chatbot-api  
 **Google Cloud Project ID:** glass-core-467907-e9
 
 ## ✅ STATUS OPTYMALIZACJI - WSZYSTKO OGARNIĘTE!

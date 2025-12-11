@@ -166,7 +166,7 @@ gcloud sql connect novahouse-chatbot-db --user=chatbot_user
 ### **KROK 2: Deploy z Secrets** (10 min) ⏰
 
 ```bash
-cd /Users/michalmarini/Projects/manus/novahouse-chatbot-api
+cd /Users/michalmarini/Projects/manus/chatbot-api
 
 # Kopiuj secrets
 cp app.yaml.secret app.yaml.prod

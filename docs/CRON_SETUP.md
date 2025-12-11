@@ -5,13 +5,13 @@
 ### 1. Auto-push do GitHub (co 30 minut)
 
 ```bash
-*/30 * * * * /Users/michalmarini/Projects/manus/novahouse-chatbot-api/auto_push.sh
+*/30 * * * * /Users/michalmarini/Projects/manus/chatbot-api/auto_push.sh
 ```
 
 ### 2. Monitoring crona (co godzinę)
 
 ```bash
-0 * * * * /Users/michalmarini/Projects/manus/novahouse-chatbot-api/scripts/monitor_cron.sh
+0 * * * * /Users/michalmarini/Projects/manus/chatbot-api/scripts/monitor_cron.sh
 ```
 
 ## Instalacja:
@@ -37,13 +37,13 @@ crontab -l
 ### Sprawdź logi auto-push:
 
 ```bash
-tail -f ~/Projects/manus/novahouse-chatbot-api/logs/auto_push.log
+tail -f ~/Projects/manus/chatbot-api/logs/auto_push.log
 ```
 
 ### Sprawdź alerty monitoringu:
 
 ```bash
-tail -f ~/Projects/manus/novahouse-chatbot-api/logs/cron_alerts.log
+tail -f ~/Projects/manus/chatbot-api/logs/cron_alerts.log
 ```
 
 ## Zmiana częstotliwości:
@@ -65,8 +65,8 @@ crontab -e
 
 ```bash
 # Test auto-push
-/Users/michalmarini/Projects/manus/novahouse-chatbot-api/auto_push.sh
+/Users/michalmarini/Projects/manus/chatbot-api/auto_push.sh
 
 # Test monitoringu
-/Users/michalmarini/Projects/manus/novahouse-chatbot-api/scripts/monitor_cron.sh
+/Users/michalmarini/Projects/manus/chatbot-api/scripts/monitor_cron.sh
 ```

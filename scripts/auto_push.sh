@@ -1,8 +1,8 @@
 #!/bin/zsh
 
 # Auto-push script with logging and backup
-LOG_FILE="/Users/michalmarini/Projects/manus/novahouse-chatbot-api/logs/auto_push.log"
-BACKUP_DIR="/Users/michalmarini/Projects/manus/novahouse-chatbot-api/backups/automated"
+LOG_FILE="/Users/michalmarini/Projects/manus/chatbot-api/logs/auto_push.log"
+BACKUP_DIR="/Users/michalmarini/Projects/manus/chatbot-api/backups/automated"
 TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S")
 
 # Create log directory if it doesn't exist
@@ -11,7 +11,7 @@ mkdir -p "$BACKUP_DIR"
 
 echo "[$TIMESTAMP] Starting auto-push script" >> "$LOG_FILE"
 
-cd /Users/michalmarini/Projects/manus/novahouse-chatbot-api
+cd /Users/michalmarini/Projects/manus/chatbot-api
 
 # Check if there are changes to commit
 if [[ -n $(git status -s) ]]; then

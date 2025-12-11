@@ -214,7 +214,7 @@ gcloud sql users set-password chatbot_user \
 
 #### 3. Deploy with New Credentials
 ```bash
-cd /Users/michalmarini/Projects/manus/novahouse-chatbot-api
+cd /Users/michalmarini/Projects/manus/chatbot-api
 cp app.yaml.secret app.yaml.prod
 gcloud app deploy app.yaml.prod
 rm app.yaml.prod  # DELETE IMMEDIATELY!

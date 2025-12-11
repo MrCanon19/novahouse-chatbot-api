@@ -170,11 +170,11 @@ Poprawa:
 
 Sprawdź status pipeline'u:
 
-1. **GitHub**: https://github.com/MrCanon19/novahouse-chatbot-api/actions
+1. **GitHub**: https://github.com/MrCanon19/chatbot-api/actions
 2. **Ostatnie runs**: Po każdym push na main
 3. **Badge**: Dodaj do README.md:
    ```markdown
-   ![CI/CD Pipeline](https://github.com/MrCanon19/novahouse-chatbot-api/workflows/CI%2FCD%20Pipeline/badge.svg)
+   ![CI/CD Pipeline](https://github.com/MrCanon19/chatbot-api/workflows/CI%2FCD%20Pipeline/badge.svg)
    ```
 
 ---

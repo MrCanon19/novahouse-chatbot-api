@@ -141,7 +141,7 @@ env_variables:
 ### KROK 7: Deploy zaktualizowanej aplikacji
 
 ```bash
-cd /Users/michalmarini/Projects/manus/novahouse-chatbot-api
+cd /Users/michalmarini/Projects/manus/chatbot-api
 
 # Zapisz zmiany w app.yaml
 git add app.yaml

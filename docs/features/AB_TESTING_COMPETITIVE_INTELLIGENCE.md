@@ -245,7 +245,7 @@ Przy tworzeniu leada system automatycznie:
 ### Uruchomienie
 
 ```bash
-cd /Users/michalmarini/Projects/manus/novahouse-chatbot-api
+cd /Users/michalmarini/Projects/manus/chatbot-api
 python migrations/add_ab_testing_and_competitive_intel.py
 ```
 

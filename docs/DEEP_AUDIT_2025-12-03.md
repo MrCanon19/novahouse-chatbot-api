@@ -103,7 +103,7 @@ curl -X POST /api/leads \
 
 # Response:
 {
-  "error": "KeyError: 'email' at /Users/michalmarini/Projects/novahouse-chatbot-api/src/routes/leads.py:23"
+  "error": "KeyError: 'email' at /Users/michalmarini/Projects/chatbot-api/src/routes/leads.py:23"
 }
 # ❌ Attacker wie:
 # - Struktura filesystem

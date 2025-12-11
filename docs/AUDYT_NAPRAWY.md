@@ -2,7 +2,7 @@
 
 **Data audytu:** 3 grudnia 2025  
 **Inspektor:** Senior DevOps Engineer (40 lat doświadczenia)  
-**Projekt:** novahouse-chatbot-api  
+**Projekt:** chatbot-api  
 
 ---
 
