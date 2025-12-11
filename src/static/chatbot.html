@@ -174,25 +174,64 @@
                     ⚠️ WAŻNE: Rozmawiasz z chatbotem (sztuczną inteligencją), a nie z człowiekiem.
                 </p>
                 <p style="margin: 10px 0 0 0; font-size: 14px;">
-                    Twoje wiadomości są przetwarzane automatycznie przez system AI. W razie potrzeby możesz poprosić o kontakt z żywym konsultantem.
+                    Twoje wiadomości są przetwarzane automatycznie przez system AI (OpenAI GPT). 
+                    <strong>Użytkownik ma prawo wiedzieć, że rozmawia z maszyną - to wymóg prawny.</strong><br>
+                    W razie potrzeby możesz poprosić o kontakt z żywym konsultantem (telefon: 585 004 663).
                 </p>
             </div>
 
             <p>
                 <strong>Administrator danych osobowych:</strong><br>
-                NovaHouse<br>
+                <strong>NovaHouse</strong><br>
+                Oddział Gdańsk: ul. Pałubickiego 2 (budynek C2-parter), 80-175 Gdańsk<br>
+                Oddział Warszawa: ul. Prosta 70 – 5 piętro, 00-838 Warszawa<br>
+                Oddział Wrocław: ul. Sucha 3, 50-086 Wrocław<br>
+                <br>
+                <strong>Kontakt:</strong><br>
                 Email: m.kubiak@novahouse.pl<br>
-                <small style="color: #666;">To Ty jako administrator ponosisz pełną odpowiedzialność za dane przetwarzane przez chatbota.</small>
+                Telefon: 585 004 663<br>
+                <br>
+                <small style="color: #d32f2f; font-weight: bold;">
+                    ⚠️ WAŻNE: Administrator ponosi pełną odpowiedzialność za dane przetwarzane przez chatbota zgodnie z art. 24 RODO. 
+                    Organ nadzorczy (UODO) nie będzie pytał dostawcy o zaniedbania - odpowiedzialność spoczywa na administratorze.
+                </small>
             </p>
 
             <p>
-                <strong>Co chatbot robi z Twoimi danymi?</strong>
+                <strong>Co chatbot robi z Twoimi danymi? (Szczegółowy zakres przetwarzania)</strong>
             </p>
             <ul style="margin-left: 20px; margin-bottom: 15px; font-size: 14px;">
-                <li><strong>Zbiera:</strong> wiadomości, dane kontaktowe (jeśli podasz), informacje o projekcie</li>
-                <li><strong>Przetwarza:</strong> analizuje pytania, dopasowuje odpowiedzi, kwalifikuje leady</li>
-                <li><strong>Przechowuje:</strong> historię rozmów, dane kontaktowe, preferencje</li>
-                <li><strong>Udostępnia:</strong> dane mogą być przekazane dostawcom usług IT (hosting, AI) na podstawie umowy powierzenia</li>
+                <li><strong>Zbiera:</strong> 
+                    <ul style="margin-left: 15px; margin-top: 5px;">
+                        <li>Treść wszystkich wiadomości w rozmowie</li>
+                        <li>Dane kontaktowe (email, telefon - jeśli podasz)</li>
+                        <li>Informacje o projekcie (metraż, budżet, lokalizacja, preferencje)</li>
+                        <li>Dane techniczne (IP, cookies, identyfikator sesji, user agent)</li>
+                        <li>Zgody RODO (data, czas, IP, user agent)</li>
+                    </ul>
+                </li>
+                <li><strong>Przetwarza:</strong> 
+                    <ul style="margin-left: 15px; margin-top: 5px;">
+                        <li>Analizuje pytania za pomocą AI (OpenAI GPT)</li>
+                        <li>Dopasowuje odpowiedzi na podstawie bazy wiedzy</li>
+                        <li>Kwalifikuje leady i oblicza scoring</li>
+                        <li>Tworzy podsumowania konwersacji</li>
+                    </ul>
+                </li>
+                <li><strong>Przechowuje:</strong> 
+                    <ul style="margin-left: 15px; margin-top: 5px;">
+                        <li>Pełna historia rozmów w bazie danych (PostgreSQL)</li>
+                        <li>Dane kontaktowe w systemie CRM (Monday.com)</li>
+                        <li>Backupy danych (Google Cloud Storage)</li>
+                    </ul>
+                </li>
+                <li><strong>Udostępnia:</strong> 
+                    <ul style="margin-left: 15px; margin-top: 5px;">
+                        <li>Dostawcom usług IT (Google Cloud, OpenAI) - na podstawie umowy powierzenia (art. 28 RODO)</li>
+                        <li>Systemowi CRM (Monday.com) - na podstawie umowy powierzenia</li>
+                        <li>Partnerom biznesowym - tylko za wyraźną zgodą marketingową</li>
+                    </ul>
+                </li>
             </ul>
 
             <p>
@@ -206,15 +245,65 @@
             </ul>
 
             <p>
-                <strong>Podstawa prawna:</strong> Zgoda (art. 6 ust. 1 lit. a RODO) oraz wykonanie umowy (art. 6 ust. 1 lit. b RODO)
+                <strong>Podstawa prawna przetwarzania:</strong>
             </p>
+            <ul style="margin-left: 20px; margin-bottom: 15px; font-size: 14px;">
+                <li><strong>Zgoda użytkownika</strong> (art. 6 ust. 1 lit. a RODO) - podstawowa podstawa dla chatbota</li>
+                <li><strong>Wykonanie umowy</strong> (art. 6 ust. 1 lit. b RODO) - świadczenie usług chatbota</li>
+                <li><strong>Prawnie uzasadniony interes</strong> (art. 6 ust. 1 lit. f RODO) - analiza i poprawa jakości</li>
+            </ul>
 
             <p>
-                <strong>Twoje prawa:</strong> Masz prawo do dostępu, sprostowania, usunięcia danych, przenoszenia danych, sprzeciwu oraz wycofania zgody w dowolnym momencie.
+                <strong>Okres przechowywania danych:</strong>
+            </p>
+            <ul style="margin-left: 20px; margin-bottom: 15px; font-size: 14px;">
+                <li><strong>Historia rozmów:</strong> 12 miesięcy od ostatniej aktywności</li>
+                <li><strong>Dane kontaktowe:</strong> 12 miesięcy od ostatniej aktywności</li>
+                <li><strong>Zgody RODO:</strong> 5 lat (wymóg prawny - dokumentacja zgodności)</li>
+                <li><strong>Dane marketingowe:</strong> Do momentu wycofania zgody</li>
+                <li><strong>Dane księgowe:</strong> Zgodnie z wymogami prawa podatkowego (5 lat)</li>
+            </ul>
+
+            <p>
+                <strong>Twoje prawa (art. 15-22 RODO):</strong>
+            </p>
+            <ul style="margin-left: 20px; margin-bottom: 15px; font-size: 14px;">
+                <li><strong>Prawo dostępu</strong> (art. 15) - możesz poprosić o kopię swoich danych</li>
+                <li><strong>Prawo sprostowania</strong> (art. 16) - możesz poprawić nieprawidłowe dane</li>
+                <li><strong>Prawo usunięcia</strong> (art. 17) - "prawo do bycia zapomnianym"</li>
+                <li><strong>Prawo ograniczenia</strong> (art. 18) - możesz ograniczyć przetwarzanie</li>
+                <li><strong>Prawo przenoszenia</strong> (art. 20) - możesz otrzymać dane w formacie JSON/CSV</li>
+                <li><strong>Prawo sprzeciwu</strong> (art. 21) - możesz sprzeciwić się przetwarzaniu</li>
+                <li><strong>Prawo wycofania zgody</strong> (art. 7 ust. 3) - w dowolnym momencie</li>
+            </ul>
+            <p style="font-size: 13px; background: #e3f2fd; padding: 10px; border-radius: 6px; margin-top: 10px;">
+                <strong>Jak skorzystać z praw?</strong><br>
+                • Eksport danych: <code>/api/rodo/export</code> (wymaga email)<br>
+                • Usunięcie danych: <code>/api/chatbot/delete-my-data</code> (wymaga email)<br>
+                • Wycofanie zgody: <code>/api/unsubscribe</code> lub w chacie<br>
+                • Kontakt: m.kubiak@novahouse.pl
             </p>
 
-            <p style="font-size: 12px; color: #666; margin-top: 20px;">
-                <strong>Umowa powierzenia:</strong> Dane mogą być przetwarzane przez dostawców usług IT (hosting, AI) na podstawie umowy powierzenia przetwarzania danych zgodnie z art. 28 RODO.
+            <p style="font-size: 13px; background: #fff3cd; padding: 15px; border-radius: 8px; margin-top: 20px; border-left: 4px solid #ffc107;">
+                <strong>⚠️ Umowa powierzenia przetwarzania danych (art. 28 RODO):</strong><br>
+                <strong>ABSOLUTNA PODSTAWA:</strong> Dane są przetwarzane przez dostawców usług IT (Google Cloud Platform, OpenAI) 
+                wyłącznie na podstawie szczegółowej umowy powierzenia przetwarzania danych. 
+                <strong>Bez takiej umowy przekazanie danych dostawcy jest nielegalne.</strong><br>
+                <br>
+                <strong>Dostawcy z umową powierzenia:</strong><br>
+                • Google Cloud Platform (hosting, baza danych, storage)<br>
+                • OpenAI (przetwarzanie wiadomości przez AI)<br>
+                • Monday.com (system CRM)<br>
+                <br>
+                Wszystkie umowy powierzenia są zgodne z wymogami art. 28 RODO i zawierają m.in.:
+                gwarancje bezpieczeństwa, zakaz udostępniania danych innym podmiotom, 
+                obowiązek informowania o naruszeniach, prawo do audytu.
+            </p>
+
+            <p style="font-size: 12px; color: #666; margin-top: 15px;">
+                <strong>Prawo do skargi:</strong> Masz prawo wnieść skargę do organu nadzorczego (UODO - Urząd Ochrony Danych Osobowych) 
+                jeśli uważasz, że przetwarzanie Twoich danych narusza przepisy RODO. 
+                Kontakt: <a href="https://uodo.gov.pl" target="_blank" class="rodo-link">uodo.gov.pl</a>
             </p>
 
             <div class="rodo-checkbox">
@@ -250,7 +339,11 @@
             <div class="message bot">
                 Cześć! 👋 Jestem asystentem AI NovaHouse. Mogę pomóc Ci z informacjami o pakietach wykończeniowych, cenach i procesie budowy. O co chciałbyś zapytać?
                 <br><br>
-                <small style="opacity: 0.7;">💡 Pamiętaj: rozmawiasz z chatbotem (sztuczną inteligencją). W razie potrzeby mogę przekierować Cię do konsultanta.</small>
+                <small style="opacity: 0.7;">
+                    💡 <strong>Informacja:</strong> Rozmawiasz z chatbotem (sztuczną inteligencją), a nie z człowiekiem. 
+                    To wymóg prawny - musisz wiedzieć, że rozmawiasz z AI.<br>
+                    W razie potrzeby mogę przekierować Cię do żywego konsultanta (tel: 585 004 663).
+                </small>
             </div>
         </div>
         <div class="chatbot-input">
