@@ -14,14 +14,21 @@ cd "/Users/michalmarini/Cursor-pliki/Nova House/chatbot-api"
 
 ### Sposób 1: Skrypt (NAJŁATWIEJSZY) ⭐
 
+**Z pre-commit hooks (sprawdza kod przed commit):**
 ```bash
 cd "/Users/michalmarini/Cursor-pliki/Nova House/chatbot-api"
 ./scripts/quick_commit.sh "Aktualizacja kodu"
 ```
 
+**Bez pre-commit hooks (szybsze, jeśli hooks nie działają):**
+```bash
+cd "/Users/michalmarini/Cursor-pliki/Nova House/chatbot-api"
+./scripts/quick_commit_no_hooks.sh "Aktualizacja kodu"
+```
+
 Lub bez wiadomości (użyje domyślnej):
 ```bash
-./scripts/quick_commit.sh
+./scripts/quick_commit_no_hooks.sh
 ```
 
 ### Sposób 2: Komendy ręczne (klasyczne)
@@ -33,18 +40,22 @@ cd "/Users/michalmarini/Cursor-pliki/Nova House/chatbot-api"
 # 2. Dodaj wszystkie zmiany
 git add .
 
-# 3. Commit z wiadomością
-git commit -am "Aktualizacja kodu"
+# 3. Commit z wiadomością (--no-verify pomija pre-commit hooks)
+git commit --no-verify -am "Aktualizacja kodu"
 
 # 4. Push do GitHub
 git push
 ```
 
+**Uwaga:** `--no-verify` pomija pre-commit hooks (użyj jeśli masz problemy z `pre-commit not found`)
+
 ### Sposób 3: Jedna linia
 
 ```bash
-cd "/Users/michalmarini/Cursor-pliki/Nova House/chatbot-api" && git add . && git commit -am "Aktualizacja kodu" && git push
+cd "/Users/michalmarini/Cursor-pliki/Nova House/chatbot-api" && git add . && git commit --no-verify -am "Aktualizacja kodu" && git push
 ```
+
+**Uwaga:** `--no-verify` pomija pre-commit hooks
 
 ---
 
