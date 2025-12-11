@@ -2,7 +2,11 @@ import os
 
 from flask import Blueprint, jsonify, request
 
-from src.integrations.zencal_client import ZencalClient
+# Zencal integration (optional)
+try:
+    from src.integrations.zencal_client import ZencalClient
+except ImportError:
+    ZencalClient = None
 from src.models.chatbot import Booking, Lead, db
 
 booking_bp = Blueprint("booking", __name__)
@@ -61,6 +65,9 @@ def get_available_slots():
         if not date:
             return jsonify({"error": "date parameter is required (YYYY-MM-DD)"}), 400
 
+        if ZencalClient is None:
+            return jsonify({"error": "Zencal integration not available"}), 503
+
         zencal = ZencalClient()
         slots = zencal.get_available_slots(date=date)
 
@@ -83,6 +90,9 @@ def create_booking():
         for field in required_fields:
             if field not in data:
                 return jsonify({"error": f"{field} is required"}), 400
+
+        if ZencalClient is None:
+            return jsonify({"error": "Zencal integration not available"}), 503
 
         zencal = ZencalClient()
 
@@ -152,6 +162,9 @@ def cancel_booking_route(booking_id):
         if not booking:
             return jsonify({"error": "Booking not found"}), 404
 
+        if ZencalClient is None:
+            return jsonify({"error": "Zencal integration not available"}), 503
+
         zencal = ZencalClient()
 
         # Anuluj w Zencal jeśli mamy ID
@@ -180,6 +193,9 @@ def test_zencal():
         auth_error = _check_admin_key()
         if auth_error:
             return auth_error
+
+        if ZencalClient is None:
+            return jsonify({"error": "Zencal integration not available", "available": False}), 503
 
         zencal = ZencalClient()
 

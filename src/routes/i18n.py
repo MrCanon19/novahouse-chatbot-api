@@ -6,9 +6,20 @@ Multi-language support endpoints
 
 from flask import Blueprint, jsonify, request
 
-from src.services.i18n_service import I18nService
+# I18n service (optional - may not exist)
+try:
+    from src.services.i18n_service import I18nService
+except ImportError:
+    I18nService = None
 
 i18n_bp = Blueprint("i18n", __name__)
+
+
+def _check_i18n_service():
+    """Check if I18nService is available"""
+    if I18nService is None:
+        return jsonify({"error": "I18n service not available"}), 503
+    return None
 
 
 @i18n_bp.route("/detect", methods=["POST"])
@@ -23,6 +34,10 @@ def detect_language():
     }
     """
     try:
+        error_response = _check_i18n_service()
+        if error_response:
+            return error_response
+
         data = request.get_json()
         text = data.get("text", "")
 
@@ -44,6 +59,10 @@ def get_translations(language):
     GET /api/i18n/translations/{language}
     """
     try:
+        error_response = _check_i18n_service()
+        if error_response:
+            return error_response
+
         if language not in I18nService.SUPPORTED_LANGUAGES:
             supported = ", ".join(I18nService.SUPPORTED_LANGUAGES)
             return (
@@ -65,18 +84,22 @@ def get_translations(language):
 @i18n_bp.route("/translate", methods=["POST"])
 def translate():
     """
-    Translate a key to target language
+    Translate a key to a language
     POST /api/i18n/translate
 
     Body:
     {
         "key": "greeting",
-        "language": "en"
+        "language": "pl"
     }
     """
     try:
+        error_response = _check_i18n_service()
+        if error_response:
+            return error_response
+
         data = request.get_json()
-        key = data.get("key", "")
+        key = data.get("key")
         language = data.get("language", I18nService.DEFAULT_LANGUAGE)
 
         if not key:
@@ -84,24 +107,23 @@ def translate():
 
         translation = I18nService.translate(key, language)
 
-        return (
-            jsonify(
-                {"status": "success", "key": key, "language": language, "translation": translation}
-            ),
-            200,
-        )
+        return jsonify({"status": "success", "key": key, "language": language, "translation": translation}), 200
 
     except Exception as e:
         return jsonify({"status": "error", "error": str(e)}), 500
 
 
 @i18n_bp.route("/languages", methods=["GET"])
-def get_supported_languages():
+def get_languages():
     """
     Get list of supported languages
     GET /api/i18n/languages
     """
     try:
+        error_response = _check_i18n_service()
+        if error_response:
+            return error_response
+
         languages = I18nService.format_language_switcher()
 
         return (
@@ -120,12 +142,16 @@ def get_supported_languages():
 
 
 @i18n_bp.route("/faq/<intent>/<language>", methods=["GET"])
-def get_faq_translation(intent, language):
+def translate_faq(intent, language):
     """
-    Get FAQ translation for specific intent and language
+    Translate FAQ intent to a language
     GET /api/i18n/faq/{intent}/{language}
     """
     try:
+        error_response = _check_i18n_service()
+        if error_response:
+            return error_response
+
         if language not in I18nService.SUPPORTED_LANGUAGES:
             supported = ", ".join(I18nService.SUPPORTED_LANGUAGES)
             return (
@@ -135,23 +161,8 @@ def get_faq_translation(intent, language):
 
         translation = I18nService.translate_faq(intent, language)
 
-        if not translation:
-            return (
-                jsonify(
-                    {"status": "not_found", "message": f"No translation found for intent: {intent}"}
-                ),
-                404,
-            )
-
         return (
-            jsonify(
-                {
-                    "status": "success",
-                    "intent": intent,
-                    "language": language,
-                    "translation": translation,
-                }
-            ),
+            jsonify({"status": "success", "intent": intent, "language": language, "translation": translation}),
             200,
         )
 

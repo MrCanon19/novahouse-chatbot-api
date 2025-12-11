@@ -7,7 +7,11 @@ import os
 
 from flask import Blueprint, jsonify, request
 
-from src.services.followup_automation import followup_automation
+# Followup automation (optional - may not exist)
+try:
+    from src.services.followup_automation import followup_automation
+except ImportError:
+    followup_automation = None
 from src.services.session_timeout import session_timeout_service
 
 cron_bp = Blueprint("cron", __name__)
@@ -45,6 +49,9 @@ def send_followups():
     Header: X-CRON-KEY: your_cron_key
     """
     try:
+        if followup_automation is None:
+            return jsonify({"error": "Followup automation service not available"}), 503
+
         # Get conversations needing follow-up
         followups = followup_automation.get_conversations_needing_followup()
 
@@ -150,6 +157,9 @@ def high_value_alerts():
     Header: X-CRON-KEY: your_cron_key
     """
     try:
+        if followup_automation is None:
+            return jsonify({"error": "Followup automation service not available"}), 503
+
         high_value = followup_automation.get_high_value_abandoned()
 
         # Filter only very high value (>100k PLN estimated)
@@ -181,6 +191,9 @@ def test_cron():
     Header: X-CRON-KEY: your_cron_key
     """
     try:
+        if followup_automation is None:
+            return jsonify({"error": "Followup automation service not available"}), 503
+
         # Get followups (but don't send)
         followups = followup_automation.get_conversations_needing_followup()
         high_value = followup_automation.get_high_value_abandoned()

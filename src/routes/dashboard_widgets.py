@@ -9,13 +9,13 @@ from datetime import datetime, timedelta, timezone
 from flask import Blueprint, jsonify, request
 from sqlalchemy import desc, func
 
-from src.middleware.security import require_api_key
+from src.middleware.security import require_auth
 
 dashboard_widgets = Blueprint("dashboard_widgets", __name__)
 
 
 @dashboard_widgets.route("/api/widgets/metrics/summary", methods=["GET"])
-@require_api_key
+@require_auth
 def get_metrics_summary():
     """
     Get summary metrics for dashboard
@@ -70,7 +70,7 @@ def get_metrics_summary():
 
 
 @dashboard_widgets.route("/api/widgets/metrics/timeline", methods=["GET"])
-@require_api_key
+@require_auth
 def get_metrics_timeline():
     """
     Get timeline data for charts (daily/weekly/monthly)
@@ -139,7 +139,7 @@ def get_metrics_timeline():
 
 
 @dashboard_widgets.route("/api/widgets/top/intents", methods=["GET"])
-@require_api_key
+@require_auth
 def get_top_intents():
     """
     Get top detected intents
@@ -177,7 +177,7 @@ def get_top_intents():
 
 
 @dashboard_widgets.route("/api/widgets/top/packages", methods=["GET"])
-@require_api_key
+@require_auth
 def get_top_packages():
     """
     Get most popular design packages
@@ -216,7 +216,7 @@ def get_top_packages():
 
 
 @dashboard_widgets.route("/api/widgets/active/sessions", methods=["GET"])
-@require_api_key
+@require_auth
 def get_active_sessions():
     """
     Get active chat sessions (last 5 minutes)
@@ -259,7 +259,7 @@ def get_active_sessions():
 
 
 @dashboard_widgets.route("/api/widgets/response/times", methods=["GET"])
-@require_api_key
+@require_auth
 def get_response_times():
     """
     Get average response times
@@ -301,7 +301,7 @@ def get_response_times():
 
 
 @dashboard_widgets.route("/api/widgets/satisfaction/scores", methods=["GET"])
-@require_api_key
+@require_auth
 def get_satisfaction_scores():
     """
     Get satisfaction ratings distribution
@@ -347,7 +347,7 @@ def get_satisfaction_scores():
 
 
 @dashboard_widgets.route("/api/widgets/custom", methods=["POST"])
-@require_api_key
+@require_auth
 def save_custom_widget():
     """
     Save custom widget configuration
