@@ -84,9 +84,126 @@
         .chatbot-input button:hover {
             background: #5568d3;
         }
+        .rodo-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .rodo-modal.active {
+            display: flex;
+        }
+        .rodo-modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .rodo-modal-content h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+        .rodo-modal-content p {
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+        .rodo-checkbox {
+            margin: 20px 0;
+            display: flex;
+            align-items: flex-start;
+        }
+        .rodo-checkbox input {
+            margin-right: 10px;
+            margin-top: 3px;
+        }
+        .rodo-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .rodo-buttons button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .rodo-buttons .accept {
+            background: #667eea;
+            color: white;
+        }
+        .rodo-buttons .accept:hover {
+            background: #5568d3;
+        }
+        .rodo-buttons .accept:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .rodo-buttons .decline {
+            background: #f0f0f0;
+            color: #333;
+        }
+        .rodo-buttons .decline:hover {
+            background: #e0e0e0;
+        }
+        .rodo-link {
+            color: #667eea;
+            text-decoration: underline;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
+    <!-- RODO Consent Modal -->
+    <div class="rodo-modal" id="rodoModal">
+        <div class="rodo-modal-content">
+            <h2>🔒 Zgoda na przetwarzanie danych osobowych (RODO)</h2>
+            <p>
+                Aby korzystać z chatbota NovaHouse, musimy przetwarzać Twoje dane osobowe zgodnie z Rozporządzeniem RODO.
+            </p>
+            <p>
+                <strong>Administrator danych:</strong> NovaHouse<br>
+                Email: m.kubiak@novahouse.pl
+            </p>
+            <p>
+                <strong>Cel przetwarzania:</strong>
+            </p>
+            <ul style="margin-left: 20px; margin-bottom: 15px;">
+                <li>Świadczenie usług chatbota i odpowiedzi na pytania</li>
+                <li>Kwalifikacja leadów i dopasowanie oferty</li>
+                <li>Kontakt w sprawie oferty (za zgodą)</li>
+            </ul>
+            <p>
+                Masz prawo do dostępu, sprostowania, usunięcia danych oraz wycofania zgody w dowolnym momencie.
+            </p>
+            <div class="rodo-checkbox">
+                <input type="checkbox" id="rodoConsentCheckbox" />
+                <label for="rodoConsentCheckbox">
+                    Akceptuję <a href="/static/polityka-prywatnosci.html" target="_blank" class="rodo-link">politykę prywatności</a> 
+                    i wyrażam zgodę na przetwarzanie moich danych osobowych zgodnie z RODO.
+                </label>
+            </div>
+            <div class="rodo-buttons">
+                <button class="accept" id="acceptRodo" disabled onclick="acceptRodoConsent()">
+                    Akceptuję
+                </button>
+                <button class="decline" onclick="declineRodoConsent()">
+                    Odrzuć
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div class="chatbot-container">
         <div class="chatbot-header">
             <h1>🏠 NovaHouse Chatbot</h1>
@@ -107,6 +224,64 @@
         const API_URL = window.location.origin;
         const messagesDiv = document.getElementById('messages');
         const userInput = document.getElementById('userInput');
+        let sessionId = localStorage.getItem('chatbot_session_id') || 'session_' + Date.now();
+        let rodoConsentGiven = localStorage.getItem('rodo_consent') === 'true';
+
+        // Initialize session ID
+        if (!localStorage.getItem('chatbot_session_id')) {
+            localStorage.setItem('chatbot_session_id', sessionId);
+        }
+
+        // Check RODO consent on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            if (!rodoConsentGiven) {
+                showRodoModal();
+            }
+        });
+
+        // Enable accept button when checkbox is checked
+        document.getElementById('rodoConsentCheckbox').addEventListener('change', (e) => {
+            document.getElementById('acceptRodo').disabled = !e.target.checked;
+        });
+
+        function showRodoModal() {
+            document.getElementById('rodoModal').classList.add('active');
+        }
+
+        function hideRodoModal() {
+            document.getElementById('rodoModal').classList.remove('active');
+        }
+
+        async function acceptRodoConsent() {
+            try {
+                const response = await fetch(`${API_URL}/api/chatbot/rodo-consent`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        session_id: sessionId,
+                        consent_given: true
+                    })
+                });
+
+                if (response.ok) {
+                    localStorage.setItem('rodo_consent', 'true');
+                    rodoConsentGiven = true;
+                    hideRodoModal();
+                    addMessage('Dziękuję za akceptację! Teraz możemy rozpocząć rozmowę. 😊', false);
+                } else {
+                    alert('Wystąpił błąd podczas zapisywania zgody. Spróbuj ponownie.');
+                }
+            } catch (error) {
+                console.error('Error saving RODO consent:', error);
+                alert('Wystąpił błąd. Spróbuj ponownie.');
+            }
+        }
+
+        function declineRodoConsent() {
+            alert('Aby korzystać z chatbota, musisz zaakceptować politykę prywatności.');
+        }
 
         function addMessage(text, isUser = false) {
             const messageDiv = document.createElement('div');
@@ -117,6 +292,11 @@
         }
 
         async function sendMessage() {
+            if (!rodoConsentGiven) {
+                showRodoModal();
+                return;
+            }
+
             const message = userInput.value.trim();
             if (!message) return;
 
@@ -131,14 +311,24 @@
                     },
                     body: JSON.stringify({
                         message: message,
-                        session_id: 'demo-session'
+                        session_id: sessionId
                     })
                 });
 
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
                 const data = await response.json();
-                addMessage(data.response || 'Przepraszam, wystąpił błąd.');
+                
+                if (data.error) {
+                    addMessage(`Przepraszam, wystąpił błąd: ${data.error}`, false);
+                } else {
+                    addMessage(data.response || 'Przepraszam, wystąpił błąd.', false);
+                }
             } catch (error) {
-                addMessage('Przepraszam, nie mogę się połączyć z serwerem.');
+                console.error('Error sending message:', error);
+                addMessage('Przepraszam, nie mogę się połączyć z serwerem. Sprawdź połączenie internetowe.', false);
             }
         }
 
