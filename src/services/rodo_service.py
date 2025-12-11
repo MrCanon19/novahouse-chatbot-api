@@ -210,7 +210,10 @@ class RodoService:
             conversations = []
             try:
                 # First try: direct email column (if exists)
-                conversations = ChatConversation.query.filter_by(email=user_identifier).all()
+                # Search in context_data since email column doesn't exist
+                conversations = ChatConversation.query.filter(
+                    ChatConversation.context_data.like(f'%"email":"{user_identifier}"%')
+                ).all()
             except Exception as e:
                 # If email column doesn't exist, search in context_data
                 logger.warning(f"Email column not available, searching in context_data: {e}")
@@ -296,7 +299,10 @@ class RodoService:
             conversations = []
             try:
                 # First try: direct email column (if exists)
-                conversations = ChatConversation.query.filter_by(email=user_identifier).all()
+                # Search in context_data since email column doesn't exist
+                conversations = ChatConversation.query.filter(
+                    ChatConversation.context_data.like(f'%"email":"{user_identifier}"%')
+                ).all()
             except Exception as e:
                 # If email column doesn't exist, search in context_data
                 logger.warning(f"Email column not available, searching in context_data: {e}")

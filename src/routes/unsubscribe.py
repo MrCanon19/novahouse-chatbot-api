@@ -72,7 +72,10 @@ def unsubscribe():
 
         # Find and update by email
         if email and email != "unknown":
-            conversations = ChatConversation.query.filter_by(email=email).all()
+            # Search in context_data since email column doesn't exist
+            conversations = ChatConversation.query.filter(
+                ChatConversation.context_data.like(f'%"email":"{email}"%')
+            ).all()
             for conv in conversations:
                 conv.marketing_consent = False
                 db.session.add(conv)
@@ -218,7 +221,10 @@ def check_unsubscribe_status(email: str):
         )
 
         # Check conversation status
-        conversation = ChatConversation.query.filter_by(email=email).first()
+        # Search in context_data since email column doesn't exist
+        conversation = ChatConversation.query.filter(
+            ChatConversation.context_data.like(f'%"email":"{email}"%')
+        ).first()
         lead = Lead.query.filter_by(email=email).first()
 
         marketing_consent = False

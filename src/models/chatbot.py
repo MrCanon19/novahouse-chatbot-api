@@ -287,6 +287,27 @@ class ChatConversation(db.Model):
     started_at = db.Column(db.DateTime, nullable=False)
     ended_at = db.Column(db.DateTime)
     context_data = db.Column(db.Text)  # JSON: {name, email, city, square_meters, package}
+    
+    @property
+    def email(self):
+        """Get email from context_data for backward compatibility"""
+        try:
+            if self.context_data:
+                context = json.loads(self.context_data)
+                return context.get("email")
+        except (json.JSONDecodeError, TypeError):
+            pass
+        return None
+    
+    @email.setter
+    def email(self, value):
+        """Set email in context_data for backward compatibility"""
+        try:
+            context = json.loads(self.context_data) if self.context_data else {}
+            context["email"] = value
+            self.context_data = json.dumps(context)
+        except (json.JSONDecodeError, TypeError):
+            self.context_data = json.dumps({"email": value})
     # Quality metrics
     user_satisfaction = db.Column(db.Integer)  # 1-5 rating
     feedback_text = db.Column(db.Text)  # Optional user feedback
