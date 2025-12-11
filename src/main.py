@@ -143,6 +143,7 @@ app.config["UPLOAD_FOLDER"] = os.getenv("UPLOAD_FOLDER", "/tmp/uploads")
 # CORS is now configured in security middleware above
 
 # Initialize WebSocket support (v2.3) with optimizations (optional)
+socketio = None  # Initialize to None to prevent NameError
 try:
     from src.services.websocket_service import socketio
     socketio.init_app(
@@ -154,8 +155,10 @@ try:
     )
     logger.info("✅ WebSocket support initialized")
 except ImportError:
+    socketio = None  # Ensure it's None if import fails
     logger.info("ℹ️  WebSocket service not available, skipping")
 except Exception as e:
+    socketio = None  # Ensure it's None if initialization fails
     logger.warning(f"⚠️  WebSocket initialization failed: {e}")
 
 # KROK 3: Konfigurujemy i łączymy bazę danych z aplikacją.
@@ -725,9 +728,12 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     debug = os.environ.get("FLASK_ENV") != "production"
     # Use socketio.run instead of app.run for WebSocket support (if available)
-    try:
-        from src.services.websocket_service import socketio
-        socketio.run(app, host="0.0.0.0", port=port, debug=debug)
-    except ImportError:
+    if socketio is not None:
+        try:
+            socketio.run(app, host="0.0.0.0", port=port, debug=debug)
+        except Exception as e:
+            logger.error(f"WebSocket run failed: {e}, falling back to Flask run")
+            app.run(host="0.0.0.0", port=port, debug=debug)
+    else:
         # Fallback to standard Flask run if WebSocket not available
         app.run(host="0.0.0.0", port=port, debug=debug)
