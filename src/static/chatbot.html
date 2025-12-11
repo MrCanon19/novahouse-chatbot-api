@@ -167,35 +167,67 @@
     <!-- RODO Consent Modal -->
     <div class="rodo-modal" id="rodoModal">
         <div class="rodo-modal-content">
-            <h2>🔒 Zgoda na przetwarzanie danych osobowych (RODO)</h2>
+            <h2>🔒 Informacja o przetwarzaniu danych osobowych (RODO)</h2>
+            
+            <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #ffc107;">
+                <p style="margin: 0; font-weight: bold;">
+                    ⚠️ WAŻNE: Rozmawiasz z chatbotem (sztuczną inteligencją), a nie z człowiekiem.
+                </p>
+                <p style="margin: 10px 0 0 0; font-size: 14px;">
+                    Twoje wiadomości są przetwarzane automatycznie przez system AI. W razie potrzeby możesz poprosić o kontakt z żywym konsultantem.
+                </p>
+            </div>
+
             <p>
-                Aby korzystać z chatbota NovaHouse, musimy przetwarzać Twoje dane osobowe zgodnie z Rozporządzeniem RODO.
+                <strong>Administrator danych osobowych:</strong><br>
+                NovaHouse<br>
+                Email: m.kubiak@novahouse.pl<br>
+                <small style="color: #666;">To Ty jako administrator ponosisz pełną odpowiedzialność za dane przetwarzane przez chatbota.</small>
             </p>
+
             <p>
-                <strong>Administrator danych:</strong> NovaHouse<br>
-                Email: m.kubiak@novahouse.pl
+                <strong>Co chatbot robi z Twoimi danymi?</strong>
             </p>
+            <ul style="margin-left: 20px; margin-bottom: 15px; font-size: 14px;">
+                <li><strong>Zbiera:</strong> wiadomości, dane kontaktowe (jeśli podasz), informacje o projekcie</li>
+                <li><strong>Przetwarza:</strong> analizuje pytania, dopasowuje odpowiedzi, kwalifikuje leady</li>
+                <li><strong>Przechowuje:</strong> historię rozmów, dane kontaktowe, preferencje</li>
+                <li><strong>Udostępnia:</strong> dane mogą być przekazane dostawcom usług IT (hosting, AI) na podstawie umowy powierzenia</li>
+            </ul>
+
             <p>
                 <strong>Cel przetwarzania:</strong>
             </p>
-            <ul style="margin-left: 20px; margin-bottom: 15px;">
+            <ul style="margin-left: 20px; margin-bottom: 15px; font-size: 14px;">
                 <li>Świadczenie usług chatbota i odpowiedzi na pytania</li>
                 <li>Kwalifikacja leadów i dopasowanie oferty</li>
-                <li>Kontakt w sprawie oferty (za zgodą)</li>
+                <li>Kontakt w sprawie oferty (za zgodą marketingową)</li>
+                <li>Analiza i poprawa jakości usług</li>
             </ul>
+
             <p>
-                Masz prawo do dostępu, sprostowania, usunięcia danych oraz wycofania zgody w dowolnym momencie.
+                <strong>Podstawa prawna:</strong> Zgoda (art. 6 ust. 1 lit. a RODO) oraz wykonanie umowy (art. 6 ust. 1 lit. b RODO)
             </p>
+
+            <p>
+                <strong>Twoje prawa:</strong> Masz prawo do dostępu, sprostowania, usunięcia danych, przenoszenia danych, sprzeciwu oraz wycofania zgody w dowolnym momencie.
+            </p>
+
+            <p style="font-size: 12px; color: #666; margin-top: 20px;">
+                <strong>Umowa powierzenia:</strong> Dane mogą być przetwarzane przez dostawców usług IT (hosting, AI) na podstawie umowy powierzenia przetwarzania danych zgodnie z art. 28 RODO.
+            </p>
+
             <div class="rodo-checkbox">
                 <input type="checkbox" id="rodoConsentCheckbox" />
-                <label for="rodoConsentCheckbox">
-                    Akceptuję <a href="/static/polityka-prywatnosci.html" target="_blank" class="rodo-link">politykę prywatności</a> 
-                    i wyrażam zgodę na przetwarzanie moich danych osobowych zgodnie z RODO.
+                <label for="rodoConsentCheckbox" style="font-size: 14px;">
+                    Rozumiem, że rozmawiam z chatbotem (AI) i wyrażam zgodę na przetwarzanie moich danych osobowych zgodnie z 
+                    <a href="/static/polityka-prywatnosci.html" target="_blank" class="rodo-link">polityką prywatności</a> 
+                    oraz wymogami RODO.
                 </label>
             </div>
             <div class="rodo-buttons">
                 <button class="accept" id="acceptRodo" disabled onclick="acceptRodoConsent()">
-                    Akceptuję
+                    Akceptuję i kontynuuję
                 </button>
                 <button class="decline" onclick="declineRodoConsent()">
                     Odrzuć
@@ -207,11 +239,18 @@
     <div class="chatbot-container">
         <div class="chatbot-header">
             <h1>🏠 NovaHouse Chatbot</h1>
-            <p>Cześć! Jestem Twoim asystentem. Jak mogę pomóc?</p>
+            <p>
+                Cześć! Jestem Twoim asystentem AI. Jak mogę pomóc? 
+                <span style="font-size: 12px; opacity: 0.9; display: block; margin-top: 5px;">
+                    💬 Rozmawiasz z chatbotem (sztuczną inteligencją)
+                </span>
+            </p>
         </div>
         <div class="chatbot-messages" id="messages">
             <div class="message bot">
-                Cześć! 👋 Jestem asystentem NovaHouse. Mogę pomóc Ci z informacjami o pakietach wykończeniowych, cenach i procesie budowy. O co chciałbyś zapytać?
+                Cześć! 👋 Jestem asystentem AI NovaHouse. Mogę pomóc Ci z informacjami o pakietach wykończeniowych, cenach i procesie budowy. O co chciałbyś zapytać?
+                <br><br>
+                <small style="opacity: 0.7;">💡 Pamiętaj: rozmawiasz z chatbotem (sztuczną inteligencją). W razie potrzeby mogę przekierować Cię do konsultanta.</small>
             </div>
         </div>
         <div class="chatbot-input">
