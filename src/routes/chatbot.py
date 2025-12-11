@@ -237,10 +237,13 @@ def generate_conversation_summary(messages, context_memory):
 
 
 def suggest_next_best_action(context_memory, lead_score):
+    """Sugeruj najlepsze następne działanie na podstawie lead score i danych"""
     if lead_score >= 70 and (context_memory.get("email") or context_memory.get("phone")):
-        return "HIGH PRIORITY: Call within 1 hour and send tailored offer via email."
+        return "HIGH PRIORITY: Call within 1 hour and send tailored offer via email. Suggest booking consultation."
     if lead_score >= 50:
-        return "Follow-up via email within 24h with a tailored proposal."
+        return "Follow-up via email within 24h with a tailored proposal. Offer free consultation."
+    if lead_score >= 30:
+        return "Nurture via newsletter and light touch follow-ups. Share case studies."
     return "Nurture via newsletter and light touch follow-ups."
 
 
@@ -338,6 +341,12 @@ def check_booking_intent(user_message: str, context_memory: dict):
         "konsult",
         "wizy",
         "booking",
+        "chcę się spotkać",
+        "chciałbym się spotkać",
+        "chciałabym się spotkać",
+        "spotkajmy się",
+        "kiedy możemy się spotkać",
+        "gdy możemy się spotkać",
     ]
 
     if not any(k in message_lower for k in keywords):
@@ -350,11 +359,20 @@ def check_booking_intent(user_message: str, context_memory: dict):
         booking_link = zencal.get_booking_link(
             context_memory.get("name"), context_memory.get("email")
         )
-    except Exception:
-        booking_link = "https://booking.zencal.io"
+    except Exception as e:
+        print(f"[Zencal] Error getting booking link: {e}")
+        booking_link = os.getenv("ZENCAL_BOOKING_URL", "https://zencal.io/novahouse/konsultacja")
 
     context_memory["booking_intent_detected"] = True
-    return f"Super, zarezerwuj spotkanie tutaj: {booking_link}"
+    
+    # Jeśli mamy imię, użyj go
+    name = context_memory.get("name", "")
+    if name:
+        from src.utils.polish_declension import PolishDeclension
+        declined_name = PolishDeclension.decline_full_name(name)
+        return f"Świetnie {declined_name}! 🎉 Zarezerwuj bezpłatną konsultację tutaj: {booking_link}\n\nTo zajmie tylko 2 minuty - wybierz dogodny termin, a nasz ekspert skontaktuje się z Tobą!"
+    else:
+        return f"Świetnie! 🎉 Zarezerwuj bezpłatną konsultację tutaj: {booking_link}\n\nTo zajmie tylko 2 minuty - wybierz dogodny termin, a nasz ekspert skontaktuje się z Tobą!"
 
 
 @chatbot_bp.route("/health", methods=["GET"])
@@ -530,6 +548,18 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
         if not bot_response:
             print("[CRITICAL FALLBACK] Używam awaryjnej odpowiedzi")
             bot_response = get_default_response(user_message)
+
+        # Add proactive booking suggestion if we have data
+        if context_memory.get("_booking_suggestion") and not context_memory.get("booking_intent_detected"):
+            booking_link = context_memory.pop("_booking_suggestion")
+            name = context_memory.get("name", "")
+            if name:
+                from src.utils.polish_declension import PolishDeclension
+                declined_name = PolishDeclension.decline_full_name(name)
+                booking_text = f"\n\n💡 {declined_name}, chcesz umówić bezpłatną konsultację? Nasz ekspert dopasuje idealny pakiet do Twojego projektu! Zarezerwuj tutaj: {booking_link}"
+            else:
+                booking_text = f"\n\n💡 Chcesz umówić bezpłatną konsultację? Nasz ekspert dopasuje idealny pakiet do Twojego projektu! Zarezerwuj tutaj: {booking_link}"
+            bot_response = bot_response + booking_text
 
         # Track A/B test response (if user responded to follow-up question)
         if conversation.followup_variant and len(user_message) > 3:
@@ -719,15 +749,30 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
             bot_response = "Oczywiście! Popraw dane które chcesz zmienić, a ja je zaktualizuję. 📝"
 
         # Fallback: Auto-create lead if enough data (no confirmation asked)
+        # Create lead automatically if we have contact data OR high lead score
         elif not conversation.awaiting_confirmation and not existing_lead:
             try:
                 has_contact_data = (
                     context_memory.get("name")
-                    and context_memory.get("email")
-                    or context_memory.get("phone")
+                    and (context_memory.get("email") or context_memory.get("phone"))
                 )
+                
+                # Also create lead if we have project data (metraż/budżet) even without contact
+                # This allows us to capture leads earlier
+                has_project_data = context_memory.get("square_meters") or context_memory.get("budget")
+                
+                # Calculate lead score first to decide
+                message_count = ChatMessage.query.filter_by(
+                    conversation_id=conversation.id
+                ).count()
+                lead_score = calculate_lead_score(context_memory, message_count)
+                
+                # Create lead if:
+                # 1. We have contact data (name + email/phone)
+                # 2. OR we have project data (metraż/budżet) AND lead score >= 30
+                should_create_lead = has_contact_data or (has_project_data and lead_score >= 30)
 
-                if has_contact_data:
+                if should_create_lead:
                     from src.integrations.monday_client import MondayClient
 
                     message_count = ChatMessage.query.filter_by(
