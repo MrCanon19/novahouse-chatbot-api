@@ -81,6 +81,23 @@ coverage.xml
 coverage.svg
 htmlcov/
 
+# Virtual environments
+venv/
+env/
+ENV/
+novahouse/
+
+# Database files
+instance/
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary files
+temp/
+*.tmp
+trigger.txt
+
 # Credentials (IMPORTANT!)
 *.json
 *.pem
