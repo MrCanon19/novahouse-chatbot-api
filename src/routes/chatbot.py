@@ -127,26 +127,55 @@ def extract_context(message: str, existing_context: dict | None = None):
     if phone_match:
         ctx["phone"] = phone_match.group(1).strip()
 
-    # City (basic Polish city word after 'z'/'w')
-    city_match = re.search(r"\b(?:z|ze|w|we)\s+([A-Za-zĄĆĘŁŃÓŚŹŻąćęłńóśźż]+)", text, re.IGNORECASE)
+    # City (improved recognition - all Polish cities)
+    # Pattern 1: "jestem z Wrocławia" / "mieszkam w Warszawie" / "z Wrocławia"
+    city_match = re.search(r"\b(?:z|ze|w|we|mieszkam|jestem|pochodzę)\s+([A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+(?:\s+[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+)*)", text, re.IGNORECASE)
     if city_match:
-        candidate_city = city_match.group(1)
+        candidate_city = city_match.group(1).strip()
         try:
             from src.utils.polish_cities import PolishCities
 
-            candidate_city = PolishCities.normalize_city_name(candidate_city) or candidate_city
-        except Exception:
-            pass
-        if candidate_city.lower().startswith("warszaw"):
-            candidate_city = "Warszawa"
-        lower_city = candidate_city.lower()
-        if lower_city.endswith("iu") and len(candidate_city) > 5:
-            candidate_city = candidate_city[:-2]
-        elif lower_city.endswith("u") and len(candidate_city) > 5:
-            candidate_city = candidate_city[:-1]
-        valid, value, _ = ContextValidator.validate_city(candidate_city)
-        if valid:
-            ctx["city"] = value
+            # Try to normalize using cities database
+            normalized = PolishCities.normalize_city_name(candidate_city)
+            if normalized:
+                candidate_city = normalized
+            
+            # Check if city is in database (all Polish cities)
+            city_variants = [candidate_city, candidate_city.title(), candidate_city.capitalize()]
+            recognized_city = None
+            for variant in city_variants:
+                if variant in PolishCities.CITIES:
+                    recognized_city = variant
+                    break
+                if variant in PolishCities.ALL_POLISH_CITIES_GUS:
+                    recognized_city = variant
+                    break
+            
+            if recognized_city:
+                valid, value, _ = ContextValidator.validate_city(recognized_city)
+                if valid:
+                    ctx["city"] = value
+            else:
+                # Fallback: try to clean up common endings
+                lower_city = candidate_city.lower()
+                if lower_city.endswith("iu") and len(candidate_city) > 5:
+                    candidate_city = candidate_city[:-2]
+                elif lower_city.endswith("u") and len(candidate_city) > 5:
+                    candidate_city = candidate_city[:-1]
+                elif lower_city.endswith("ia") and len(candidate_city) > 5:
+                    candidate_city = candidate_city  # Keep as is
+                
+                valid, value, _ = ContextValidator.validate_city(candidate_city)
+                if valid:
+                    ctx["city"] = value
+        except Exception as e:
+            logging.warning(f"Error recognizing city: {e}")
+            # Fallback to old logic
+            if candidate_city.lower().startswith("warszaw"):
+                candidate_city = "Warszawa"
+            valid, value, _ = ContextValidator.validate_city(candidate_city)
+            if valid:
+                ctx["city"] = value
 
     # Budget (numbers with tys/PLN)
     budget_match = re.search(r"(\d+[\s\d]*)(?:\s?tys|\s?000|\s?pln|\s?zł)", text, re.IGNORECASE)
@@ -424,31 +453,51 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                         ]
                     )
 
-                    # Add memory context with proper name declension
+                    # Add memory context with proper name declension and city recognition
                     memory_prompt = ""
                     if context_memory:
                         from src.utils.polish_declension import PolishDeclension
+                        from src.utils.polish_cities import PolishCities
 
                         memory_items = []
                         if context_memory.get("name"):
                             name = context_memory["name"]
                             declined_name = PolishDeclension.decline_full_name(name)
                             is_polish = PolishDeclension.is_polish_name(name.split()[0])
+                            gender = PolishDeclension.detect_gender(name.split()[0])
 
                             # Add both forms for GPT reference
                             memory_items.append(
-                                f"Imię: {name} (wołacz: {declined_name}, polskie: {is_polish})"
+                                f"Imię: {name} (wołacz: {declined_name}, polskie: {is_polish}, płeć: {gender})"
                             )
                         if context_memory.get("city"):
-                            memory_items.append(f"Miasto: {context_memory['city']}")
+                            city = context_memory["city"]
+                            # Check if city is recognized in Polish cities database
+                            city_variants = [city, city.title(), city.lower(), city.capitalize()]
+                            recognized_city = None
+                            for variant in city_variants:
+                                if variant in PolishCities.CITIES:
+                                    recognized_city = variant
+                                    break
+                                # Check in ALL_POLISH_CITIES_GUS
+                                if variant in PolishCities.ALL_POLISH_CITIES_GUS:
+                                    recognized_city = variant
+                                    break
+                            
+                            if recognized_city:
+                                memory_items.append(f"Miasto: {recognized_city} (działamy w tym mieście!)")
+                            else:
+                                memory_items.append(f"Miasto: {city}")
                         if context_memory.get("square_meters"):
                             memory_items.append(f"Metraż: {context_memory['square_meters']}m²")
+                        if context_memory.get("budget"):
+                            memory_items.append(f"Budżet: {context_memory['budget']} zł")
                         if context_memory.get("package"):
                             memory_items.append(f"Interesujący pakiet: {context_memory['package']}")
                         if memory_items:
                             memory_prompt = "\n\nZapamiętane info o kliencie:\n" + "\n".join(
                                 memory_items
-                            )
+                            ) + "\n\nWAŻNE: Używaj imienia naturalnie (co 2-3 wiadomości), zapamiętuj miasto i metraż, przeliczaj ceny automatycznie!"
 
                     print(f"[OpenAI GPT] Przetwarzanie: {user_message[:50]}...")
                     messages = [
@@ -827,17 +876,21 @@ def ensure_openai_client():
         print("⚠️  GPT_FALLBACK_ENABLED=false – skipping GPT client init")
         return None
 
-    if openai_client is None and OPENAI_API_KEY and not OPENAI_API_KEY.lower().startswith("test_"):
+    # Always try to get client (even if already initialized, to ensure it's working)
+    if OPENAI_API_KEY and not OPENAI_API_KEY.lower().startswith("test_"):
         client = get_openai_client()
         if client:
             openai_client = client
             AI_PROVIDER = "openai"
-            print("✅ OpenAI GPT-4o-mini enabled (proven & reliable)")
+            if not openai_client:  # Only print if first time
+                print("✅ OpenAI GPT-4o-mini enabled (proven & reliable)")
+            return openai_client
         else:
             print("⚠️  No AI configured - set OPENAI_API_KEY")
-    elif not OPENAI_API_KEY or OPENAI_API_KEY.lower().startswith("test_"):
-        print("⚠️  OPENAI_API_KEY missing/placeholder – GPT disabled")
-    return openai_client
+            return None
+    else:
+        print(f"⚠️  OPENAI_API_KEY missing/placeholder (key starts with: {OPENAI_API_KEY[:10] if OPENAI_API_KEY else 'None'}) – GPT disabled")
+        return None
 
 
 if MONDAY_API_KEY:
