@@ -319,9 +319,51 @@ class ChatConversation(db.Model):
     needs_human_review = db.Column(db.Boolean, default=False)  # Sentiment escalation
     followup_count = db.Column(db.Integer, default=0)  # Number of followups sent
     last_followup_at = db.Column(db.DateTime)  # Last followup timestamp
-    # RODO/GDPR Consent fields
-    marketing_consent = db.Column(db.Boolean, default=True)  # Marketing emails opt-in
-    rodo_consent = db.Column(db.Boolean, default=True)  # Data processing consent
+    # RODO/GDPR Consent fields - removed from DB, using context_data instead
+    # marketing_consent = db.Column(db.Boolean, default=True)
+    # rodo_consent = db.Column(db.Boolean, default=True)
+    
+    @property
+    def marketing_consent(self):
+        """Get marketing_consent from context_data for backward compatibility"""
+        try:
+            if self.context_data:
+                context = json.loads(self.context_data)
+                return context.get("marketing_consent", True)
+        except (json.JSONDecodeError, TypeError):
+            pass
+        return True
+    
+    @marketing_consent.setter
+    def marketing_consent(self, value):
+        """Set marketing_consent in context_data for backward compatibility"""
+        try:
+            context = json.loads(self.context_data) if self.context_data else {}
+            context["marketing_consent"] = value
+            self.context_data = json.dumps(context)
+        except (json.JSONDecodeError, TypeError):
+            self.context_data = json.dumps({"marketing_consent": value})
+    
+    @property
+    def rodo_consent(self):
+        """Get rodo_consent from context_data for backward compatibility"""
+        try:
+            if self.context_data:
+                context = json.loads(self.context_data)
+                return context.get("rodo_consent", True)
+        except (json.JSONDecodeError, TypeError):
+            pass
+        return True
+    
+    @rodo_consent.setter
+    def rodo_consent(self, value):
+        """Set rodo_consent in context_data for backward compatibility"""
+        try:
+            context = json.loads(self.context_data) if self.context_data else {}
+            context["rodo_consent"] = value
+            self.context_data = json.dumps(context)
+        except (json.JSONDecodeError, TypeError):
+            self.context_data = json.dumps({"rodo_consent": value})
 
     messages = db.relationship(
         "ChatMessage", backref="conversation", lazy=True, cascade="all, delete-orphan"
