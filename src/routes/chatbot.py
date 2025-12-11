@@ -522,26 +522,60 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                                 memory_items
                             ) + "\n\nWAŻNE: Używaj imienia naturalnie (co 2-3 wiadomości), zapamiętuj miasto i metraż, przeliczaj ceny automatycznie!"
 
-                    print(f"[OpenAI GPT] Przetwarzanie: {user_message[:50]}...")
-                    messages = [
-                        {"role": "system", "content": SYSTEM_PROMPT + memory_prompt},
-                        {
-                            "role": "user",
-                            "content": f"Context:\n{context}\n\nUser: {user_message}",
-                        },
-                    ]
-                    # OPTIMIZED FOR COST: Reduced max_tokens from 500 to 350 (saves ~30% on output costs)
-                    # Most chatbot responses are 200-300 tokens, 350 is sufficient
-                    response = client.chat.completions.create(
-                        model=GPT_MODEL,
-                        messages=messages,
-                        max_tokens=350,  # Optimized: was 500, saves ~30% on output costs
-                        temperature=0.6,  # Optimized: was 0.7, slightly more focused responses
-                    )
-                    bot_response = response.choices[0].message.content
-                    print(
-                        f"[OpenAI GPT] Response: {bot_response[:100] if bot_response else 'EMPTY'}..."
-                    )
+                    # COST OPTIMIZATION: Check cache first for similar questions
+                    try:
+                        from src.middleware.cache import cache
+                        import hashlib
+                        # Create cache key from normalized user message (ignore case, whitespace)
+                        normalized_msg = user_message.lower().strip()
+                        cache_key = f"gpt_response:{hashlib.md5(normalized_msg.encode()).hexdigest()}"
+                        cached_response = cache.get(cache_key)
+                        if cached_response:
+                            print(f"[GPT CACHE HIT] Using cached response for: {user_message[:50]}...")
+                            bot_response = cached_response
+                        else:
+                            print(f"[OpenAI GPT] Przetwarzanie: {user_message[:50]}...")
+                            messages = [
+                                {"role": "system", "content": SYSTEM_PROMPT + memory_prompt},
+                                {
+                                    "role": "user",
+                                    "content": f"Context:\n{context}\n\nUser: {user_message}",
+                                },
+                            ]
+                            # OPTIMIZED FOR COST: Reduced max_tokens from 500 to 350 (saves ~30% on output costs)
+                            # Most chatbot responses are 200-300 tokens, 350 is sufficient
+                            response = client.chat.completions.create(
+                                model=GPT_MODEL,
+                                messages=messages,
+                                max_tokens=350,  # Optimized: was 500, saves ~30% on output costs
+                                temperature=0.6,  # Optimized: was 0.7, slightly more focused responses
+                            )
+                            bot_response = response.choices[0].message.content
+                            # Cache response for 1 hour (3600s) - common questions get cached
+                            cache.set(cache_key, bot_response, ttl=3600)
+                            print(
+                                f"[OpenAI GPT] Response: {bot_response[:100] if bot_response else 'EMPTY'}..."
+                            )
+                    except ImportError:
+                        # Cache not available, use GPT directly
+                        print(f"[OpenAI GPT] Przetwarzanie: {user_message[:50]}...")
+                        messages = [
+                            {"role": "system", "content": SYSTEM_PROMPT + memory_prompt},
+                            {
+                                "role": "user",
+                                "content": f"Context:\n{context}\n\nUser: {user_message}",
+                            },
+                        ]
+                        response = client.chat.completions.create(
+                            model=GPT_MODEL,
+                            messages=messages,
+                            max_tokens=350,
+                            temperature=0.6,
+                        )
+                        bot_response = response.choices[0].message.content
+                        print(
+                            f"[OpenAI GPT] Response: {bot_response[:100] if bot_response else 'EMPTY'}..."
+                        )
 
                 except Exception as e:
                     print(f"[GPT ERROR] {type(e).__name__}: {e}")
