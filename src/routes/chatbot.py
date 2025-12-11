@@ -769,13 +769,23 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
         }
 
     except SQLAlchemyError as e:
-        print(f"Database error in chat processing: {e}")
+        logging.error(f"Database error in chat processing: {e}", exc_info=True)
         db.session.rollback()
-        return {
-            "response": "Przepraszam, problem z bazą danych. Spróbuj ponownie.",
-            "session_id": session_id,
-            "conversation_id": None,
-        }
+        # Try to continue without database (graceful degradation)
+        try:
+            # Return a basic response without saving to database
+            return {
+                "response": "Cześć! Mogę pomóc Ci z informacjami o pakietach wykończeniowych NovaHouse. O co chciałbyś zapytać?",
+                "session_id": session_id,
+                "conversation_id": None,
+            }
+        except Exception as fallback_error:
+            logging.error(f"Fallback also failed: {fallback_error}")
+            return {
+                "response": "Przepraszam, problem z bazą danych. Spróbuj ponownie za chwilę.",
+                "session_id": session_id,
+                "conversation_id": None,
+            }
     except Exception as e:
         print(f"Unexpected chat processing error: {e}")
         db.session.rollback()
