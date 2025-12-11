@@ -282,9 +282,8 @@ class ChatConversation(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     session_id = db.Column(db.String(100), unique=True, nullable=False)
-    email = db.Column(
-        db.String(255), nullable=True, index=True
-    )  # Direct email column for unsubscribe + idempotency
+    # email column removed - using context_data instead to avoid migration issues
+    # email = db.Column(db.String(255), nullable=True, index=True)
     started_at = db.Column(db.DateTime, nullable=False)
     ended_at = db.Column(db.DateTime)
     context_data = db.Column(db.Text)  # JSON: {name, email, city, square_meters, package}
