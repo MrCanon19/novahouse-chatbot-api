@@ -1,8 +1,8 @@
 #!/bin/zsh
 # Monitor cron job execution and send notifications if it fails
 
-LOG_FILE="/Users/michalmarini/Projects/manus/novahouse-chatbot-api/logs/auto_push.log"
-ALERT_FILE="/Users/michalmarini/Projects/manus/novahouse-chatbot-api/logs/cron_alerts.log"
+LOG_FILE="/Users/michalmarini/Projects/manus/chatbot-api/logs/auto_push.log"
+ALERT_FILE="/Users/michalmarini/Projects/manus/chatbot-api/logs/cron_alerts.log"
 
 # Check if log file exists
 if [ ! -f "$LOG_FILE" ]; then

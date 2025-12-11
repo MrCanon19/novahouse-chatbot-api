@@ -76,7 +76,7 @@ GEMINI_API_KEY=twoj_klucz_gemini
 ### 1. Skopiuj plik konfiguracyjny
 
 ```bash
-cd /Users/michalmarini/Projects/manus/novahouse-chatbot-api
+cd /Users/michalmarini/Projects/manus/chatbot-api
 cp .env.example .env
 ```
 

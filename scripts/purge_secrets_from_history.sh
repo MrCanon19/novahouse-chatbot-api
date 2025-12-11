@@ -20,7 +20,7 @@ fi
 echo ""
 echo "📦 Step 1: Backup current repository..."
 cd "$(dirname "$0")/.."
-BACKUP_DIR="../novahouse-chatbot-api-backup-$(date +%Y%m%d_%H%M%S)"
+BACKUP_DIR="../chatbot-api-backup-$(date +%Y%m%d_%H%M%S)"
 cp -r . "$BACKUP_DIR"
 echo "✅ Backup created: $BACKUP_DIR"
 

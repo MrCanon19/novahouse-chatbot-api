@@ -121,7 +121,7 @@ git push origin main
 gh run watch
 
 # Lub sprawdź online:
-# https://github.com/MrCanon19/novahouse-chatbot-api/actions
+# https://github.com/MrCanon19/chatbot-api/actions
 ```
 
 ### Krok 3: Oczekiwany wynik

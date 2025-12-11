@@ -13,7 +13,7 @@
 2. Zaloguj się lub załóż konto (GitHub login = 1 klik)
 3. Kliknij **"Create Project"**
 4. Wybierz: **Python** → **Flask**
-5. Nazwa projektu: `novahouse-chatbot-api`
+5. Nazwa projektu: `chatbot-api`
 6. Team: wybierz swój lub utwórz nowy
 
 ### Krok 2: Skopiuj DSN
@@ -32,7 +32,7 @@ sentry_sdk.init(
 ### Krok 3: Dodaj do app.yaml
 
 ```bash
-cd /Users/michalmarini/Projects/manus/novahouse-chatbot-api
+cd /Users/michalmarini/Projects/manus/chatbot-api
 nano app.yaml
 ```
 
@@ -128,7 +128,7 @@ cat key.json | pbcopy  # Kopiuje do schowka macOS
 
 ### Krok 3: Dodaj do GitHub Secrets
 
-1. Otwórz: https://github.com/MrCanon19/novahouse-chatbot-api/settings/secrets/actions
+1. Otwórz: https://github.com/MrCanon19/chatbot-api/settings/secrets/actions
 2. Kliknij **"New repository secret"**
 3. **Name:** `GCP_SA_KEY`
 4. **Value:** Wklej zawartość `key.json` (Cmd+V)
@@ -176,7 +176,7 @@ git commit --allow-empty -m "Test: GitHub Actions auto-deploy"
 git push origin main
 ```
 
-Sprawdź: https://github.com/MrCanon19/novahouse-chatbot-api/actions
+Sprawdź: https://github.com/MrCanon19/chatbot-api/actions
 
 ---
 

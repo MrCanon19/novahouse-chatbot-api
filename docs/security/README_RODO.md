@@ -9,7 +9,7 @@ Prerequisites
 Start server (development, foreground — recommended for debugging)
 
 ```bash
-cd ~/Projects/manus/novahouse-chatbot-api
+cd ~/Projects/manus/chatbot-api
 source venv/bin/activate
 python src/main.py
 ```
@@ -17,7 +17,7 @@ python src/main.py
 Start server (background, production-like — disables reloader)
 
 ```bash
-cd ~/Projects/manus/novahouse-chatbot-api
+cd ~/Projects/manus/chatbot-api
 source venv/bin/activate
 FLASK_ENV=production nohup python src/main.py > server.log 2>&1 &
 ```

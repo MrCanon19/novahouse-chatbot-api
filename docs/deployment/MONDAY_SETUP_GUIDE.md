@@ -189,7 +189,7 @@ Sprawdź w Monday.com czy testowy item ma wypełnione:
 ## Kontakt
 
 W razie problemów:
-- GitHub Issues: https://github.com/MrCanon19/novahouse-chatbot-api/issues
+- GitHub Issues: https://github.com/MrCanon19/chatbot-api/issues
 - Check logs: `gcloud app logs tail -s default`
 - Admin API: `/api/chatbot/stats/leads` dla overview
 

@@ -134,7 +134,7 @@ git filter-branch --force --index-filter \
 git push origin --force --all
 
 # 4. Notify GitHub
-# Go to: https://github.com/MrCanon19/novahouse-chatbot-api/settings/secrets
+# Go to: https://github.com/MrCanon19/chatbot-api/settings/secrets
 # Remove any accidentally committed secrets
 ```
 
