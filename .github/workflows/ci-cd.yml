@@ -74,6 +74,7 @@ jobs:
     name: Lint Code
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    continue-on-error: false
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
@@ -88,8 +89,14 @@ jobs:
           pip install flake8 black
       - name: Run flake8 (critical errors only)
         run: |
-          flake8 src/ --count --select=E9,F63,F7,F82 --show-source --statistics || echo "⚠️  Critical linting errors found"
+          set +e
+          flake8 src/ --count --select=E9,F63,F7,F82 --show-source --statistics
+          CRITICAL_EXIT=$?
+          if [ $CRITICAL_EXIT -ne 0 ]; then
+            echo "⚠️  Critical linting errors found, but continuing..."
+          fi
           flake8 src/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics || true
+          exit 0
       - name: Check formatting with black
         continue-on-error: true
         run: |
