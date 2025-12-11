@@ -144,9 +144,12 @@ class RodoService:
             return False
     
     @staticmethod
-    def anonymize_old_conversations() -> Dict:
+    def anonymize_old_conversations(older_than_months: Optional[int] = None) -> Dict:
         """
         Anonymize conversations older than threshold.
+        
+        Args:
+            older_than_months: Optional threshold in months (defaults to ANONYMIZATION_THRESHOLD_MONTHS)
         
         Returns:
             Dict with anonymization stats
@@ -270,7 +273,7 @@ class RodoService:
             return export_data
             
         except Exception as e:
-            logger.error(f"Error exporting data for {email}: {e}")
+            logger.error(f"Error exporting data for {user_identifier}: {e}")
             return None
     
     @staticmethod

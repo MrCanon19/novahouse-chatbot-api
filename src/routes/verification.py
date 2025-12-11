@@ -7,7 +7,11 @@ Endpoints for email and phone verification.
 from flask import Blueprint, jsonify, request
 
 from src.models.chatbot import Lead
-from src.services.lead_verification_service import lead_verification_service
+# Lead verification service (optional - may not exist)
+try:
+    from src.services.lead_verification_service import lead_verification_service
+except ImportError:
+    lead_verification_service = None
 
 verification_bp = Blueprint("verification", __name__, url_prefix="/api/verification")
 
@@ -22,6 +26,9 @@ def send_email_verification(lead_id):
 
         if lead.email_verified:
             return jsonify({"message": "Email already verified"}), 200
+
+        if lead_verification_service is None:
+            return jsonify({"error": "Verification service not available"}), 503
 
         success, message = lead_verification_service.send_email_verification(lead)
 
@@ -43,6 +50,9 @@ def verify_email():
 
         if not lead_id or not token:
             return jsonify({"error": "Missing lead_id or token"}), 400
+
+        if lead_verification_service is None:
+            return jsonify({"error": "Verification service not available"}), 503
 
         success, message = lead_verification_service.verify_email_token(lead_id, token)
 
@@ -75,6 +85,9 @@ def send_sms_verification(lead_id):
         if lead.phone_verified:
             return jsonify({"message": "Phone already verified"}), 200
 
+        if lead_verification_service is None:
+            return jsonify({"error": "Verification service not available"}), 503
+
         success, message = lead_verification_service.send_phone_verification(lead)
 
         if success:
@@ -96,6 +109,9 @@ def verify_sms():
 
         if not lead_id or not code:
             return jsonify({"error": "Missing lead_id or code"}), 400
+
+        if lead_verification_service is None:
+            return jsonify({"error": "Verification service not available"}), 503
 
         success, message = lead_verification_service.verify_phone_code(lead_id, code)
 

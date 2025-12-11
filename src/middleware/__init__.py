@@ -8,7 +8,7 @@ from .rate_limiting import DummyLimiter, is_rate_limit_disabled
 
 __all__ = [
     "rate_limit",
-    "require_api_key",
+    "require_auth",
     "log_request",
     "rate_limiter",
     "cache",

@@ -7,7 +7,11 @@ Endpoints for managing lead assignments to sales team.
 from flask import Blueprint, jsonify
 
 from src.models.chatbot import Lead
-from src.services.lead_assignment_service import lead_assignment_service
+# Lead assignment service (optional - may not exist)
+try:
+    from src.services.lead_assignment_service import lead_assignment_service
+except ImportError:
+    lead_assignment_service = None
 
 assignment_bp = Blueprint("assignment", __name__, url_prefix="/api/assignment")
 
@@ -16,6 +20,9 @@ assignment_bp = Blueprint("assignment", __name__, url_prefix="/api/assignment")
 def assign_lead(lead_id, user_id):
     """Manually assign lead to specific user"""
     try:
+        if lead_assignment_service is None:
+            return jsonify({"error": "Assignment service not available"}), 503
+
         success, message = lead_assignment_service.assign_lead_to_user(lead_id, user_id)
 
         if success:
@@ -46,6 +53,9 @@ def auto_assign_lead(lead_id):
                 200,
             )
 
+        if lead_assignment_service is None:
+            return jsonify({"error": "Assignment service not available"}), 503
+
         success, user_id = lead_assignment_service.auto_assign_lead(lead)
 
         if success:
@@ -70,6 +80,9 @@ def auto_assign_lead(lead_id):
 def get_sales_users():
     """Get list of available sales users"""
     try:
+        if lead_assignment_service is None:
+            return jsonify({"error": "Assignment service not available"}), 503
+
         users = lead_assignment_service.get_available_sales_users()
         return jsonify({"users": users}), 200
 
@@ -84,6 +97,9 @@ def get_sla_status(lead_id):
         lead = Lead.query.get(lead_id)
         if not lead:
             return jsonify({"error": "Lead not found"}), 404
+
+        if lead_assignment_service is None:
+            return jsonify({"error": "Assignment service not available"}), 503
 
         status = lead_assignment_service.get_sla_status(lead)
         breached = lead_assignment_service.check_sla_breach(lead)
@@ -113,6 +129,9 @@ def get_breached_slas():
     """Get all leads with breached SLAs"""
     try:
         leads = Lead.query.filter(Lead.assigned_to_user_id.isnot(None)).all()
+
+        if lead_assignment_service is None:
+            return jsonify({"error": "Assignment service not available"}), 503
 
         breached_leads = []
         for lead in leads:

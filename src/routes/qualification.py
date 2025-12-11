@@ -3,7 +3,12 @@ from datetime import datetime, timezone
 
 from flask import Blueprint, jsonify, request
 
-from src.knowledge.novahouse_info import PACKAGES, QUALIFICATION_QUESTIONS
+# Knowledge module (optional - may not exist)
+try:
+    from src.knowledge.novahouse_info import PACKAGES, QUALIFICATION_QUESTIONS
+except ImportError:
+    PACKAGES = []
+    QUALIFICATION_QUESTIONS = []
 from src.models.chatbot import Lead, db
 
 qualification_bp = Blueprint("qualification", __name__)
@@ -41,9 +46,11 @@ def calculate_recommendation(answers):
         (scores[recommended] / sum(scores.values()) * 100) if sum(scores.values()) > 0 else 0
     )
 
+    package_details = PACKAGES.get(recommended, {}) if isinstance(PACKAGES, dict) else {}
+
     return {
         "recommended_package": recommended,
-        "package_details": PACKAGES[recommended],
+        "package_details": package_details,
         "scores": scores,
         "confidence": round(confidence, 1),
     }

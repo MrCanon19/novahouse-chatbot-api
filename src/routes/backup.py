@@ -6,13 +6,13 @@ RODO-compliant data export and backup management
 
 from flask import Blueprint, jsonify, request, send_file
 
-from src.middleware.security import require_api_key
+from src.middleware.security import require_auth
 
 backup_routes = Blueprint("backup_routes", __name__)
 
 
 @backup_routes.route("/api/backup/export", methods=["POST"])
-@require_api_key
+@require_auth
 def export_backup():
     """
     Create full database backup
@@ -48,7 +48,7 @@ def export_backup():
 
 
 @backup_routes.route("/api/backup/list", methods=["GET"])
-@require_api_key
+@require_auth
 def list_backups():
     """
     Get list of available backups
@@ -68,7 +68,7 @@ def list_backups():
 
 
 @backup_routes.route("/api/backup/cleanup", methods=["POST"])
-@require_api_key
+@require_auth
 def cleanup_old_backups():
     """
     Manually trigger cleanup of old backups
@@ -104,7 +104,7 @@ def cleanup_old_backups():
 
 
 @backup_routes.route("/api/backup/download/<filename>", methods=["GET"])
-@require_api_key
+@require_auth
 def download_backup(filename: str):
     """
     Download specific backup file
@@ -245,7 +245,7 @@ def check_consent():
 
 
 @backup_routes.route("/api/backup/schedule", methods=["POST"])
-@require_api_key
+@require_auth
 def schedule_backup():
     """
     Enable/disable automated backups

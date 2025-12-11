@@ -6,14 +6,14 @@ Requires API_KEY authentication
 
 from flask import Blueprint, jsonify
 
-from src.middleware.security import require_api_key
+from src.middleware.security import require_auth
 from src.models.chatbot import db
 
 migration_bp = Blueprint("migrations", __name__)
 
 
 @migration_bp.route("/v24", methods=["POST"])
-@require_api_key
+@require_auth
 def run_v24_migration():
     """Run Chat Improvements V2.4 database migration"""
 
