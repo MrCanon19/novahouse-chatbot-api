@@ -36,7 +36,7 @@ def export_user_data():
         if not email:
             return jsonify({"error": "email_required", "message": "Email is required"}), 400
         
-        export_data = rodo_service.export_user_data(email)
+        export_data = rodo_service.export_user_data(email)  # Supports both email and session_id
         
         if not export_data:
             return jsonify({"error": "not_found", "message": "No data found for this email"}), 404
@@ -73,7 +73,7 @@ def delete_user_data():
                 "message": "Please confirm deletion by setting 'confirm': true"
             }), 400
         
-        result = rodo_service.delete_user_data(email)
+        result = rodo_service.delete_user_data(email)  # Supports both email and session_id
         
         if "error" in result:
             return jsonify(result), 500

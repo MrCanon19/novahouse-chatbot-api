@@ -106,9 +106,13 @@ class RodoService:
                 context_data["phone"] = "[ANONYMIZED]"
             conversation.context_data = json.dumps(context_data)
             
-            # Anonymize email column
-            if conversation.email:
-                conversation.email = "[ANONYMIZED]"
+            # Anonymize email column (if exists)
+            try:
+                if hasattr(conversation, 'email') and conversation.email:
+                    conversation.email = "[ANONYMIZED]"
+            except Exception as e:
+                # Column might not exist in database yet
+                logger.debug(f"Email column not available for anonymization: {e}")
             
             # Mark as anonymized
             context_data["anonymized_at"] = datetime.now(timezone.utc).isoformat()
@@ -148,7 +152,8 @@ class RodoService:
             Dict with anonymization stats
         """
         try:
-            cutoff_date = datetime.now(timezone.utc) - timedelta(days=ANONYMIZATION_THRESHOLD_MONTHS * 30)
+            threshold = older_than_months if older_than_months is not None else ANONYMIZATION_THRESHOLD_MONTHS
+            cutoff_date = datetime.now(timezone.utc) - timedelta(days=threshold * 30)
             
             old_conversations = (
                 ChatConversation.query
@@ -174,7 +179,7 @@ class RodoService:
             return {
                 "anonymized_count": anonymized_count,
                 "cutoff_date": cutoff_date.isoformat(),
-                "threshold_months": ANONYMIZATION_THRESHOLD_MONTHS,
+                "threshold_months": threshold,
             }
             
         except Exception as e:
@@ -185,29 +190,50 @@ class RodoService:
             }
     
     @staticmethod
-    def export_user_data(email: str) -> Optional[Dict]:
+    def export_user_data(user_identifier: str) -> Optional[Dict]:
         """
         Export all data for a user (GDPR right to data portability).
+        Supports both email and session_id as identifier.
         
         Args:
-            email: User's email address
+            user_identifier: User's email address or session_id
             
         Returns:
             Dict with all user data or None if not found
         """
         try:
-            # Find all conversations
-            conversations = ChatConversation.query.filter_by(email=email).all()
+            # Try to find conversations by email (if column exists) or by session_id
+            # Fallback: search in context_data JSON if email column doesn't exist
+            conversations = []
+            try:
+                # First try: direct email column (if exists)
+                conversations = ChatConversation.query.filter_by(email=user_identifier).all()
+            except Exception as e:
+                # If email column doesn't exist, search in context_data
+                logger.warning(f"Email column not available, searching in context_data: {e}")
+                all_conversations = ChatConversation.query.all()
+                for conv in all_conversations:
+                    try:
+                        context_data = json.loads(conv.context_data or "{}")
+                        if context_data.get("email") == user_identifier or conv.session_id == user_identifier:
+                            conversations.append(conv)
+                    except:
+                        if conv.session_id == user_identifier:
+                            conversations.append(conv)
+            
+            # Also try session_id if no conversations found
+            if not conversations:
+                conversations = ChatConversation.query.filter_by(session_id=user_identifier).all()
             
             # Find all leads
-            leads = Lead.query.filter_by(email=email).all()
+            leads = Lead.query.filter_by(email=user_identifier).all()
             
             if not conversations and not leads:
                 return None
             
             # Build export data
             export_data = {
-                "email": email,
+                "user_identifier": user_identifier,
                 "exported_at": datetime.now(timezone.utc).isoformat(),
                 "conversations": [],
                 "leads": [],
@@ -248,12 +274,13 @@ class RodoService:
             return None
     
     @staticmethod
-    def delete_user_data(email: str) -> Dict:
+    def delete_user_data(user_identifier: str) -> Dict:
         """
         Delete all data for a user (GDPR right to erasure).
+        Supports both email and session_id as identifier.
         
         Args:
-            email: User's email address
+            user_identifier: User's email address or session_id
             
         Returns:
             Dict with deletion stats
@@ -262,8 +289,28 @@ class RodoService:
             deleted_conversations = 0
             deleted_leads = 0
             
-            # Delete conversations
-            conversations = ChatConversation.query.filter_by(email=email).all()
+            # Delete conversations - try email column first, fallback to session_id and context_data
+            conversations = []
+            try:
+                # First try: direct email column (if exists)
+                conversations = ChatConversation.query.filter_by(email=user_identifier).all()
+            except Exception as e:
+                # If email column doesn't exist, search in context_data
+                logger.warning(f"Email column not available, searching in context_data: {e}")
+                all_conversations = ChatConversation.query.all()
+                for conv in all_conversations:
+                    try:
+                        context_data = json.loads(conv.context_data or "{}")
+                        if context_data.get("email") == user_identifier or conv.session_id == user_identifier:
+                            conversations.append(conv)
+                    except:
+                        if conv.session_id == user_identifier:
+                            conversations.append(conv)
+            
+            # Also try session_id if no conversations found
+            if not conversations:
+                conversations = ChatConversation.query.filter_by(session_id=user_identifier).all()
+            
             for conversation in conversations:
                 # Delete messages (cascade should handle this, but explicit for safety)
                 ChatMessage.query.filter_by(conversation_id=conversation.id).delete()
@@ -271,27 +318,27 @@ class RodoService:
                 deleted_conversations += 1
             
             # Delete leads
-            leads = Lead.query.filter_by(email=email).all()
+            leads = Lead.query.filter_by(email=user_identifier).all()
             for lead in leads:
                 db.session.delete(lead)
                 deleted_leads += 1
             
             db.session.commit()
             
-            logger.info(f"✅ Deleted all data for {email}: {deleted_conversations} conversations, {deleted_leads} leads")
+            logger.info(f"✅ Deleted all data for {user_identifier}: {deleted_conversations} conversations, {deleted_leads} leads")
             
             return {
-                "email": email,
+                "user_identifier": user_identifier,
                 "deleted_conversations": deleted_conversations,
                 "deleted_leads": deleted_leads,
                 "deleted_at": datetime.now(timezone.utc).isoformat(),
             }
             
         except Exception as e:
-            logger.error(f"Error deleting data for {email}: {e}")
+            logger.error(f"Error deleting data for {user_identifier}: {e}")
             db.session.rollback()
             return {
-                "email": email,
+                "user_identifier": user_identifier,
                 "error": str(e),
             }
 
