@@ -775,10 +775,7 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                 if should_create_lead:
                     from src.integrations.monday_client import MondayClient
 
-                    message_count = ChatMessage.query.filter_by(
-                        conversation_id=conversation.id
-                    ).count()
-                    lead_score = calculate_lead_score(context_memory, message_count)
+                    # message_count and lead_score already calculated above
 
                     all_messages = (
                         ChatMessage.query.filter_by(conversation_id=conversation.id)
