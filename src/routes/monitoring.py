@@ -10,6 +10,8 @@ from datetime import datetime
 from flask import Blueprint, jsonify
 
 from src.services.monitoring_service import monitoring_service
+from src.services.monitoring import MetricsService
+from src.middleware.security import require_auth
 
 # Try to import new monitoring services (may not be available yet)
 try:
@@ -24,6 +26,9 @@ except ImportError:
     get_safeguard = None
 
 monitoring_bp = Blueprint("monitoring", __name__, url_prefix="/api/monitoring")
+
+# All monitoring endpoints require authentication
+monitoring_bp.before_request(require_auth)
 
 
 @monitoring_bp.route("/health", methods=["GET"])
@@ -76,6 +81,17 @@ def get_performance():
         stats = monitoring_service.get_performance_stats()
         return jsonify(stats), 200
 
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@monitoring_bp.route("/metrics", methods=["GET"])
+def get_metrics():
+    """Get application metrics (conversations, response times, errors, LLM stats)"""
+    try:
+        from src.services.monitoring import MetricsService
+        metrics = MetricsService.get_metrics()
+        return jsonify(metrics), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

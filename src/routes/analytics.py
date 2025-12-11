@@ -5,8 +5,12 @@ from sqlalchemy import func, text
 
 from src.models.analytics import ChatAnalytics, IntentAnalytics, PerformanceMetrics, UserEngagement
 from src.models.chatbot import Conversation, Lead, db
+from src.middleware.security import require_auth
 
 analytics_bp = Blueprint("analytics", __name__)
+
+# All analytics endpoints require authentication
+analytics_bp.before_request(require_auth)
 
 
 def _clamp_days(raw_days: int, default: int = 7, max_days: int = 31) -> int:

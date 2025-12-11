@@ -1,259 +1,197 @@
 """
-Rate Limiting & Security Middleware
+Security Middleware
+Handles CORS, CSRF, security headers, and authentication for admin endpoints.
 """
-
 import os
-import time
-from collections import defaultdict
-from datetime import datetime
 from functools import wraps
+from typing import List, Optional
 
-from flask import jsonify, request
-
-
-# Distributed rate limiter with Redis support
-class RateLimiter:
-    def __init__(self):
-        self.redis = None
-        redis_url = os.getenv("REDIS_URL")
-
-        if redis_url:
-            try:
-                import redis
-
-                self.redis = redis.from_url(
-                    redis_url,
-                    decode_responses=True,
-                    socket_connect_timeout=2,
-                    socket_timeout=2,
-                )
-                self.redis.ping()
-                print(f"✅ Rate limiter using Redis: {redis_url}")
-            except Exception as e:
-                print(f"⚠️  Redis unavailable, fallback to in-memory: {e}")
-                self.redis = None
-
-        # Fallback to in-memory for development
-        self.requests = defaultdict(list)
-        self.cleanup_interval = 3600  # 1 hour
-        self.last_cleanup = time.time()
-
-    def is_allowed(self, key: str, max_requests: int, window_seconds: int) -> bool:
-        """Check if request is allowed (Redis-distributed or in-memory fallback)"""
-
-        if self.redis:
-            try:
-                # Redis sliding window implementation
-                current = int(time.time())
-                window_start = current - window_seconds
-
-                # Use Redis sorted set for sliding window
-                pipe = self.redis.pipeline()
-                pipe.zremrangebyscore(key, 0, window_start)  # Remove old entries
-                pipe.zadd(key, {str(current): current})  # Add current request
-                pipe.zcount(key, window_start, current)  # Count in window
-                pipe.expire(key, window_seconds)  # Set expiry
-                results = pipe.execute()
-
-                count = results[2]
-                return count <= max_requests
-
-            except Exception as e:
-                print(f"⚠️  Redis rate limit error: {e}, using fallback")
-                # Fall through to in-memory
-
-        # In-memory fallback (original logic)
-        now = time.time()
-
-        # Cleanup old entries periodically
-        if now - self.last_cleanup > self.cleanup_interval:
-            self._cleanup()
-            self.last_cleanup = now
-
-        # Get requests for this key
-        requests = self.requests[key]
-
-        # Remove expired requests
-        cutoff = now - window_seconds
-        requests[:] = [req_time for req_time in requests if req_time > cutoff]
-
-        # Check if under limit
-        if len(requests) < max_requests:
-            requests.append(now)
-            return True
-
-        return False
-
-    def _cleanup(self):
-        """Remove old entries to prevent memory leak"""
-        now = time.time()
-        keys_to_delete = []
-
-        for key, requests in self.requests.items():
-            # Remove requests older than 1 hour
-            requests[:] = [req_time for req_time in requests if now - req_time < 3600]
-            if not requests:
-                keys_to_delete.append(key)
-
-        for key in keys_to_delete:
-            del self.requests[key]
-
-    def get_remaining(self, key: str, max_requests: int, window_seconds: int) -> int:
-        """Get remaining requests"""
-        now = time.time()
-        cutoff = now - window_seconds
-        requests = self.requests.get(key, [])
-        active_requests = [req_time for req_time in requests if req_time > cutoff]
-        return max(0, max_requests - len(active_requests))
+from flask import g, request, jsonify, session
+from flask_cors import CORS
 
 
-# Global rate limiter instance
-rate_limiter = RateLimiter()
+# Allowed origins (whitelist)
+def get_allowed_origins() -> List[str]:
+    """Get list of allowed CORS origins based on environment"""
+    env_origins = os.getenv("CORS_ALLOWED_ORIGINS", "")
+    
+    if env_origins:
+        # Parse comma-separated list from env
+        return [origin.strip() for origin in env_origins.split(",") if origin.strip()]
+    
+    # Default origins based on environment
+    if os.getenv("FLASK_ENV") == "production":
+        return [
+            "https://novahouse.pl",
+            "https://www.novahouse.pl",
+            "https://glass-core-467907-e9.ey.r.appspot.com",
+        ]
+    elif os.getenv("FLASK_ENV") == "staging":
+        return [
+            "https://staging.novahouse.pl",
+            "https://glass-core-467907-e9.ey.r.appspot.com",
+        ]
+    else:
+        # Development - allow localhost
+        return [
+            "http://localhost:3000",
+            "http://localhost:5000",
+            "http://localhost:8080",
+            "http://127.0.0.1:3000",
+            "http://127.0.0.1:5000",
+            "http://127.0.0.1:8080",
+        ]
 
 
-def rate_limit(max_requests=100, window_seconds=60):
+def configure_cors(app):
     """
-    Rate limit decorator
-
-    Usage:
-        @rate_limit(max_requests=10, window_seconds=60)  # 10 req/min
-        def my_endpoint():
-            ...
+    Configure CORS with whitelist of allowed origins.
+    Never uses "*" in production.
     """
-
-    def decorator(f):
-        @wraps(f)
-        def wrapped(*args, **kwargs):
-            # Use IP address as key
-            key = f"rate_limit:{request.remote_addr}:{f.__name__}"
-
-            if not rate_limiter.is_allowed(key, max_requests, window_seconds):
-                remaining = rate_limiter.get_remaining(key, max_requests, window_seconds)
-                return (
-                    jsonify(
-                        {
-                            "error": "Rate limit exceeded",
-                            "message": "Too many requests. Try again later.",
-                            "retry_after": window_seconds,
-                        }
-                    ),
-                    429,
-                )
-
-            # Add rate limit headers
-            response = f(*args, **kwargs)
-            if isinstance(response, tuple):
-                response_obj, status_code = response[0], response[1]
-            else:
-                response_obj, status_code = response, 200
-
-            # Add headers if response is a Flask Response object
-            if hasattr(response_obj, "headers"):
-                remaining = rate_limiter.get_remaining(key, max_requests, window_seconds)
-                response_obj.headers["X-RateLimit-Limit"] = str(max_requests)
-                response_obj.headers["X-RateLimit-Remaining"] = str(remaining)
-                response_obj.headers["X-RateLimit-Reset"] = str(int(time.time() + window_seconds))
-
-            return response if isinstance(response, tuple) else (response_obj, status_code)
-
-        return wrapped
-
-    return decorator
+    allowed_origins = get_allowed_origins()
+    
+    CORS(
+        app,
+        origins=allowed_origins,
+        max_age=3600,  # Cache preflight requests for 1h
+        allow_headers=["Content-Type", "Authorization", "X-API-Key", "X-Request-ID"],
+        methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    )
+    
+    return allowed_origins
 
 
-def require_api_key(f):
+def add_security_headers(response):
     """
-    Require API key for endpoint
-
-    Usage:
-        @require_api_key
-        def admin_endpoint():
-            ...
+    Add security headers to all responses.
+    This should be used as @app.after_request decorator.
     """
-
-    @wraps(f)
-    def wrapped(*args, **kwargs):
-        import os
-
-        api_key = os.getenv("API_KEY") or os.getenv("ADMIN_API_KEY")
-        if not api_key:
-            # If no API key configured, allow access (development mode)
-            return f(*args, **kwargs)
-
-        # Check for API key in headers
-        provided_key = request.headers.get("X-API-Key") or request.headers.get("X-ADMIN-API-KEY")
-
-        if not provided_key or provided_key != api_key:
-            return jsonify({"error": "Unauthorized", "message": "Valid API key required"}), 401
-
-        return f(*args, **kwargs)
-
-    return wrapped
-
-
-def log_request(f):
-    """
-    Log all requests to endpoint
-
-    Usage:
-        @log_request
-        def my_endpoint():
-            ...
-    """
-
-    @wraps(f)
-    def wrapped(*args, **kwargs):
-        # Log request
-        print(
-            f"""
-        ╔══════════════════════════════════════════════════════════
-        ║ REQUEST LOG
-        ╠══════════════════════════════════════════════════════════
-        ║ Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-        ║ IP: {request.remote_addr}
-        ║ Method: {request.method}
-        ║ Path: {request.path}
-        ║ User-Agent: {request.headers.get('User-Agent', 'N/A')}
-        ║ Function: {f.__name__}
-        ╚══════════════════════════════════════════════════════════
-        """
+    # X-Frame-Options: prevent clickjacking
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
+    
+    # X-Content-Type-Options: prevent MIME sniffing
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    
+    # X-XSS-Protection: enable XSS filter
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    
+    # Referrer-Policy: control referrer information
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    
+    # HSTS: force HTTPS in production
+    if os.getenv("FLASK_ENV") == "production":
+        response.headers["Strict-Transport-Security"] = (
+            "max-age=31536000; includeSubDomains; preload"
         )
+    
+    # Content-Security-Policy
+    csp_min = (
+        "default-src 'self'; "
+        "img-src 'self' data: https:; "
+        "style-src 'self' 'unsafe-inline'; "
+        "script-src 'self' 'unsafe-inline'; "
+        "connect-src 'self'"
+    )
+    
+    # Strict CSP (opt-in via ENABLE_STRICT_CSP)
+    if os.getenv("ENABLE_STRICT_CSP") == "true":
+        import secrets
+        
+        nonce = secrets.token_urlsafe(16)
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            f"script-src 'self' 'nonce-{nonce}'; "
+            "style-src 'self'; "
+            "img-src 'self' data: https:; "
+            "connect-src 'self'"
+        )
+        response.headers["X-Content-Security-Policy-Nonce"] = nonce
+    else:
+        response.headers["Content-Security-Policy"] = csp_min
+    
+    return response
 
-        start_time = time.time()
-        response = f(*args, **kwargs)
-        duration = (time.time() - start_time) * 1000  # ms
 
-        # Log response
-        status = response[1] if isinstance(response, tuple) else 200
-        print(f"  ✅ Response: {status} ({duration:.2f}ms)")
-
-        return response
-
-    return wrapped
-
-
-def cors_headers(f):
-    """Add CORS headers to response"""
-
+def require_auth(f):
+    """
+    Decorator to require authentication for admin endpoints.
+    Checks for ADMIN_API_KEY in headers or session.
+    """
     @wraps(f)
-    def wrapped(*args, **kwargs):
-        response = f(*args, **kwargs)
+    def decorated_function(*args, **kwargs):
+        # Check for API key in headers
+        api_key = request.headers.get("X-API-Key") or request.headers.get("Authorization")
+        
+        if api_key:
+            # Remove "Bearer " prefix if present
+            if api_key.startswith("Bearer "):
+                api_key = api_key[7:]
+            
+            expected_key = os.getenv("ADMIN_API_KEY")
+            if expected_key and api_key == expected_key:
+                g.authenticated = True
+                return f(*args, **kwargs)
+        
+        # Check for session (for web panel)
+        if session.get("authenticated"):
+            g.authenticated = True
+            return f(*args, **kwargs)
+        
+        # Not authenticated
+        return jsonify({"error": "authentication_required", "message": "Authentication required"}), 401
+    
+    return decorated_function
 
-        if isinstance(response, tuple):
-            response_obj, status_code = response[0], response[1]
-        else:
-            response_obj, status_code = response, 200
 
-        # Add CORS headers if response is a Flask Response object
-        if hasattr(response_obj, "headers"):
-            response_obj.headers["Access-Control-Allow-Origin"] = "*"
-            response_obj.headers["Access-Control-Allow-Methods"] = (
-                "GET, POST, PUT, DELETE, PATCH, OPTIONS"
-            )
-            response_obj.headers["Access-Control-Allow-Headers"] = (
-                "Content-Type, Authorization, X-API-Key"
-            )
+def require_csrf(f):
+    """
+    Decorator to require CSRF token for state-changing operations.
+    Only applies to requests with cookies (web panel), not pure API calls.
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # Skip CSRF for API calls (no cookies)
+        if not request.cookies:
+            return f(*args, **kwargs)
+        
+        # Require CSRF token for web panel requests
+        csrf_token = request.headers.get("X-CSRF-Token") or request.form.get("csrf_token")
+        session_token = session.get("csrf_token")
+        
+        if not csrf_token or csrf_token != session_token:
+            return jsonify({"error": "csrf_token_invalid", "message": "Invalid CSRF token"}), 403
+        
+        return f(*args, **kwargs)
+    
+    return decorated_function
 
-        return response if isinstance(response, tuple) else (response_obj, status_code)
 
-    return wrapped
+def generate_csrf_token():
+    """Generate CSRF token and store in session"""
+    import secrets
+    
+    if "csrf_token" not in session:
+        session["csrf_token"] = secrets.token_urlsafe(32)
+    
+    return session["csrf_token"]
+
+
+def get_csrf_token():
+    """Get CSRF token from session"""
+    return session.get("csrf_token", "")
+
+
+# Admin endpoints that require authentication
+ADMIN_ENDPOINTS = [
+    "/api/analytics",
+    "/api/leads",
+    "/api/leads/export",
+    "/api/faq-learning",
+    "/api/monitoring",
+    "/admin",
+]
+
+
+def is_admin_endpoint(path: str) -> bool:
+    """Check if path is an admin endpoint"""
+    return any(path.startswith(endpoint) for endpoint in ADMIN_ENDPOINTS)

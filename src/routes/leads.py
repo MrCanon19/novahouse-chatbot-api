@@ -6,9 +6,13 @@ from flask import Blueprint, jsonify, request
 from src.integrations.monday_client import MondayClient
 from src.models.chatbot import Lead, db
 from src.services.email_service import email_service
+from src.middleware.security import require_auth
 
 logger = logging.getLogger(__name__)
 leads_bp = Blueprint("leads", __name__)
+
+# Admin endpoints require authentication (GET /, export, bulk-update)
+# POST / (create_lead) is public - anyone can submit a lead
 
 
 @leads_bp.route("/", methods=["POST"])
@@ -28,28 +32,23 @@ def create_lead():
     except Exception as e:
         # Fail open if limiter unavailable
         logger.warning(f"Rate limiter check failed, allowing request: {e}")
+    # Validate payload using validator
+    from src.utils.validators import validate_lead_payload
+    from src.exceptions import ValidationError
+    
     data = request.get_json()
-
     if not data:
-        return jsonify({"error": "No data provided"}), 400
-
-    required_fields = ["name", "email"]
-    for field in required_fields:
-        if field not in data:
-            return jsonify({"error": f"Missing required field: {field}"}), 400
-    # Lightweight value validation
-    name = data.get("name")
-    email = data.get("email")
-    if not isinstance(name, str) or not (1 <= len(name.strip()) <= 100):
-        return jsonify({"error": "Invalid name"}), 400
-    if not isinstance(email, str) or "@" not in email or len(email) > 255:
-        return jsonify({"error": "Invalid email"}), 400
-    phone = data.get("phone")
-    if phone is not None and (not isinstance(phone, str) or len(phone) > 20):
-        return jsonify({"error": "Invalid phone"}), 400
-    message = data.get("message")
-    if message is not None and (not isinstance(message, str) or len(message) > 5000):
-        return jsonify({"error": "Invalid message"}), 400
+        raise ValidationError("No data provided")
+    
+    try:
+        validated_data = validate_lead_payload(data)
+    except ValidationError as e:
+        raise  # Let global error handler catch it
+    
+    name = validated_data.get("name", "").strip()
+    email = validated_data.get("email", "").strip()
+    phone = validated_data.get("phone")
+    message = validated_data.get("message")
 
     try:
         lead = Lead(
@@ -127,8 +126,9 @@ def create_lead():
 
 
 @leads_bp.route("/", methods=["GET"])
+@require_auth
 def get_leads():
-    """Get all leads"""
+    """Get all leads (requires authentication)"""
     try:
         leads = Lead.query.order_by(Lead.created_at.desc()).all()
 
@@ -360,8 +360,9 @@ def filter_leads():
 
 
 @leads_bp.route("/export", methods=["GET"])
+@require_auth
 def export_leads():
-    """Export leads to CSV"""
+    """Export leads to CSV (requires authentication)"""
     try:
         import csv
         from io import StringIO
@@ -426,8 +427,9 @@ def export_leads():
 
 
 @leads_bp.route("/bulk-update", methods=["POST"])
+@require_auth
 def bulk_update_leads():
-    """Bulk update lead statuses"""
+    """Bulk update lead statuses (requires authentication)"""
     try:
         data = request.get_json()
         lead_ids = data.get("lead_ids", [])

@@ -10,8 +10,12 @@ from flask import Blueprint, jsonify, request
 
 from src.models.chatbot import db
 from src.models.faq_learning import LearnedFAQ, UnknownQuestion
+from src.middleware.security import require_auth
 
 faq_learning_routes = Blueprint("faq_learning", __name__, url_prefix="/api/faq-learning")
+
+# All FAQ learning endpoints require authentication
+faq_learning_routes.before_request(require_auth)
 
 
 @faq_learning_routes.route("/unknown", methods=["GET"])

@@ -64,33 +64,20 @@ def upload_image():
             return jsonify({"success": False, "error": "Invalid folder"}), 400
         create_variants = request.form.get("variants", "true").lower() == "true"
 
-        # Security: block potentially dangerous types
-        disallowed_ext = {".svg", ".html", ".htm"}
-        import os
-
-        _, ext = os.path.splitext(file.filename.lower())
-        if ext in disallowed_ext:
-            return jsonify({"success": False, "error": "Disallowed file type"}), 400
-
-        # Read file bytes
-        file_bytes = file.read()
-        # Enforce max size (10MB)
-        if len(file_bytes) > 10 * 1024 * 1024:
-            return jsonify({"success": False, "error": "File too large (max 10MB)"}), 413
-
-        # MIME validation: block dangerous MIME types regardless of extension
-        import magic
-
+        # Validate file using validator
+        from src.utils.validators import validate_uploaded_file
+        from src.exceptions import InvalidFileTypeError, FileTooLargeError
+        
         try:
-            mime = magic.from_buffer(file_bytes[:2048], mime=True)
-            disallowed_mimes = {"image/svg+xml", "text/html", "application/x-httpd-php"}
-            if mime in disallowed_mimes:
-                return jsonify({"success": False, "error": "Disallowed MIME type"}), 400
-        except Exception:
-            # Fallback: if magic unavailable, rely on extension check only
-            pass
-
-        filename = secure_filename(file.filename)
+            file_bytes, filename, content_type = validate_uploaded_file(
+                file, 
+                filename=file.filename,
+                content_type=file.content_type
+            )
+        except (InvalidFileTypeError, FileTooLargeError) as e:
+            raise  # Let global error handler catch it
+        
+        filename = secure_filename(filename)
 
         # Upload
         result = file_upload_service.upload_file(

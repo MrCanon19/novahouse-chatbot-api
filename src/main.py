@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from apscheduler.schedulers.background import BackgroundScheduler
-from flask import Flask, render_template, request, send_from_directory
+from flask import Flask, g, render_template, request, send_from_directory
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from src.middleware.rate_limiting import DummyLimiter, is_rate_limit_disabled
@@ -72,33 +72,29 @@ from src.models.chatbot import db
 # Logi błędów: https://console.cloud.google.com/errors?project=glass-core-467907-e9
 # NOTE: app already initialized above, don't create it again!
 
+# Initialize Sentry for error tracking (optional)
+from src.services.monitoring import init_sentry, capture_exception, MetricsService
+from src.utils.logging import setup_logging, setup_request_logging
 
-# Security headers (HSTS, clickjacking, MIME sniffing, XSS)
+# Initialize Sentry
+sentry = init_sentry()  # Will be None if not configured
+
+# Setup structured logging with request IDs
+setup_logging(app)
+setup_request_logging(app)
+
+
+# Security headers and CORS - use middleware
+from src.middleware.security import configure_cors, add_security_headers
+
+# Configure CORS with whitelist (never "*" in production)
+allowed_origins = configure_cors(app)
+logger.info(f"✅ CORS configured with {len(allowed_origins)} allowed origins")
+
+# Security headers
 @app.after_request
 def set_security_headers(response):
-    response.headers["X-Frame-Options"] = "SAMEORIGIN"
-    response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["X-XSS-Protection"] = "1; mode=block"
-    # Enable HSTS in production environments
-    if os.getenv("FLASK_ENV") == "production":
-        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-    # Minimal CSP to reduce risk while keeping compatibility
-    csp_min = "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'"
-    # Prepare strict CSP with nonce (opt-in via ENABLE_STRICT_CSP)
-    # Note: Using nonce requires templates to inject the same nonce into script tags
-    if os.getenv("ENABLE_STRICT_CSP") == "true":
-        import secrets
-
-        nonce = secrets.token_urlsafe(16)
-        response.headers["Content-Security-Policy"] = (
-            "default-src 'self'; "
-            f"script-src 'self' 'nonce-{nonce}'; "
-            "style-src 'self'; img-src 'self' data: https:; connect-src 'self'"
-        )
-        response.headers["X-Content-Security-Policy-Nonce"] = nonce
-    else:
-        response.headers["Content-Security-Policy"] = csp_min
-    return response
+    return add_security_headers(response)
 
 
 # Initialize rate limiter (Redis backend or memory fallback)
@@ -144,33 +140,23 @@ app.config["SECRET_KEY"] = os.getenv(
 app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024  # 50MB max request size
 app.config["UPLOAD_FOLDER"] = os.getenv("UPLOAD_FOLDER", "/tmp/uploads")
 
-# CORS Configuration with caching
-# Production: Restrict to your domain
-# Development: Allow all for testing
-if os.getenv("FLASK_ENV") == "production":
-    CORS(
+# CORS is now configured in security middleware above
+
+# Initialize WebSocket support (v2.3) with optimizations (optional)
+try:
+    from src.services.websocket_service import socketio
+    socketio.init_app(
         app,
-        origins=[
-            "https://novahouse.pl",
-            "https://www.novahouse.pl",
-            "https://glass-core-467907-e9.ey.r.appspot.com",
-        ],
-        max_age=3600,
-    )  # Cache preflight requests for 1h
-else:
-    # Development mode - allow all
-    CORS(app, max_age=3600)
-
-# Initialize WebSocket support (v2.3) with optimizations
-from src.services.websocket_service import socketio
-
-socketio.init_app(
-    app,
-    cors_allowed_origins="*",
-    async_mode="threading",  # Better performance on App Engine
-    ping_timeout=10,
-    ping_interval=25,
-)
+        cors_allowed_origins="*",
+        async_mode="threading",  # Better performance on App Engine
+        ping_timeout=10,
+        ping_interval=25,
+    )
+    logger.info("✅ WebSocket support initialized")
+except ImportError:
+    logger.info("ℹ️  WebSocket service not available, skipping")
+except Exception as e:
+    logger.warning(f"⚠️  WebSocket initialization failed: {e}")
 
 # KROK 3: Konfigurujemy i łączymy bazę danych z aplikacją.
 # Od tego momentu 'db' wie o istnieniu 'app'.
@@ -329,6 +315,11 @@ app.register_blueprint(assignment_bp)
 from src.routes.monitoring import monitoring_bp
 
 app.register_blueprint(monitoring_bp)
+
+# Register RODO routes
+from src.routes.rodo import rodo_bp
+app.register_blueprint(rodo_bp)
+
 # KROK 6: Tworzymy tabele w kontekście w pełni skonfigurowanej aplikacji.
 with app.app_context():
     # Retry logic dla Connection Pool na start
@@ -443,12 +434,34 @@ with app.app_context():
             id="dlq_cleanup",
             name="Clean up old delivered alerts from dead-letter queue",
         )
+        
+        # Job 4: Session timeout cleanup (hourly)
+        from src.services.session_timeout import session_timeout_service
+        scheduler.add_job(
+            func=lambda: session_timeout_service.cleanup_old_sessions(older_than_hours=24),
+            trigger="interval",
+            hours=1,
+            id="session_cleanup",
+            name="Clean up old inactive sessions",
+        )
+        
+        # Job 5: Send nudges to inactive sessions (every 15 minutes)
+        scheduler.add_job(
+            func=lambda: _send_nudges_to_inactive_sessions(),
+            trigger="interval",
+            minutes=15,
+            id="session_nudges",
+            name="Send nudges to inactive sessions",
+        )
 
         scheduler.start()
-        logger.info("✅ APScheduler started: 3 background jobs configured")
+        logger.info("✅ APScheduler started: 6 background jobs configured")
         logger.info("   - Cache cleanup every 10 minutes")
         logger.info("   - Dead-letter queue retry every 5 minutes")
         logger.info("   - Old alert cleanup daily")
+        logger.info("   - Session cleanup hourly")
+        logger.info("   - Session nudges every 15 minutes")
+        logger.info("   - RODO anonymization daily")
     except Exception as e:
         logger.warning(f"APScheduler initialization failed: {e}")
 
@@ -478,19 +491,111 @@ def handle_db_connection_error(error):
 @app.errorhandler(413)
 def request_entity_too_large(error):
     """File too large"""
-    return {"error": "File too large. Maximum size is 50MB."}, 413
+    request_id = getattr(g, "request_id", None)
+    MetricsService.increment_error(413)
+    
+    response_data = {"error": "File too large. Maximum size is 50MB."}
+    if request_id:
+        response_data["request_id"] = request_id
+    return response_data, 413
 
 
 @app.errorhandler(404)
 def not_found(error):
     """Page not found"""
-    return {"error": "Resource not found"}, 404
+    request_id = getattr(g, "request_id", None)
+    MetricsService.increment_error(404)
+    
+    response_data = {"error": "Resource not found"}
+    if request_id:
+        response_data["request_id"] = request_id
+    return response_data, 404
+
+
+# Import custom exceptions
+from src.exceptions import (
+    BusinessException,
+    ValidationError,
+    AuthenticationError,
+    AuthorizationError,
+    NotFoundError,
+    ConflictError,
+    RateLimitError,
+    ChatMessageTooLongError,
+    InvalidFileTypeError,
+    FileTooLargeError,
+)
+
+
+@app.errorhandler(BusinessException)
+def handle_business_error(error: BusinessException):
+    """Handle business logic errors (4xx)"""
+    request_id = getattr(g, "request_id", None)
+    
+    # Map to appropriate status code
+    status_map = {
+        ValidationError: 400,
+        AuthenticationError: 401,
+        AuthorizationError: 403,
+        NotFoundError: 404,
+        ConflictError: 409,
+        RateLimitError: 429,
+        ChatMessageTooLongError: 413,
+        InvalidFileTypeError: 415,
+        FileTooLargeError: 413,
+    }
+    
+    status_code = status_map.get(type(error), 400)
+    MetricsService.increment_error(status_code)
+    
+    response_data = {
+        "error": error.error_code.lower(),
+        "message": error.message,
+    }
+    if request_id:
+        response_data["request_id"] = request_id
+    
+    logger.warning(
+        f"Business error [{error.error_code}]: {error.message}",
+        extra={"request_id": request_id, "error_code": error.error_code}
+    )
+    
+    return response_data, status_code
+
+
+@app.errorhandler(Exception)
+def handle_all_exceptions(error: Exception):
+    """Global handler for all unhandled exceptions (500)"""
+    request_id = getattr(g, "request_id", None)
+    
+    # Skip if already handled by specific handler
+    if isinstance(error, BusinessException):
+        return handle_business_error(error)
+    
+    # Capture in Sentry
+    capture_exception(error, extra={"request_id": request_id})
+    
+    # Track metrics
+    MetricsService.increment_error(500)
+    
+    # Log error (full traceback only in logs, not to user)
+    logger.error(
+        f"Unhandled exception: {type(error).__name__}: {str(error)}",
+        exc_info=True,
+        extra={"request_id": request_id}
+    )
+    
+    response_data = {"error": "internal_error"}
+    if request_id:
+        response_data["request_id"] = request_id
+    
+    return response_data, 500
 
 
 @app.errorhandler(500)
 def internal_error(error):
-    """Internal server error"""
-    return {"error": "An unexpected error occurred"}, 500
+    """Internal server error with request_id (fallback)"""
+    return handle_all_exceptions(error)
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -600,5 +705,10 @@ def serve(path):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     debug = os.environ.get("FLASK_ENV") != "production"
-    # Use socketio.run instead of app.run for WebSocket support
-    socketio.run(app, host="0.0.0.0", port=port, debug=debug)
+    # Use socketio.run instead of app.run for WebSocket support (if available)
+    try:
+        from src.services.websocket_service import socketio
+        socketio.run(app, host="0.0.0.0", port=port, debug=debug)
+    except ImportError:
+        # Fallback to standard Flask run if WebSocket not available
+        app.run(host="0.0.0.0", port=port, debug=debug)
