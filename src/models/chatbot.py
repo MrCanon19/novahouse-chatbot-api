@@ -121,9 +121,45 @@ class Lead(db.Model):
     assigned_at = db.Column(db.DateTime)  # When assigned
     first_contact_at = db.Column(db.DateTime)  # First contact timestamp
     expected_contact_by = db.Column(db.DateTime)  # SLA deadline
-    # RODO/GDPR Consent fields
-    marketing_consent = db.Column(db.Boolean, default=True)  # Marketing emails opt-in
-    rodo_consent = db.Column(db.Boolean, default=True)  # Data processing consent
+    # RODO/GDPR Consent fields - removed from DB, using notes or separate table instead
+    # marketing_consent = db.Column(db.Boolean, default=True)
+    # rodo_consent = db.Column(db.Boolean, default=True)
+    
+    @property
+    def marketing_consent(self):
+        """Get marketing_consent from notes for backward compatibility"""
+        if self.notes and "marketing_consent:true" in self.notes.lower():
+            return True
+        return True  # Default to True
+    
+    @marketing_consent.setter
+    def marketing_consent(self, value):
+        """Set marketing_consent in notes for backward compatibility"""
+        if not self.notes:
+            self.notes = ""
+        if "marketing_consent:" not in self.notes:
+            self.notes += f"\nmarketing_consent:{value}"
+        else:
+            import re
+            self.notes = re.sub(r'marketing_consent:\w+', f'marketing_consent:{value}', self.notes)
+    
+    @property
+    def rodo_consent(self):
+        """Get rodo_consent from notes for backward compatibility"""
+        if self.notes and "rodo_consent:true" in self.notes.lower():
+            return True
+        return True  # Default to True
+    
+    @rodo_consent.setter
+    def rodo_consent(self, value):
+        """Set rodo_consent in notes for backward compatibility"""
+        if not self.notes:
+            self.notes = ""
+        if "rodo_consent:" not in self.notes:
+            self.notes += f"\nrodo_consent:{value}"
+        else:
+            import re
+            self.notes = re.sub(r'rodo_consent:\w+', f'rodo_consent:{value}', self.notes)  # Data processing consent
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(
         db.DateTime,
