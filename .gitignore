@@ -77,6 +77,8 @@ logs/
 # Testing
 .pytest_cache/
 .coverage
+coverage.xml
+coverage.svg
 htmlcov/
 
 # Credentials (IMPORTANT!)
