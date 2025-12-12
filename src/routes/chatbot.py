@@ -807,7 +807,7 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
         # Try to get conversation from DB
         try:
             conversation = ChatConversation.query.filter_by(session_id=session_id).first()
-        if not conversation:
+            if not conversation:
             conversation = ChatConversation(
                 session_id=session_id,
                 started_at=datetime.now(timezone.utc),
