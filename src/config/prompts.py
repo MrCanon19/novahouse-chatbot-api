@@ -365,8 +365,122 @@ Q: Jakie są koszty poszczególnych usług?
 A: Analizując pracę różnych firm wykończeniowych można zauważyć, że część z nich nie ujawnia wszystkich kosztów związanych z remontem. Osoby planujące remont często nie posiadają dokładnej wiedzy odnośnie ilości potrzebnych materiałów. Obawiają się też, że firma naciągnie ich na opłatę za "rzeczy" których tak naprawdę nie muszą kupować. My oferujemy czytelną umowę o współpracy. Do każdej umowy załączony jest cennik naszych usług. Wyszczególniamy transparentnie każdą pozycję w ofercie (usługi, materiały budowlane, materiały wykończeniowe). Dzięki temu nasz klient na bieżąco zna wszystkie koszty, ewentualnych, dodatkowych prac – co daje pełną kontrolę nad budżetem.
 
 --- BAZA PYTAŃ NOVABOT (Google Docs) ---
-[Zawartość z https://docs.google.com/document/d/17By-nfAtdXLoNuwjjXHd7Gfkb4TQaTxiAY5t05PNBbc/edit?tab=t.0 - DO DODANIA]
-[Proszę skopiować zawartość z dokumentu Google Docs i wkleić tutaj]
+
+Q: Jak długo trwa cały proces od podpisania umowy do odbioru mieszkania?
+A: 
+- W przypadku pakietów Express i Express Plus: Zazwyczaj od 7 do 10 tygodni – w zależności od pakietu, zakresu i metrażu.
+- W przypadku pakietów Comfort i Premium: Zazwyczaj od 12 do 18 tygodni – w zależności od pakietu, zakresu i metrażu.
+- W przypadku projektu indywidualnego: Zazwyczaj od 14 do 20 tygodni – w zależności od zakresu i metrażu.
+Projekt + realizacja to całość, którą prowadzimy od A do Z.
+
+Q: Kiedy możecie rozpocząć projektowanie po podpisaniu umowy?
+A: Najczęściej w ciągu 1–2 tygodni od podpisania umowy – w tym czasie finalizujemy umowę i dobieramy odpowiedniego projektanta do Twoich potrzeb.
+
+Q: Jak długo trwa sam etap projektowania?
+A: 
+- Standardowo 2 pierwsze pakiety (Express): 2 tygodnie.
+- Wyższe pakiety Comfort i Premium: 4-6 tygodni.
+- Przy projektach indywidualnych może być dłużej: 6-10 tygodni w zależności od metrażu, bo wszystko dopasowujemy pod Ciebie.
+
+Q: Ile trwa wykończenie mieszkania w standardzie pakietowym?
+A: W pakietach bazowych Express i Express Plus wykończenie trwa 6–8 tygodni. Przy większych metrażach lub nietypowych rozwiązaniach czas może się wydłużyć.
+
+Q: Czy muszę być obecny podczas całego remontu/wykończenia?
+A: Nie 🙂. Nasz zespół prowadzi całość, a Ty dostajesz regularne raporty i zdjęcia. Możesz być w stałym kontakcie z Koordynatorem projektu.
+
+Q: Czy pomagacie w formalnościach u dewelopera (odbiór techniczny, zgłoszenia)?
+A: Tak, pomagamy w odbiorze technicznym i doradzamy przy zgłoszeniach – Nasz inżynier sprawdza mieszkanie i przedstawia raport z ewentualnymi usterkami.
+
+Q: Jak wygląda proces krok po kroku od pierwszego kontaktu?
+A: 
+1. Rozmowa telefoniczna o preferencjach
+2. Spotkanie ze specjalistą ds wykończeń wnętrz
+3. Opcjonalne 2 spotkanie z projektantem
+4. Podpisanie umowy
+5. Projektowanie
+6. Zakupy i logistyka
+7. Realizacja wykończenia i nadzór
+8. Montaż zabudów stolarskich
+9. Odbiór i gwarancja
+
+Q: Czy współpracujecie też z klientami spoza mojego miasta?
+A: Tak. Realizujemy projekty w – Gdańsk, Warszawa, Wrocław oraz okolice do 60 km od Centrum. Dojeżdżamy i prowadzimy zdalne konsultacje.
+
+Q: Kiedy możecie rozpocząć Realizację po podpisaniu umowy?
+A: Najczęściej w ciągu 1–2 tygodni od zakończenia projektu – w tym czasie finalizujemy projekt, kosztorys i zamawiamy materiały.
+
+Q: Co dokładnie zawiera pakiet wykończeniowy?
+A: Poniżej wspólny zakres dla wszystkich:
+- Odbiór lokalu od dewelopera przez inspektora budowlanego
+- Kompleksowe prace wykonawcze: malowanie, montaż podłóg, drzwi, pełne wykończenie łazienki (płytki, armatura, prysznic/wanna, WC, lustro, oświetlenie)
+- Materiały budowlane (kleje, farby, fugi, hydroizolacja itd.)
+- Materiały wykończeniowe (podłogi, listwy, płytki, drzwi, klamki, armatura, ceramika itp.)
+- Koordynacja zamówień materiałów i prac
+- Sprzątanie pobudowlane
+- Projekt pakietowy: układ funkcjonalny, rzuty wykonawcze, moodboardy, lista zakupowa, konsultacje z projektantem, wyższe pakiety (Comfort i Premium) posiadają wizualizacje wybranych pomieszczeń
+
+Q: Jakie są różnice między poszczególnymi pakietami?
+A: Kluczowe różnice:
+- Standard produktów – od Basic, przez Standard, Comfort, Premium, do Indywidualnego
+- Liczba produktów do wyboru – od 150 do pełnego asortymentu 7 sklepów partnerskich
+- Zakres wizualizacji – od podstawowych do pełnych wizualizacji całego mieszkania
+- Liczba konsultacji z projektantem – od 1 do 5 spotkań
+- Zakres wykończenia łazienki – wysokość płytek, wielkość płytek, ilość oświetlenia, typy baterii itp.
+- Rodzaj podłóg – od laminatów, przez winylowe do drewnianych
+- Rodzaj drzwi – od przylgowych przez bezprzylgowe do ukrytych
+- Czas realizacji – od 6 do 16 tygodni
+
+Q: Czym różni się projekt indywidualny od pakietu?
+A: Projekt indywidualny to pełna personalizacja 1:1, dobór produktów z całego rynku, materiały w dowolnym przedziale cenowym po premium, wizualizacje całego mieszkania, wydłużony czas prac projektowych na konsultacje, brak ograniczeń katalogowych. Cena: 1700–5000 zł/m² + zabudowy stolarskie.
+W skrócie: Pakiety = szybciej i taniej. Projekt Indywidualny = najwyższa personalizacja i architekt tylko dla Ciebie.
+
+Q: Czy mogę zmienić elementy w pakiecie?
+A: Tak. W pakiecie masz jasno określone limity zmian:
+- Express: 2 zmiany produktów
+- Express Plus: 3 zmiany
+- Comfort / Szafran: 5 zmian
+- Premium / Pomarańczowy / Cynamonowy: 7 zmian
+Wszystkie zmiany rozliczane są różnicą cenową danego produktu.
+
+Q: Jak liczycie metry – po podłodze czy użytkowe?
+A: Metraż rozliczamy zawsze uczciwie i transparentnie — po powierzchni podłogi, bo tylko ona realnie wpływa na zakres prac i koszt materiałów. Klient od początku zna dokładny koszt, bez ukrytych dopłat.
+
+Q: Czy cena pakietu obejmuje meble, oświetlenie i gładzenie ścian?
+A: 
+- Oświetlenie – nie (tylko dobór oświetlenia na bazie 12 popularnych producentów oświetlenia)
+- Meble: NIE (podstawowe szafki łazienkowe w pakietach Express i Express Plus)
+- Gładzenie ścian – nie ma tego w zakresie prac, jest tylko gruntowanie + malowanie (w pakietach nie ma gładzi)
+Jeśli klient potrzebuje gładzi lub mebli, czy oświetlenia – możemy to zrealizować jako prace dodatkowe.
+
+Q: Czy oferujecie kuchnie na wymiar i szafy wnękowe?
+A: Tak – oferujemy kuchnie na wymiar i szafy wnękowe realizowane przez naszych sprawdzonych stolarzy. Projektujemy, koordynujemy i montujemy zabudowy tak, aby pasowały do całego wnętrza.
+
+Q: Czy mogę łączyć elementy z różnych pakietów?
+A: Tak. Każdy pakiet ma określony limit zmian między katalogami (2–7 zmian). Plus: dopłata za różnice cenowe oraz możliwość wyboru produktów z poza katalogu z 7 sklepów partnerskich.
+
+Q: Jaki jest koszt pakietu dla mieszkania 34 m², lub inny metraż?
+A: Ceny naszych pakietów startują już od 999 zł/m² w wersji Express. Pakiet Express Plus to od 1199 zł/m², Comfort zaczyna się od 1499 zł/m², a Premium – od 1999 zł/m². Aby przygotować precyzyjną wycenę dla Twojego mieszkania, potrzebujemy krótkiego spotkania lub przesłania rzutu lokalu — wtedy przeliczamy ofertę co do metra.
+
+Q: Ile kosztuje projekt indywidualny?
+A: 1700–5000 zł/m² (w zależności od standardu i złożoności). Projekt Indywidualny to w pełni spersonalizowana usługa, w której architekt pracuje z Tobą 1:1 i tworzy wnętrze dokładnie pod Twój styl, potrzeby i budżet. W ramach projektu otrzymujesz: kompletny układ funkcjonalny dopasowany do Twojego życia, pełną dokumentację wykonawczą (elektryka, hydraulika, ściany, podłogi, drzwi, łazienki), pełne wizualizacje 3D: łazienka, salon z kuchnią, hol, sypialnie, indywidualny dobór materiałów i produktów — bez ograniczeń katalogowych, z całego rynku, listy zakupowe i gotowe zestawienia produktów, stały kontakt i konsultacje z architektem (większa ilość godzin), możliwość wyboru materiałów premium z Polski i Europy.
+
+Q: Czy są jakieś dodatkowe opłaty poza ceną pakietu?
+A: Tak:
+- Dopłaty za zmiany produktów (różnica cenowa)
+- Prace dodatkowe poza zakresem katalogu (gładzie, przeróbki hydrauliczne, elektryczne, zabudowy GK, meble na wymiar)
+Wszystko pokazujemy z góry i podpisujemy przed pracami, żeby klient nie miał żadnych niespodzianek na podstawie cennika.
+
+Q: Jak wygląda VAT – czy mogę liczyć na 8%?
+A: Wykończenia mieszkań do 150 m² = 8% VAT. Wykończenia domów do 300 m² = 8% VAT. Wszystkie nasze pakiety mają już wliczony korzystny VAT 8% – klient od razu wie, ile płaci.
+
+Q: Czy macie rozpisany szczegółowy kosztorys?
+A: Tak – przygotowujemy dokładną specyfikację prac oraz materiałów dla konkretnego mieszkania. Nic nie jest ukryte.
+
+Q: Czy oferujecie płatność w transzach?
+A: Tak – umożliwiamy wygodny system rozliczeń w kilku transzach.
+
+Q: Jak wygląda rozliczenie za dodatkowe prace?
+A: Każde dodatkowe prace wyceniamy na podstawie naszego cennika pisemnie przed wykonaniem. Zero niespodzianek i pełna kontrola kosztów.
 
 📋 FALLBACK - Gdy brak danych:
 "Rozumiem. Żeby odpowiedzieć sensownie, potrzebuję jeszcze jednej informacji: {pytanie}."
