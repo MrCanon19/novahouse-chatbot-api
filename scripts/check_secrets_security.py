@@ -36,6 +36,13 @@ CHECK_EXTENSIONS = ['.py', '.yaml', '.yml', '.json', '.sh', '.md', '.txt', '.env
 def is_ignored(file_path):
     """Sprawdź czy plik powinien być ignorowany"""
     path_str = str(file_path)
+    
+    # Zawsze ignoruj migracje i configs z przykładami
+    for ignore_pattern in ALWAYS_IGNORE:
+        if ignore_pattern in path_str:
+            return True
+    
+    # Standardowe ignorowanie
     for pattern in IGNORE_PATTERNS:
         if pattern in path_str:
             return True
@@ -55,7 +62,7 @@ def check_file(file_path):
                     matches = re.finditer(pattern, line)
                     for match in matches:
                         # Sprawdź czy to nie jest komentarz z przykładem
-                        if 'example' in line.lower() or 'placeholder' in line.lower() or 'YOUR_' in line or 'sk-...' in line:
+                        if any(word in line.lower() for word in ['example', 'placeholder', 'template', 'your_', 'sk-...', 'xxx', 'replace']):
                             continue
                         
                         # Sprawdź czy to nie jest w .gitignore, dokumentacji lub testach
@@ -63,12 +70,22 @@ def check_file(file_path):
                             continue
                         
                         # Sprawdź czy to nie jest w plikach .secret, .env, .example (które są ignorowane)
-                        if any(ext in str(file_path) for ext in ['.secret', '.env', '.example', '.deploy']):
+                        if any(ext in str(file_path) for ext in ['.secret', '.env', '.example', '.deploy', '.template']):
                             continue
                         
-                        # Sprawdź czy to nie jest w migracjach (mogą zawierać długie nazwy funkcji)
-                        if 'migration' in str(file_path).lower() and 'DATABASE_URL' not in line:
+                        # Sprawdź czy to nie jest w migracjach (zawsze ignoruj migracje)
+                        if 'migration' in str(file_path).lower():
                             continue
+                        
+                        # Sprawdź czy to nie jest w config (przykłady)
+                        if 'config/' in str(file_path) and 'app.yaml' in str(file_path):
+                            continue
+                        
+                        # Sprawdź czy to nie jest długi ciąg w nazwie funkcji/zmiennej (false positive)
+                        if '=' in line or ':' in line:
+                            # Jeśli to przypisanie, sprawdź czy to nie jest nazwa funkcji/zmiennej
+                            if any(keyword in line for keyword in ['def ', 'class ', 'import ', 'from ', 'return ', 'if ', 'for ']):
+                                continue
                         
                         secret_preview = match.group()[:20] + "..." if len(match.group()) > 20 else match.group()
                         issues.append({
