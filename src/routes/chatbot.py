@@ -48,6 +48,19 @@ def get_openai_client():
             _openai_client = OpenAI(api_key=api_key)
             OPENAI_AVAILABLE = True
             logging.info(f"✅ OpenAI client initialized with model: {GPT_MODEL}")
+            # Test the client with a simple call to verify it works
+            try:
+                test_response = _openai_client.chat.completions.create(
+                    model=GPT_MODEL,
+                    messages=[{"role": "user", "content": "test"}],
+                    max_tokens=5
+                )
+                logging.info(f"✅ OpenAI client test successful - API key is valid")
+            except Exception as test_error:
+                logging.error(f"❌ OpenAI client test failed: {test_error} - API key may be invalid!")
+                _openai_client = None
+                OPENAI_AVAILABLE = False
+                return None
         except ImportError:
             OPENAI_AVAILABLE = False
             logging.warning("⚠️  openai package not installed - GPT disabled")
