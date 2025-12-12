@@ -1271,18 +1271,26 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                     from src.integrations.monday_client import MondayClient
 
                     # Get message count for lead scoring
-                    message_count = ChatMessage.query.filter_by(
-                        conversation_id=conversation.id
-                    ).count()
+                    if db_available and conversation:
+                        try:
+                            message_count = ChatMessage.query.filter_by(
+                                conversation_id=conversation.id
+                            ).count()
+                            # Generate conversation summary
+                            all_messages = (
+                                ChatMessage.query.filter_by(conversation_id=conversation.id)
+                                .order_by(ChatMessage.timestamp.asc())
+                                .all()
+                            )
+                            conv_summary = generate_conversation_summary(all_messages, context_memory)
+                        except Exception:
+                            message_count = 0
+                            conv_summary = f"Konwersacja z chatbotem. Dane: {json.dumps(context_memory, ensure_ascii=False)}"
+                    else:
+                        message_count = 0
+                        conv_summary = f"Konwersacja z chatbotem. Dane: {json.dumps(context_memory, ensure_ascii=False)}"
+                    
                     lead_score = calculate_lead_score(context_memory, message_count)
-
-                    # Generate conversation summary
-                    all_messages = (
-                        ChatMessage.query.filter_by(conversation_id=conversation.id)
-                        .order_by(ChatMessage.timestamp.asc())
-                        .all()
-                    )
-                    conv_summary = generate_conversation_summary(all_messages, context_memory)
 
                     # Create lead
                     lead = Lead(
