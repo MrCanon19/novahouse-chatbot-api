@@ -807,18 +807,18 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
         # Try to get conversation from DB
         try:
             conversation = ChatConversation.query.filter_by(session_id=session_id).first()
-        if not conversation:
-            conversation = ChatConversation(
-                session_id=session_id,
-                started_at=datetime.now(timezone.utc),
-                context_data=json.dumps({}),
-            )
-            db.session.add(conversation)
-            db.session.commit()
+            if not conversation:
+                conversation = ChatConversation(
+                    session_id=session_id,
+                    started_at=datetime.now(timezone.utc),
+                    context_data=json.dumps({}),
+                )
+                db.session.add(conversation)
+                db.session.commit()
 
             # Load context with error handling
             try:
-        context_memory = json.loads(conversation.context_data or "{}")
+                context_memory = json.loads(conversation.context_data or "{}")
                 db_available = True
             except (json.JSONDecodeError, TypeError) as e:
                 logging.warning(f"Failed to parse context_data for session {session_id}: {e}, using empty dict")
