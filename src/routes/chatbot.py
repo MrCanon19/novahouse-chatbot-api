@@ -917,12 +917,18 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                 try:
                     # Pobierz historię konwersacji (ujednolicony limit do 30)
                     message_history_limit = int(os.getenv("MESSAGE_HISTORY_LIMIT", "30"))
-                    history = (
-                        ChatMessage.query.filter_by(conversation_id=conversation.id)
-                        .order_by(ChatMessage.timestamp.desc())
-                        .limit(message_history_limit)
-                        .all()
-                    )
+                    if db_available and conversation:
+                        try:
+                            history = (
+                                ChatMessage.query.filter_by(conversation_id=conversation.id)
+                                .order_by(ChatMessage.timestamp.desc())
+                                .limit(message_history_limit)
+                                .all()
+                            )
+                        except Exception:
+                            history = []
+                    else:
+                        history = []
 
                     context = "\n".join(
                         [
