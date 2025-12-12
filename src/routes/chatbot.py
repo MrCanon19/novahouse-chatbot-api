@@ -1424,15 +1424,47 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
         logging.error(f"Database error in chat processing: {e}", exc_info=True)
         db.session.rollback()
         # Try to continue without database (graceful degradation)
+        # CRITICAL: Even if database fails, try to use GPT for response
         try:
-            # Return a basic response without saving to database
+            logging.warning("[DB ERROR] Database failed, but attempting GPT response anyway...")
+            # Try to get GPT response even without database
+            client = ensure_openai_client()
+            if not client:
+                client = get_openai_client()
+            
+            if client:
+                try:
+                    # Use GPT even without database context
+                    messages = [
+                        {"role": "system", "content": SYSTEM_PROMPT},
+                        {"role": "user", "content": user_message},
+                    ]
+                    response = client.chat.completions.create(
+                        model=GPT_MODEL,
+                        messages=messages,
+                        max_tokens=350,
+                        temperature=0.6,
+                    )
+                    bot_response = response.choices[0].message.content
+                    if bot_response and bot_response.strip():
+                        logging.info(f"[GPT SUCCESS] Got response despite DB error: {bot_response[:50]}...")
+                        return {
+                            "response": bot_response,
+                            "session_id": session_id,
+                            "conversation_id": None,
+                        }
+                except Exception as gpt_error:
+                    logging.error(f"[GPT ERROR in DB fallback] {gpt_error}", exc_info=True)
+            
+            # If GPT also failed, use basic fallback
+            logging.warning("[FALLBACK] Both DB and GPT failed, using basic response")
             return {
-                "response": "Cześć! Mogę pomóc Ci z informacjami o pakietach wykończeniowych NovaHouse. O co chciałbyś zapytać?",
+                "response": "Dziękuję za wiadomość! Jak mogę pomóc w wykończeniu Twojego mieszkania? Możesz zapytać o ofertę, pakiety lub terminy realizacji.",
                 "session_id": session_id,
                 "conversation_id": None,
             }
         except Exception as fallback_error:
-            logging.error(f"Fallback also failed: {fallback_error}")
+            logging.error(f"Fallback also failed: {fallback_error}", exc_info=True)
             return {
                 "response": "Przepraszam, problem z bazą danych. Spróbuj ponownie za chwilę.",
                 "session_id": session_id,
