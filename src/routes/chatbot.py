@@ -239,7 +239,7 @@ def extract_context(message: str, existing_context: dict | None = None):
                 preferred_name = existing_name  # Keep original to preserve formatting
                 # Mark in context that name was confirmed
                 ctx["_name_confirmed"] = True
-            else:
+    else:
                 preferred_name = value
                 logging.info(f"✓ Extracted name from intro pattern: {preferred_name}")
         else:
@@ -251,10 +251,10 @@ def extract_context(message: str, existing_context: dict | None = None):
         # Skip if message starts with common greetings
         text_start = text.strip()[:20].lower()
         if not any(text_start.startswith(greeting) for greeting in ["cześć", "hej", "dzień", "witam", "siema"]):
-            capitalized_pairs = re.findall(
-                r"[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+\s+[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+",
-                text,
-            )
+        capitalized_pairs = re.findall(
+            r"[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+\s+[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+",
+            text,
+        )
         if capitalized_pairs:
                 candidate = capitalized_pairs[-1].strip()
                 # Validate - reject if in blacklist
@@ -315,11 +315,11 @@ def extract_context(message: str, existing_context: dict | None = None):
                     ctx["city"] = value
             else:
                 # Fallback: try to clean up common endings
-                lower_city = candidate_city.lower()
-                if lower_city.endswith("iu") and len(candidate_city) > 5:
-                    candidate_city = candidate_city[:-2]
-                elif lower_city.endswith("u") and len(candidate_city) > 5:
-                    candidate_city = candidate_city[:-1]
+        lower_city = candidate_city.lower()
+        if lower_city.endswith("iu") and len(candidate_city) > 5:
+            candidate_city = candidate_city[:-2]
+        elif lower_city.endswith("u") and len(candidate_city) > 5:
+            candidate_city = candidate_city[:-1]
                 elif lower_city.endswith("ia") and len(candidate_city) > 5:
                     candidate_city = candidate_city  # Keep as is
                 
@@ -806,19 +806,19 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
         
         # Try to get conversation from DB
         try:
-            conversation = ChatConversation.query.filter_by(session_id=session_id).first()
-            if not conversation:
-                conversation = ChatConversation(
-                    session_id=session_id,
-                    started_at=datetime.now(timezone.utc),
-                    context_data=json.dumps({}),
-                )
-                db.session.add(conversation)
-                db.session.commit()
+        conversation = ChatConversation.query.filter_by(session_id=session_id).first()
+        if not conversation:
+            conversation = ChatConversation(
+                session_id=session_id,
+                started_at=datetime.now(timezone.utc),
+                context_data=json.dumps({}),
+            )
+            db.session.add(conversation)
+            db.session.commit()
 
             # Load context with error handling
             try:
-                context_memory = json.loads(conversation.context_data or "{}")
+        context_memory = json.loads(conversation.context_data or "{}")
                 db_available = True
             except (json.JSONDecodeError, TypeError) as e:
                 logging.warning(f"Failed to parse context_data for session {session_id}: {e}, using empty dict")
