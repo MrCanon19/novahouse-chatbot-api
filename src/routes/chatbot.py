@@ -239,7 +239,7 @@ def extract_context(message: str, existing_context: dict | None = None):
                 preferred_name = existing_name  # Keep original to preserve formatting
                 # Mark in context that name was confirmed
                 ctx["_name_confirmed"] = True
-            else:
+    else:
                 preferred_name = value
                 logging.info(f"✓ Extracted name from intro pattern: {preferred_name}")
         else:
@@ -251,11 +251,11 @@ def extract_context(message: str, existing_context: dict | None = None):
         # Skip if message starts with common greetings
         text_start = text.strip()[:20].lower()
         if not any(text_start.startswith(greeting) for greeting in ["cześć", "hej", "dzień", "witam", "siema"]):
-            capitalized_pairs = re.findall(
-                r"[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+\s+[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+",
-                text,
-            )
-            if capitalized_pairs:
+        capitalized_pairs = re.findall(
+            r"[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+\s+[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+",
+            text,
+        )
+        if capitalized_pairs:
                 candidate = capitalized_pairs[-1].strip()
                 # Validate - reject if in blacklist
                 valid, value, _ = ContextValidator.validate_name(candidate)
