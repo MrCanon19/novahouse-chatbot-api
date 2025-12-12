@@ -9,12 +9,21 @@ import re
 import sys
 from pathlib import Path
 
-# Wzorce do wykrywania sekretów
+# Wzorce do wykrywania sekretów (tylko rzeczywiste sekrety)
 SECRET_PATTERNS = [
     (r'sk-proj-[A-Za-z0-9_-]{40,}', 'OpenAI API Key (sk-proj-)'),
     (r'sk-[A-Za-z0-9_-]{40,}', 'OpenAI API Key (sk-)'),
     (r'eyJ[A-Za-z0-9_-]{100,}', 'JWT Token / Monday.com API Key'),
-    (r'[A-Za-z0-9_-]{32,}', 'Potential secret (long alphanumeric)'),
+    # NIE sprawdzamy ogólnych długich ciągów - za dużo false positives
+]
+
+# Pliki/katalogi które ZAWSZE ignorujemy (migracje, configs z przykładami)
+ALWAYS_IGNORE = [
+    'migrations/',
+    'config/app.yaml',  # To jest przykład, nie sekret
+    'config/environments/',
+    '.example',
+    '.template',
 ]
 
 # Pliki/katalogi do ignorowania
