@@ -36,21 +36,30 @@ fi
 echo "✅ All required secrets found"
 echo ""
 
-# Create temporary deploy file with full path
+# app.yaml.secret already has full structure, use it directly
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-DEPLOY_FILE="$PROJECT_DIR/app.yaml.deploy.$(date +%s)"
 
 cd "$PROJECT_DIR"
+
+# Create temporary deploy file (app.yaml.secret has full structure)
+DEPLOY_FILE="$PROJECT_DIR/app.yaml.deploy.$(date +%s)"
 cp app.yaml.secret "$DEPLOY_FILE"
 
 echo "📤 Deploying to Google App Engine..."
 echo "   Using file: $DEPLOY_FILE"
+
+# Check if deploy file exists
+if [ ! -f "$DEPLOY_FILE" ]; then
+    echo "❌ ERROR: Deploy file not created: $DEPLOY_FILE"
+    exit 1
+fi
+
+# Deploy directly (app.yaml.secret has full structure)
 gcloud app deploy "$DEPLOY_FILE" \
     --quiet \
     --project=glass-core-467907-e9 \
-    --version="$(date +%Y%m%d%H%M%S)" \
-    --no-promote
+    --version="$(date +%Y%m%d%H%M%S)"
 
 # Wait a moment for deployment to start
 sleep 2
