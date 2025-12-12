@@ -836,6 +836,13 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
         # 4. Jeśli nie znaleziono w FAQ, ZAWSZE użyj AI (OpenAI GPT) - PRIORYTET!
         if not bot_response:
             client = ensure_openai_client()
+            if not client:
+                # Try direct initialization as fallback
+                logging.warning("[WARNING] ensure_openai_client() returned None - trying direct initialization...")
+                client = get_openai_client()
+                if client:
+                    logging.info("[INFO] Direct get_openai_client() succeeded")
+            
             if client:
                 try:
                     # Pobierz historię konwersacji (ujednolicony limit do 30)
@@ -1008,12 +1015,38 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                     # Fallback tylko przy błędzie GPT - ale lepszy fallback
                     bot_response = get_default_response(user_message)
             else:
-                logging.warning("[WARNING] OpenAI nie skonfigurowany - używam fallback")
-                # Check if OPENAI_API_KEY is set but client failed to initialize
-                openai_key = os.getenv("OPENAI_API_KEY")
-                if not openai_key or openai_key.lower().startswith("test_"):
-                    logging.warning("OPENAI_API_KEY not set or is test key - GPT disabled")
-                bot_response = get_default_response(user_message)
+                # Try to get client again - maybe it wasn't initialized yet
+                logging.warning("[WARNING] OpenAI client is None - attempting to initialize...")
+                client = get_openai_client()
+                if client:
+                    logging.info("[INFO] OpenAI client initialized successfully - retrying GPT call")
+                    try:
+                        messages = [
+                            {"role": "system", "content": SYSTEM_PROMPT + memory_prompt},
+                            {
+                                "role": "user",
+                                "content": f"Context:\n{context}\n\nUser: {user_message}",
+                            },
+                        ]
+                        response = client.chat.completions.create(
+                            model=GPT_MODEL,
+                            messages=messages,
+                            max_tokens=350,
+                            temperature=0.6,
+                        )
+                        bot_response = response.choices[0].message.content
+                        logging.info(f"[OpenAI GPT] Response received (retry): {bot_response[:100] if bot_response else 'EMPTY'}...")
+                    except Exception as e:
+                        logging.error(f"[GPT ERROR on retry] {type(e).__name__}: {e}", exc_info=True)
+                        bot_response = get_default_response(user_message)
+                else:
+                    # Check if OPENAI_API_KEY is set but client failed to initialize
+                    openai_key = os.getenv("OPENAI_API_KEY")
+                    if not openai_key or openai_key.lower().startswith("test_"):
+                        logging.warning("OPENAI_API_KEY not set or is test key - GPT disabled")
+                    else:
+                        logging.error(f"OPENAI_API_KEY is set but client initialization failed - check API key validity")
+                    bot_response = get_default_response(user_message)
 
         # Jeśli NADAL brak odpowiedzi (nie powinno się zdarzyć)
         if not bot_response:
