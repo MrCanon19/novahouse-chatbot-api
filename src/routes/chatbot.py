@@ -1461,7 +1461,7 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
         return {
             "response": bot_response,
             "session_id": session_id,
-            "conversation_id": conversation.id,
+            "conversation_id": conversation.id if conversation else None,
             "context": context_memory,
             "lead_score": lead_score,
             "next_best_action": next_action,
