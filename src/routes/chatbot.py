@@ -217,7 +217,9 @@ def extract_context(message: str, existing_context: dict | None = None):
 
     # Name extraction - CRITICAL: "Cześć" is a greeting, NOT a name!
     # Only extract if explicitly introduced with patterns like "jestem X", "nazywam się X", "mam na imię X"
+    # IMPORTANT: If name already exists and user repeats it, confirm it's the same person
     preferred_name = None
+    existing_name = original_context.get("name", "").strip()
     
     # Pattern 1: Explicit introduction ("jestem Michał", "nazywam się Anna Kowalska")
     intro_match = re.search(
@@ -230,8 +232,16 @@ def extract_context(message: str, existing_context: dict | None = None):
         # CRITICAL: Validate immediately - reject if in blacklist (greetings like "Cześć")
         valid, value, _ = ContextValidator.validate_name(candidate)
         if valid:
-            preferred_name = value
-            logging.info(f"✓ Extracted name from intro pattern: {preferred_name}")
+            # Check if this is the same name as already in context
+            if existing_name and value.lower() == existing_name.lower():
+                # Same name - mark it as confirmed (don't overwrite, just confirm)
+                logging.info(f"✓ Name '{value}' confirmed (same as existing '{existing_name}')")
+                preferred_name = existing_name  # Keep original to preserve formatting
+                # Mark in context that name was confirmed
+                ctx["_name_confirmed"] = True
+    else:
+                preferred_name = value
+                logging.info(f"✓ Extracted name from intro pattern: {preferred_name}")
         else:
             logging.warning(f"✗ Rejected name candidate (blacklist/validation): {candidate}")
     
@@ -241,11 +251,11 @@ def extract_context(message: str, existing_context: dict | None = None):
         # Skip if message starts with common greetings
         text_start = text.strip()[:20].lower()
         if not any(text_start.startswith(greeting) for greeting in ["cześć", "hej", "dzień", "witam", "siema"]):
-            capitalized_pairs = re.findall(
-                r"[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+\s+[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+",
-                text,
-            )
-            if capitalized_pairs:
+        capitalized_pairs = re.findall(
+            r"[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+\s+[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+",
+            text,
+        )
+        if capitalized_pairs:
                 candidate = capitalized_pairs[-1].strip()
                 # Validate - reject if in blacklist
                 valid, value, _ = ContextValidator.validate_name(candidate)
@@ -305,11 +315,11 @@ def extract_context(message: str, existing_context: dict | None = None):
                     ctx["city"] = value
             else:
                 # Fallback: try to clean up common endings
-                lower_city = candidate_city.lower()
-                if lower_city.endswith("iu") and len(candidate_city) > 5:
-                    candidate_city = candidate_city[:-2]
-                elif lower_city.endswith("u") and len(candidate_city) > 5:
-                    candidate_city = candidate_city[:-1]
+        lower_city = candidate_city.lower()
+        if lower_city.endswith("iu") and len(candidate_city) > 5:
+            candidate_city = candidate_city[:-2]
+        elif lower_city.endswith("u") and len(candidate_city) > 5:
+            candidate_city = candidate_city[:-1]
                 elif lower_city.endswith("ia") and len(candidate_city) > 5:
                     candidate_city = candidate_city  # Keep as is
                 
@@ -321,9 +331,9 @@ def extract_context(message: str, existing_context: dict | None = None):
             # Fallback to old logic
             if candidate_city.lower().startswith("warszaw"):
                 candidate_city = "Warszawa"
-            valid, value, _ = ContextValidator.validate_city(candidate_city)
-            if valid:
-                ctx["city"] = value
+        valid, value, _ = ContextValidator.validate_city(candidate_city)
+        if valid:
+            ctx["city"] = value
 
     # Budget (numbers with tys/PLN)
     budget_match = re.search(r"(\d+[\s\d]*)(?:\s?tys|\s?000|\s?pln|\s?zł)", text, re.IGNORECASE)
@@ -790,19 +800,19 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
         
         # Try to get conversation from DB
         try:
-            conversation = ChatConversation.query.filter_by(session_id=session_id).first()
-            if not conversation:
-                conversation = ChatConversation(
-                    session_id=session_id,
-                    started_at=datetime.now(timezone.utc),
-                    context_data=json.dumps({}),
-                )
-                db.session.add(conversation)
-                db.session.commit()
-            
+        conversation = ChatConversation.query.filter_by(session_id=session_id).first()
+        if not conversation:
+            conversation = ChatConversation(
+                session_id=session_id,
+                started_at=datetime.now(timezone.utc),
+                context_data=json.dumps({}),
+            )
+            db.session.add(conversation)
+            db.session.commit()
+
             # Load context with error handling
             try:
-                context_memory = json.loads(conversation.context_data or "{}")
+        context_memory = json.loads(conversation.context_data or "{}")
                 db_available = True
             except (json.JSONDecodeError, TypeError) as e:
                 logging.warning(f"Failed to parse context_data for session {session_id}: {e}, using empty dict")
@@ -837,14 +847,14 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                 conversation.context_data = json.dumps(context_memory, ensure_ascii=False)
                 # Try to save user message
                 try:
-                    user_msg = ChatMessage(
-                        conversation_id=conversation.id,
-                        message=user_message,
-                        sender="user",
-                        timestamp=datetime.now(timezone.utc),
-                    )
-                    db.session.add(user_msg)
-                    db.session.commit()
+        user_msg = ChatMessage(
+            conversation_id=conversation.id,
+            message=user_message,
+            sender="user",
+            timestamp=datetime.now(timezone.utc),
+        )
+        db.session.add(user_msg)
+        db.session.commit()
                 except Exception as msg_error:
                     logging.warning(f"[DB] Failed to save message, but continuing: {msg_error}")
                     db.session.rollback()
@@ -907,7 +917,7 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                 else:
                     logging.error("[ERROR] OPENAI_API_KEY is NOT SET in environment!")
                 client = get_openai_client()
-                if client:
+            if client:
                     logging.info("[INFO] Direct get_openai_client() succeeded")
                 else:
                     logging.error("[ERROR] Direct get_openai_client() also returned None!")
@@ -919,12 +929,12 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                     message_history_limit = int(os.getenv("MESSAGE_HISTORY_LIMIT", "30"))
                     if db_available and conversation:
                         try:
-                            history = (
-                                ChatMessage.query.filter_by(conversation_id=conversation.id)
-                                .order_by(ChatMessage.timestamp.desc())
-                                .limit(message_history_limit)
-                                .all()
-                            )
+                    history = (
+                        ChatMessage.query.filter_by(conversation_id=conversation.id)
+                        .order_by(ChatMessage.timestamp.desc())
+                        .limit(message_history_limit)
+                        .all()
+                    )
                         except Exception:
                             history = []
                     else:
@@ -1133,21 +1143,21 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                     except ImportError:
                         # Cache not available, use GPT directly
                         logging.debug(f"[OpenAI GPT] Przetwarzanie (no cache): {user_message[:50]}...")
-                        messages = [
-                            {"role": "system", "content": SYSTEM_PROMPT + memory_prompt},
-                            {
-                                "role": "user",
-                                "content": f"Context:\n{context}\n\nUser: {user_message}",
-                            },
-                        ]
-                        response = client.chat.completions.create(
-                            model=GPT_MODEL,
-                            messages=messages,
+                    messages = [
+                        {"role": "system", "content": SYSTEM_PROMPT + memory_prompt},
+                        {
+                            "role": "user",
+                            "content": f"Context:\n{context}\n\nUser: {user_message}",
+                        },
+                    ]
+                    response = client.chat.completions.create(
+                        model=GPT_MODEL,
+                        messages=messages,
                             max_tokens=350,
                             temperature=0.6,
                             timeout=30.0,  # 30 second timeout to prevent hanging
-                        )
-                        bot_response = response.choices[0].message.content
+                    )
+                    bot_response = response.choices[0].message.content
                         # Validate GPT response
                         if not bot_response or not bot_response.strip():
                             logging.error("[GPT ERROR] Empty response from GPT API (no cache)!")
@@ -1192,7 +1202,7 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                     except Exception as e:
                         logging.error(f"[GPT ERROR on retry] {type(e).__name__}: {e}", exc_info=True)
                         logging.error(f"[GPT ERROR on retry] Full error details - message: {user_message[:50]}...")
-                        bot_response = get_default_response(user_message)
+                bot_response = get_default_response(user_message)
                         logging.warning(f"[FALLBACK] Using default response (retry failed): {bot_response[:50]}...")
                 else:
                     # Check if OPENAI_API_KEY is set but client failed to initialize
@@ -1254,13 +1264,13 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
         # Zapisz odpowiedź bota (only if DB is available)
         if db_available and conversation:
             try:
-                bot_msg = ChatMessage(
-                    conversation_id=conversation.id,
-                    message=bot_response,
-                    sender="bot",
-                    timestamp=datetime.now(timezone.utc),
-                )
-                db.session.add(bot_msg)
+        bot_msg = ChatMessage(
+            conversation_id=conversation.id,
+            message=bot_response,
+            sender="bot",
+            timestamp=datetime.now(timezone.utc),
+        )
+        db.session.add(bot_msg)
                 # Update context in DB
                 try:
                     conversation.context_data = json.dumps(context_memory, ensure_ascii=False)
@@ -1310,7 +1320,7 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
         confirmation_intent = check_data_confirmation_intent(user_message)
         # Safe query with error handling for missing columns
         try:
-            existing_lead = Lead.query.filter_by(session_id=session_id).first()
+        existing_lead = Lead.query.filter_by(session_id=session_id).first()
         except Exception as e:
             logging.warning(f"Failed to query Lead for session {session_id}: {e}")
             existing_lead = None
@@ -1329,16 +1339,16 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                     # Get message count for lead scoring
                     if db_available and conversation:
                         try:
-                            message_count = ChatMessage.query.filter_by(
-                                conversation_id=conversation.id
-                            ).count()
-                            # Generate conversation summary
-                            all_messages = (
-                                ChatMessage.query.filter_by(conversation_id=conversation.id)
-                                .order_by(ChatMessage.timestamp.asc())
-                                .all()
-                            )
-                            conv_summary = generate_conversation_summary(all_messages, context_memory)
+                    message_count = ChatMessage.query.filter_by(
+                        conversation_id=conversation.id
+                    ).count()
+                    # Generate conversation summary
+                    all_messages = (
+                        ChatMessage.query.filter_by(conversation_id=conversation.id)
+                        .order_by(ChatMessage.timestamp.asc())
+                        .all()
+                    )
+                    conv_summary = generate_conversation_summary(all_messages, context_memory)
                         except Exception:
                             message_count = 0
                             conv_summary = f"Konwersacja z chatbotem. Dane: {json.dumps(context_memory, ensure_ascii=False)}"
@@ -1447,16 +1457,16 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                     context_memory.get("name")
                     and (context_memory.get("email") or context_memory.get("phone"))
                 )
-                
+
                 # Also create lead if we have project data (metraż/budżet) even without contact
                 # This allows us to capture leads earlier
                 has_project_data = context_memory.get("square_meters") or context_memory.get("budget")
-                
+
                 # Calculate lead score first to decide
-                message_count = ChatMessage.query.filter_by(
-                    conversation_id=conversation.id
-                ).count()
-                lead_score = calculate_lead_score(context_memory, message_count)
+                    message_count = ChatMessage.query.filter_by(
+                        conversation_id=conversation.id
+                    ).count()
+                    lead_score = calculate_lead_score(context_memory, message_count)
                 
                 # Create lead if:
                 # 1. We have contact data (name + email/phone)
@@ -1540,7 +1550,7 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
         # Calculate lead score (use in-memory message count if DB unavailable)
         if db_available and conversation:
             try:
-                message_count = ChatMessage.query.filter_by(conversation_id=conversation.id).count()
+        message_count = ChatMessage.query.filter_by(conversation_id=conversation.id).count()
             except Exception:
                 message_count = 0
         else:
@@ -1587,7 +1597,7 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                     bot_response = response.choices[0].message.content
                     if bot_response and bot_response.strip():
                         logging.info(f"[GPT SUCCESS] Got response despite DB error: {bot_response[:50]}...")
-                        return {
+        return {
                             "response": bot_response,
                             "session_id": session_id,
                             "conversation_id": None,
@@ -1606,9 +1616,9 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
             logging.error(f"Fallback also failed: {fallback_error}", exc_info=True)
             return {
                 "response": "Przepraszam, problem z bazą danych. Spróbuj ponownie za chwilę.",
-                "session_id": session_id,
-                "conversation_id": None,
-            }
+            "session_id": session_id,
+            "conversation_id": None,
+        }
     except Exception as e:
         logging.error(f"[CRITICAL] Unexpected chat processing error: {e}", exc_info=True)
         db.session.rollback()
@@ -1633,10 +1643,10 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                     bot_response = response.choices[0].message.content
                     if bot_response and bot_response.strip():
                         logging.info(f"[GPT SUCCESS] Got response despite unexpected error: {bot_response[:50]}...")
-                        return {
+        return {
                             "response": bot_response,
-                            "session_id": session_id,
-                            "conversation_id": None,
+            "session_id": session_id,
+            "conversation_id": None,
                         }
                 except Exception as gpt_error:
                     logging.error(f"[GPT ERROR in unexpected error handler] {gpt_error}", exc_info=True)
@@ -1690,7 +1700,7 @@ def ensure_openai_client():
             openai_client = client
             AI_PROVIDER = "openai"
             logging.debug("✅ OpenAI GPT-4o-mini client ready")
-            return openai_client
+    return openai_client
         else:
             logging.warning("⚠️  get_openai_client() returned None - check API key validity")
             return None
