@@ -2,6 +2,7 @@
 GPT Strategy - Uses OpenAI GPT to generate responses when FAQ doesn't match
 """
 import json
+import logging
 import os
 from typing import Any, Dict, Optional
 
@@ -57,7 +58,7 @@ class GptStrategy(ChatStrategy):
 
         # Skip if OpenAI client is not available
         if not self.openai_client:
-            print("[GPT Strategy] OpenAI client not available - skipping")
+            logging.warning("[GPT Strategy] OpenAI client not available - skipping")
             return context
 
         user_message = context.get("user_message")

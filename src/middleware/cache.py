@@ -2,6 +2,7 @@
 Simple caching system
 """
 
+import logging
 import time
 from functools import wraps
 from typing import Any, Optional
@@ -101,11 +102,11 @@ def cached(ttl=300, key_prefix=""):
             # Try to get from cache
             cached_value = cache.get(cache_key)
             if cached_value is not None:
-                print(f"✅ Cache HIT: {cache_key}")
+                logging.debug(f"✅ Cache HIT: {cache_key}")
                 return cached_value
 
             # Cache miss - execute function
-            print(f"❌ Cache MISS: {cache_key}")
+            logging.debug(f"❌ Cache MISS: {cache_key}")
             result = f(*args, **kwargs)
 
             # Store in cache

@@ -4,6 +4,7 @@ Zencal API Client
 Integracja z systemem rezerwacji Zencal (alternatywa dla Calendly)
 """
 
+import logging
 import os
 from typing import Dict, Optional
 
@@ -22,9 +23,9 @@ class ZencalClient:
         self.api_url = "https://api.zencal.io/v1"
 
         if not self.api_key:
-            print("WARNING: ZENCAL_API_KEY not found in environment variables")
+            logging.warning("WARNING: ZENCAL_API_KEY not found in environment variables")
         if not self.workspace_id:
-            print("WARNING: ZENCAL_WORKSPACE_ID not found in environment variables")
+            logging.warning("WARNING: ZENCAL_WORKSPACE_ID not found in environment variables")
 
     def _make_request(
         self, method: str, endpoint: str, data: Optional[Dict] = None
@@ -32,7 +33,7 @@ class ZencalClient:
         """Wykonaj request do Zencal API"""
 
         if not self.api_key:
-            print(
+            logging.warning(
                 "ALERT: ZENCAL_API_KEY not configured or expired! Sprawdź sekret w repozytorium GitHub."
             )
             return None
@@ -55,11 +56,14 @@ class ZencalClient:
             return response.json()
 
         except requests.exceptions.RequestException as e:
-            print(f"Zencal API Error: {e}")
+            logging.error(f"Zencal API Error: {e}", exc_info=True)
             return None
 
     def get_booking_link(
-        self, client_name: Optional[str] = None, client_email: Optional[str] = None
+        self,
+        client_name: Optional[str] = None,
+        client_email: Optional[str] = None,
+        consultant_booking_url: Optional[str] = None,
     ) -> str:
         """
         Pobierz link do rezerwacji z pre-filled danymi
@@ -67,17 +71,13 @@ class ZencalClient:
         Args:
             client_name: Imię klienta (optional)
             client_email: Email klienta (optional)
+            consultant_booking_url: Unikalny URL konsultanta (jeśli przypisany do konkretnego konsultanta)
 
         Returns:
             URL do strony rezerwacji Zencal
         """
-        # Jeśli mamy API key i workspace, możemy użyć API
-        # W przeciwnym razie zwracamy statyczny link
-        if self.api_key and self.workspace_id:
-            # Można dodać logikę pre-fill przez API jeśli Zencal to wspiera
-            base_url = self.booking_page_url
-        else:
-            base_url = self.booking_page_url
+        # Jeśli mamy przypisanego konsultanta, użyj jego unikalnego URL
+        base_url = consultant_booking_url or self.booking_page_url
 
         # Dodaj parametry do URL jeśli dostępne
         params = []
@@ -123,14 +123,15 @@ class ZencalClient:
                 'phone': str,
                 'date': str (YYYY-MM-DD),
                 'time': str (HH:MM),
-                'notes': str (optional)
+                'notes': str (optional),
+                'zencal_user_id': str (optional) - ID konsultanta w Zencal
             }
 
         Returns:
             Zencal booking ID lub None
         """
         if not self.api_key or not self.workspace_id:
-            print("Zencal not configured, skipping booking creation")
+            logging.warning("Zencal not configured, skipping booking creation")
             return None
 
         endpoint = f"workspaces/{self.workspace_id}/bookings"
@@ -143,12 +144,34 @@ class ZencalClient:
             "notes": booking_data.get("notes", "Rezerwacja z NovaHouse chatbota"),
         }
 
+        # Jeśli mamy przypisanego konsultanta, dodaj jego ID do payload
+        if booking_data.get("zencal_user_id"):
+            payload["user_id"] = booking_data.get("zencal_user_id")
+
         result = self._make_request("POST", endpoint, payload)
 
         if result and "id" in result:
-            print(f"Created Zencal booking: {result['id']}")
+            logging.info(f"Created Zencal booking: {result['id']}")
             return result["id"]
 
+        return None
+
+    def get_team_members(self) -> Optional[list]:
+        """
+        Pobierz listę członków zespołu z Zencal
+
+        Returns:
+            Lista członków zespołu lub None
+        """
+        if not self.api_key or not self.workspace_id:
+            return None
+
+        endpoint = f"workspaces/{self.workspace_id}/team-members"
+
+        result = self._make_request("GET", endpoint)
+
+        if result and "members" in result:
+            return result["members"]
         return None
 
     def cancel_booking(self, booking_id: str) -> bool:
@@ -169,4 +192,22 @@ class ZencalClient:
         result = self._make_request("DELETE", endpoint)
 
         return result is not None
+
+    def test_connection(self) -> bool:
+        """
+        Test połączenia z Zencal API
+
+        Returns:
+            True jeśli połączenie działa, False w przeciwnym razie
+        """
+        if not self.api_key or not self.workspace_id:
+            return False
+
+        try:
+            # Spróbuj pobrać informacje o workspace
+            endpoint = f"workspaces/{self.workspace_id}"
+            result = self._make_request("GET", endpoint)
+            return result is not None
+        except Exception:
+            return False
 

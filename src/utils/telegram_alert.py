@@ -5,7 +5,7 @@ import requests
 
 def send_telegram_alert(message: str):
     telegram_token = os.getenv("TELEGRAM_BOT_TOKEN")
-    telegram_chat_id = "-5025671405"
+    telegram_chat_id = os.getenv("TELEGRAM_CHAT_ID", "7319412445")  # Default: NovaHouse monitoring group
     if not telegram_token:
         print("ALERT: TELEGRAM_BOT_TOKEN not configured! Podaj token bota w sekrecie środowiska.")
         return

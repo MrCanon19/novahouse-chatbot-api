@@ -6,9 +6,13 @@ Automated backups and RODO-compliant data export
 
 import csv
 import json
+import logging
 import os
+import subprocess
 from datetime import datetime, timezone
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
+
+logger = logging.getLogger(__name__)
 
 
 class BackupService:
@@ -27,6 +31,21 @@ class BackupService:
             )
 
         os.makedirs(self.backup_dir, exist_ok=True)
+        
+        # Log backup location
+        logger.info(f"📁 Backup directory: {self.backup_dir}")
+
+        # GPG encryption settings
+        # SECURITY: Never hardcode secrets! Always use environment variables.
+        self.gpg_key_id = os.getenv("GPG_KEY_ID")
+        self.gpg_passphrase = os.getenv("GPG_PASSPHRASE")
+        self.gpg_enabled = os.getenv("GPG_ENABLED", "true").lower() == "true"
+        
+        # Warn if GPG is enabled but credentials are missing
+        if self.gpg_enabled and (not self.gpg_key_id or not self.gpg_passphrase):
+            logger.warning("⚠️ WARNING: GPG_ENABLED=true but GPG_KEY_ID or GPG_PASSPHRASE not set!")
+            logger.warning("   Backups will be created WITHOUT encryption.")
+            self.gpg_enabled = False
 
     def export_all_data(self, format: str = "json") -> str:
         """
@@ -49,7 +68,7 @@ class BackupService:
                 raise ValueError(f"Unsupported format: {format}")
 
         except Exception as e:
-            print(f"❌ Export failed: {e}")
+            logger.error(f"❌ Export failed: {e}", exc_info=True)
             raise
 
     def _export_json(self, timestamp: str) -> str:
@@ -155,7 +174,7 @@ class BackupService:
         with open(filepath, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
 
-        print(f"✅ JSON export saved: {filepath}")
+        logger.info(f"✅ JSON export saved: {filepath}")
         return filepath
 
     def _export_csv(self, timestamp: str) -> str:
@@ -232,7 +251,7 @@ class BackupService:
                     }
                 )
 
-        print(f"✅ CSV export saved: {csv_dir}")
+        logger.info(f"✅ CSV export saved: {csv_dir}")
         return csv_dir
 
     def export_user_data(self, user_identifier: str) -> Dict[str, Any]:
@@ -309,7 +328,7 @@ class BackupService:
             return user_data
 
         except Exception as e:
-            print(f"❌ User data export failed: {e}")
+            logger.error(f"❌ User data export failed: {e}", exc_info=True)
             raise
 
     def delete_user_data(self, user_identifier: str) -> Dict[str, int]:
@@ -360,12 +379,12 @@ class BackupService:
 
             db.session.commit()
 
-            print(f"✅ User data deleted: {deleted}")
+            logger.info(f"✅ User data deleted: {deleted}")
             return deleted
 
         except Exception as e:
             db.session.rollback()
-            print(f"❌ User data deletion failed: {e}")
+            logger.error(f"❌ User data deletion failed: {e}", exc_info=True)
             raise
 
     def cleanup_old_backups(self, days_to_keep: int = 30):
@@ -394,18 +413,100 @@ class BackupService:
                     if file_time < cutoff_date:
                         os.remove(filepath)
                         deleted_count += 1
-                        print(f"🗑️  Deleted old backup: {filename}")
+                        logger.info(f"🗑️  Deleted old backup: {filename}")
 
             if deleted_count > 0:
-                print(f"✅ Cleaned up {deleted_count} old backup(s)")
+                logger.info(f"✅ Cleaned up {deleted_count} old backup(s)")
             else:
-                print(f"✅ No old backups to clean (keeping last {days_to_keep} days)")
+                logger.debug(f"✅ No old backups to clean (keeping last {days_to_keep} days)")
 
             return deleted_count
 
         except Exception as e:
-            print(f"❌ Backup cleanup failed: {e}")
+            logger.error(f"❌ Backup cleanup failed: {e}", exc_info=True)
             return 0
+
+    def _encrypt_with_gpg(self, filepath: str) -> Optional[str]:
+        """
+        Encrypt backup file with GPG
+
+        Args:
+            filepath: Path to unencrypted backup file
+
+        Returns:
+            Path to encrypted file (.gpg) or None if encryption failed
+        """
+        if not self.gpg_enabled:
+            return None
+
+        try:
+            encrypted_filepath = f"{filepath}.gpg"
+
+            # Use GPG to encrypt with the specified key
+            # --batch: non-interactive mode
+            # --yes: assume yes to all prompts
+            # --pinentry-mode loopback: use passphrase from stdin
+            # --cipher-algo AES256: use AES256 encryption
+            # --compress-algo 1: use compression
+            cmd = [
+                "gpg",
+                "--batch",
+                "--yes",
+                "--pinentry-mode", "loopback",
+                "--cipher-algo", "AES256",
+                "--compress-algo", "1",
+                "--recipient", self.gpg_key_id,
+                "--encrypt",
+                "--output", encrypted_filepath,
+                filepath,
+            ]
+
+            # Set passphrase via environment variable for GPG
+            env = os.environ.copy()
+            env["GPG_TTY"] = "/dev/tty"
+
+            # Run GPG with passphrase
+            process = subprocess.Popen(
+                cmd,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                env=env,
+            )
+
+            # Send passphrase to stdin
+            stdout, stderr = process.communicate(input=self.gpg_passphrase.encode())
+
+            if process.returncode == 0:
+                # Remove unencrypted file after successful encryption
+                try:
+                    os.remove(filepath)
+                except Exception as e:
+                    logger.warning(f"⚠️ Warning: Could not remove unencrypted file: {e}")
+
+                logger.info(f"✅ Backup encrypted with GPG: {encrypted_filepath}")
+                return encrypted_filepath
+            else:
+                logger.error(f"❌ GPG encryption failed: {stderr.decode()}")
+                return None
+
+        except FileNotFoundError:
+            logger.warning("⚠️ GPG not found - skipping encryption")
+            return None
+        except Exception as e:
+            logger.error(f"❌ GPG encryption error: {e}", exc_info=True)
+            return None
+
+    def _send_telegram_notification(self, message: str, is_error: bool = False):
+        """Send Telegram notification about backup status"""
+        try:
+            from src.utils.telegram_alert import send_telegram_alert
+            
+            emoji = "❌" if is_error else "✅"
+            full_message = f"{emoji} Backup NovaHouse\n\n{message}"
+            send_telegram_alert(full_message)
+        except Exception as e:
+            logger.warning(f"⚠️ Failed to send Telegram notification: {e}")
 
     def automated_backup_with_cleanup(self):
         """
@@ -415,17 +516,63 @@ class BackupService:
         try:
             # Create new backup
             filepath = self.export_all_data(format="json")
-            print(f"✅ Automated backup created: {filepath}")
+            file_size = os.path.getsize(filepath) / (1024 * 1024)  # Size in MB
+            logger.info(f"✅ Automated backup created: {filepath} ({file_size:.2f} MB)")
+
+            # Encrypt with GPG if enabled
+            encrypted_filepath = None
+            if self.gpg_enabled:
+                encrypted_filepath = self._encrypt_with_gpg(filepath)
+                if encrypted_filepath:
+                    filepath = encrypted_filepath
+                    encrypted_size = os.path.getsize(filepath) / (1024 * 1024)
+                    logger.info(f"✅ Backup encrypted: {encrypted_filepath} ({encrypted_size:.2f} MB)")
 
             # Clean up old backups (keep last 30 days)
-            self.cleanup_old_backups(days_to_keep=30)
+            deleted_count = self.cleanup_old_backups(days_to_keep=30)
+
+            # Send success notification
+            backup_type = "zaszyfrowany" if encrypted_filepath else "niezaszyfrowany"
+            message = (
+                f"Backup utworzony pomyślnie!\n"
+                f"📁 Lokalizacja: {filepath}\n"
+                f"📊 Rozmiar: {file_size:.2f} MB\n"
+                f"🔐 Typ: {backup_type}\n"
+                f"🗑️ Usunięto starych backupów: {deleted_count}"
+            )
+            self._send_telegram_notification(message, is_error=False)
 
         except Exception as e:
-            print(f"❌ Automated backup failed: {e}")
+            error_msg = f"Błąd podczas tworzenia backupu!\n\n{str(e)}"
+            logger.error(f"❌ Automated backup failed: {e}", exc_info=True)
+            self._send_telegram_notification(error_msg, is_error=True)
+            raise
+
+    def _is_backup_week(self) -> bool:
+        """
+        Check if current week is a backup week (every 2 weeks)
+        Uses a simple approach: backup on 1st and 3rd Sunday of each month
+
+        Returns:
+            True if this is a backup week
+        """
+        now = datetime.now(timezone.utc)
+        # Get the day of month
+        day_of_month = now.day
+        # Get the day of week (0 = Monday, 6 = Sunday)
+        weekday = now.weekday()
+        
+        # If it's Sunday (weekday == 6)
+        if weekday == 6:
+            # Backup on 1st and 3rd Sunday (approximately days 1-7 and 15-21)
+            if day_of_month <= 7 or (day_of_month >= 15 and day_of_month <= 21):
+                return True
+        
+        return False
 
     def schedule_automated_backup(self):
         """
-        Schedule daily backup using APScheduler
+        Schedule bi-weekly backup (every 2 weeks on Sunday at 3 AM) using APScheduler
 
         Returns:
             Scheduler job
@@ -436,30 +583,40 @@ class BackupService:
 
             scheduler = BackgroundScheduler()
 
-            # Daily backup at 3 AM with automatic cleanup
+            def backup_if_needed():
+                """Check if backup is needed and perform it"""
+                if self._is_backup_week():
+                    self.automated_backup_with_cleanup()
+                else:
+                    logger.debug("⏭️ Skipping backup (not a backup week)")
+
+            # Check every Sunday at 3 AM
             scheduler.add_job(
-                func=self.automated_backup_with_cleanup,
-                trigger=CronTrigger(hour=3, minute=0),
-                id="daily_backup",
-                name="Daily Automated Backup + Cleanup",
+                func=backup_if_needed,
+                trigger=CronTrigger(day_of_week="sun", hour=3, minute=0),
+                id="biweekly_backup",
+                name="Bi-weekly Automated Backup + Cleanup (Sunday 3 AM)",
                 replace_existing=True,
             )
 
             scheduler.start()
-            print("✅ Automated backup scheduled (daily at 3 AM, keeps last 30 days)")
+            logger.info("✅ Automated backup scheduled (every 2 weeks on Sunday at 3 AM, keeps last 30 days)")
 
             return scheduler
 
         except Exception as e:
-            print(f"❌ Backup scheduling failed: {e}")
+            logger.error(f"❌ Backup scheduling failed: {e}", exc_info=True)
             raise
 
     def get_backup_list(self) -> List[Dict[str, Any]]:
-        """Get list of available backups"""
+        """Get list of available backups (including encrypted .gpg files)"""
         backups = []
 
         for filename in os.listdir(self.backup_dir):
-            if filename.startswith("backup_") and filename.endswith(".json"):
+            # Include both .json and .json.gpg files
+            if filename.startswith("backup_") and (
+                filename.endswith(".json") or filename.endswith(".json.gpg")
+            ):
                 filepath = os.path.join(self.backup_dir, filename)
                 stat = os.stat(filepath)
 
@@ -467,6 +624,7 @@ class BackupService:
                     {
                         "filename": filename,
                         "size": stat.st_size,
+                        "encrypted": filename.endswith(".gpg"),
                         "created_at": datetime.fromtimestamp(
                             stat.st_ctime, tz=timezone.utc
                         ).isoformat(),

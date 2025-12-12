@@ -119,8 +119,13 @@ def require_auth(f):
     """
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        # Check for API key in headers
-        api_key = request.headers.get("X-API-Key") or request.headers.get("Authorization")
+        # Check for API key in headers (support multiple header names)
+        api_key = (
+            request.headers.get("X-API-Key") 
+            or request.headers.get("X-API-KEY")
+            or request.headers.get("X-ADMIN-API-KEY")
+            or request.headers.get("Authorization")
+        )
         
         if api_key:
             # Remove "Bearer " prefix if present

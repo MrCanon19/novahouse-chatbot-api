@@ -16,10 +16,28 @@ build/
 pip-log.txt
 pip-delete-this-directory.txt
 
+# Python
+venv/
+env/
+ENV/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+pip-log.txt
+pip-delete-this-directory.txt
+novahouse/
+
 # Database
 *.db
 *.sqlite
 *.sqlite3
+instance/
 
 # Environment variables - CRITICAL SECURITY!
 .env
@@ -30,9 +48,15 @@ secrets.json
 credentials.json
 
 # GCP deployment with secrets - NEVER COMMIT!
+app.yaml
 app.yaml.secret
 app.yaml.prod
+app.yaml.deploy
+app.yaml.deploy.*
+*.deploy.yaml
 *.secret.yaml
+config/app.yaml
+config/*.secret.yaml
 
 # GCP & Backups
 backups/*
@@ -40,6 +64,7 @@ backups/*
 !backups/automated/*.gpg
 *.backup
 *.bak
+backups/secrets/
 
 # IDE
 ## .vscode/ usunięte z ignorowania, folder będzie śledzony przez Git
@@ -66,13 +91,14 @@ logs/
 uploads/
 /tmp/
 *.tmp
+temp/
+trigger.txt
 
 # Search index
 search_index/
 
 # Redis dumps
 dump.rdb
-logs/
 
 # Testing
 .pytest_cache/
@@ -81,35 +107,22 @@ coverage.xml
 coverage.svg
 htmlcov/
 
-# Virtual environments
-venv/
-env/
-ENV/
-novahouse/
-
-# Database files
-instance/
-*.db
-*.sqlite
-*.sqlite3
-
-# Temporary files
-temp/
-*.tmp
-trigger.txt
-
 # Credentials (IMPORTANT!)
 *.json
 *.pem
 *.key
 credentials/
 secrets/
-.env
-.env.local
-.env.*.local
-app.yaml
-app.yaml.secret
-app.yaml.prod
+
+# Session logs & temporary documentation (not for repo)
+*_COMPLETE.md
+*_STATUS*.md
+*_SUMMARY.md
+QUICK_REFERENCE.md
+DEPLOYMENT_STATUS.txt
+AUTOMATION_*.md
+AUDIT_EXECUTION_*.md
+chatbot-projekt.zip
 
 # Sensitive backups (API keys, secrets)
 backups/secrets/

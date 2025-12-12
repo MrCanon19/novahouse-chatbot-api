@@ -130,6 +130,17 @@ def submit_qualification():
             phone = contact_info.get("phone")
             if phone is not None and (not isinstance(phone, str) or len(phone) > 20):
                 return jsonify({"error": "Invalid phone"}), 400
+            # Save qualification data in additional_info as JSON
+            import json
+            qual_info = {
+                "recommended_package": recommendation["recommended_package"],
+                "confidence_score": recommendation["confidence"],
+                "property_type": qualification_data.get("property_type"),
+                "budget": qualification_data.get("budget"),
+                "interior_style": qualification_data.get("interior_style"),
+                "qualification_date": datetime.now(timezone.utc).isoformat(),
+            }
+            
             lead = Lead(
                 name=name.strip(),
                 email=email.strip(),
@@ -139,6 +150,7 @@ def submit_qualification():
                     f"({recommendation['confidence']}% pewności)"
                 ),
                 status="qualified",
+                additional_info=json.dumps(qual_info),  # Save qualification data as JSON
                 created_at=datetime.now(timezone.utc),
             )
             db.session.add(lead)

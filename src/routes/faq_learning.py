@@ -252,3 +252,78 @@ def submit_feedback():
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
+
+
+@faq_learning_routes.route("/auto-learn", methods=["POST"])
+def auto_learn_from_questions():
+    """
+    Automatycznie dodaje do FAQ pytania które wiele osób zadaje
+    Wymaga: min 3 osoby zadały podobne pytanie
+    """
+    try:
+        from sqlalchemy import func
+        from difflib import SequenceMatcher
+
+        # Pobierz wszystkie pending questions
+        pending_questions = UnknownQuestion.query.filter_by(status="pending").all()
+
+        # Grupuj podobne pytania (używając podobieństwa tekstowego)
+        question_groups = {}
+        for question in pending_questions:
+            # Znajdź podobne pytania
+            matched = False
+            for existing_key in question_groups.keys():
+                similarity = SequenceMatcher(None, question.question.lower(), existing_key.lower()).ratio()
+                if similarity > 0.7:  # 70% podobieństwa
+                    question_groups[existing_key].append(question)
+                    matched = True
+                    break
+
+            if not matched:
+                question_groups[question.question] = [question]
+
+        # Dodaj do FAQ jeśli grupa ma >= 3 pytania
+        learned_count = 0
+        for question_text, questions in question_groups.items():
+            if len(questions) >= 3:
+                # Sprawdź czy już nie ma takiego FAQ
+                existing_faq = LearnedFAQ.query.filter_by(
+                    question_pattern=question_text[:200]  # Max 200 chars
+                ).first()
+
+                if not existing_faq:
+                    # Użyj najczęstszej odpowiedzi jako wzorca
+                    bot_responses = [q.bot_response for q in questions if q.bot_response]
+                    if bot_responses:
+                        most_common_response = max(set(bot_responses), key=bot_responses.count)
+
+                        # Utwórz nowy FAQ
+                        new_faq = LearnedFAQ(
+                            question_pattern=question_text[:200],
+                            answer=most_common_response[:5000] if most_common_response else "Brak odpowiedzi",
+                            category="auto-learned",
+                            created_by="auto-learning-system",
+                        )
+                        db.session.add(new_faq)
+
+                        # Oznacz pytania jako dodane do FAQ
+                        for q in questions:
+                            q.status = "added_to_faq"
+                            q.reviewed_at = datetime.now(timezone.utc)
+                            q.reviewed_by = "auto-learning-system"
+
+                        learned_count += 1
+
+        db.session.commit()
+
+        return jsonify(
+            {
+                "message": f"Auto-learned {learned_count} new FAQs",
+                "learned_count": learned_count,
+                "total_groups": len(question_groups),
+            }
+        )
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500

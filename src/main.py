@@ -124,13 +124,22 @@ else:
 
 # SECURITY: Secret key from environment (NEVER hardcode!)
 # Fail-fast if critical secrets missing in production
+# BUT: Log warning instead of crashing to allow graceful degradation
 if os.getenv("FLASK_ENV") == "production":
     required_secrets = ["SECRET_KEY", "OPENAI_API_KEY", "ADMIN_API_KEY"]
     missing = [key for key in required_secrets if not os.getenv(key)]
     if missing:
-        raise RuntimeError(
-            f"Missing critical environment variables in production: {', '.join(missing)}"
-        )
+        import logging
+        logger = logging.getLogger(__name__)
+        error_msg = f"Missing critical environment variables in production: {', '.join(missing)}"
+        logger.critical(error_msg)
+        # Don't crash - allow app to start but log critical error
+        # This allows health checks to work even if some secrets are missing
+        # The app will fail on actual usage, but at least we can see the error in logs
+        print(f"⚠️ CRITICAL: {error_msg}")
+        # Only raise if SECRET_KEY is missing (absolutely required)
+        if "SECRET_KEY" in missing:
+            raise RuntimeError(error_msg)
 
 app.config["SECRET_KEY"] = os.getenv(
     "SECRET_KEY", "dev-secret-change-in-production-" + os.urandom(24).hex()
@@ -388,7 +397,7 @@ with app.app_context():
         from src.services.backup_service import backup_service
 
         backup_service.schedule_automated_backup()
-        logger.info("Automated backup scheduled (daily at 3 AM)")
+        logger.info("Automated backup scheduled (every 2 weeks on Sunday at 3 AM)")
     except Exception as e:
         logger.warning(f"Backup scheduling skipped: {e}")
 
@@ -476,8 +485,162 @@ with app.app_context():
             name="Send nudges to inactive sessions",
         )
 
+        # Schedule Zencal team sync (daily at 4 AM)
+        try:
+            def sync_zencal_team():
+                """Synchronize team members from Zencal API"""
+                try:
+                    with app.app_context():
+                        from src.routes.booking import sync_zencal_team as sync_function
+                        from flask import Flask
+                        # Create a minimal request context for the sync
+                        with app.test_request_context():
+                            # Call the sync endpoint logic directly
+                            from src.integrations.zencal_client import ZencalClient
+                            from src.models.chatbot import TeamMember, db
+                            
+                            zencal = ZencalClient()
+                            zencal_members = zencal.get_team_members()
+                            
+                            if not zencal_members:
+                                logger.warning("No team members found in Zencal")
+                                return
+                            
+                            synced_count = 0
+                            created_count = 0
+                            updated_count = 0
+                            
+                            for zencal_member in zencal_members:
+                                member = TeamMember.query.filter_by(
+                                    zencal_user_id=zencal_member.get("id")
+                                ).first()
+                                
+                                if not member:
+                                    member = TeamMember.query.filter_by(
+                                        email=zencal_member.get("email")
+                                    ).first()
+                                
+                                if member:
+                                    member.zencal_user_id = zencal_member.get("id")
+                                    member.zencal_booking_url = zencal_member.get("booking_url")
+                                    if not member.name:
+                                        member.name = zencal_member.get("name", "")
+                                    updated_count += 1
+                                else:
+                                    member = TeamMember(
+                                        name=zencal_member.get("name", ""),
+                                        email=zencal_member.get("email", ""),
+                                        zencal_user_id=zencal_member.get("id"),
+                                        zencal_booking_url=zencal_member.get("booking_url"),
+                                        is_active=True,
+                                    )
+                                    db.session.add(member)
+                                    created_count += 1
+                                
+                                synced_count += 1
+                            
+                            db.session.commit()
+                            logger.info(f"Zencal team sync: {synced_count} synced, {created_count} created, {updated_count} updated")
+                            
+                except Exception as e:
+                    logger.warning(f"Zencal team sync failed: {e}")
+            
+            scheduler.add_job(
+                func=sync_zencal_team,
+                trigger="cron",
+                hour=4,
+                minute=0,
+                id="zencal_sync",
+                name="Daily Zencal team synchronization",
+            )
+            logger.info("Zencal team sync scheduled (daily at 4 AM)")
+        except Exception as e:
+            logger.warning(f"Zencal sync scheduling skipped: {e}")
+
+        # Schedule FAQ auto-learning (daily at 2 AM)
+        try:
+            def run_auto_learn():
+                """Run FAQ auto-learning in background"""
+                try:
+                    with app.app_context():
+                        from src.models.faq_learning import LearnedFAQ, UnknownQuestion, db
+                        from sqlalchemy import func
+                        from difflib import SequenceMatcher
+                        from datetime import datetime, timezone
+
+                        # Pobierz wszystkie pending questions
+                        pending_questions = UnknownQuestion.query.filter_by(status="pending").all()
+
+                        # Grupuj podobne pytania (używając podobieństwa tekstowego)
+                        question_groups = {}
+                        for question in pending_questions:
+                            # Znajdź podobne pytania
+                            matched = False
+                            for existing_key in question_groups.keys():
+                                similarity = SequenceMatcher(None, question.question.lower(), existing_key.lower()).ratio()
+                                if similarity > 0.7:  # 70% podobieństwa
+                                    question_groups[existing_key].append(question)
+                                    matched = True
+                                    break
+
+                            if not matched:
+                                question_groups[question.question] = [question]
+
+                        # Dodaj do FAQ jeśli grupa ma >= 3 pytania
+                        learned_count = 0
+                        for question_text, questions in question_groups.items():
+                            if len(questions) >= 3:
+                                # Sprawdź czy już nie ma takiego FAQ
+                                existing_faq = LearnedFAQ.query.filter_by(
+                                    question_pattern=question_text[:200]  # Max 200 chars
+                                ).first()
+
+                                if not existing_faq:
+                                    # Użyj najczęstszej odpowiedzi jako wzorca
+                                    bot_responses = [q.bot_response for q in questions if q.bot_response]
+                                    if bot_responses:
+                                        most_common_response = max(set(bot_responses), key=bot_responses.count)
+
+                                        # Utwórz nowy FAQ
+                                        new_faq = LearnedFAQ(
+                                            question_pattern=question_text[:200],
+                                            answer=most_common_response[:5000] if most_common_response else "Brak odpowiedzi",
+                                            category="auto-learned",
+                                            created_by="auto-learning-system",
+                                        )
+                                        db.session.add(new_faq)
+
+                                        # Oznacz pytania jako dodane do FAQ
+                                        for q in questions:
+                                            q.status = "added_to_faq"
+                                            q.reviewed_at = datetime.now(timezone.utc)
+                                            q.reviewed_by = "auto-learning-system"
+
+                                        learned_count += 1
+
+                        db.session.commit()
+                        if learned_count > 0:
+                            logger.info(f"✅ FAQ auto-learning: {learned_count} new FAQs learned")
+                        else:
+                            logger.debug("✅ FAQ auto-learning: no new FAQs to learn")
+
+                except Exception as e:
+                    logger.error(f"❌ FAQ auto-learning failed: {e}")
+
+            scheduler.add_job(
+                run_auto_learn,
+                trigger="cron",
+                hour=2,
+                minute=0,
+                id="faq_auto_learn",
+                replace_existing=True,
+            )
+            logger.info("✅ FAQ auto-learning scheduled (daily at 2 AM)")
+        except Exception as e:
+            logger.warning(f"⚠️ Failed to schedule FAQ auto-learning: {e}")
+
         scheduler.start()
-        logger.info("✅ APScheduler started: 6 background jobs configured")
+        logger.info("✅ APScheduler started: 7 background jobs configured")
         logger.info("   - Cache cleanup every 10 minutes")
         logger.info("   - Dead-letter queue retry every 5 minutes")
         logger.info("   - Old alert cleanup daily")

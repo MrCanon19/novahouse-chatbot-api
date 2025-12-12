@@ -125,6 +125,15 @@ class Lead(db.Model):
     # marketing_consent = db.Column(db.Boolean, default=True)
     # rodo_consent = db.Column(db.Boolean, default=True)
     
+    # Database indexes for performance optimization
+    __table_args__ = (
+        db.Index('idx_leads_session_id', 'session_id'),
+        db.Index('idx_leads_status', 'status'),
+        db.Index('idx_leads_created_at', 'created_at'),
+        db.Index('idx_leads_email', 'email'),
+        db.Index('idx_leads_lead_score', 'lead_score'),
+    )
+    
     @property
     def marketing_consent(self):
         """Get marketing_consent from notes for backward compatibility"""
@@ -189,6 +198,48 @@ class Lead(db.Model):
         }
 
 
+class TeamMember(db.Model):
+    """Model dla członków zespołu (konsultantów) w Zencal"""
+
+    __tablename__ = "team_members"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)  # Imię i nazwisko
+    email = db.Column(db.String(100), unique=True, nullable=False)  # Email konsultanta
+    phone = db.Column(db.String(20))  # Telefon (opcjonalnie)
+    zencal_user_id = db.Column(db.String(100))  # ID użytkownika w Zencal (jeśli dostępne)
+    zencal_booking_url = db.Column(db.String(500))  # Unikalny URL do rezerwacji tego konsultanta
+    is_active = db.Column(db.Boolean, default=True)  # Czy konsultant jest aktywny
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    # Relacja z rezerwacjami
+    bookings = db.relationship("Booking", backref="consultant", lazy="dynamic")
+    
+    # Database indexes for performance
+    __table_args__ = (
+        db.Index('idx_team_members_email', 'email'),
+        db.Index('idx_team_members_is_active', 'is_active'),
+    )
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "email": self.email,
+            "phone": self.phone,
+            "zencal_user_id": self.zencal_user_id,
+            "zencal_booking_url": self.zencal_booking_url,
+            "is_active": self.is_active,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
 class Booking(db.Model):
     """Model dla rezerwacji spotkań (Zencal)"""
 
@@ -205,11 +256,24 @@ class Booking(db.Model):
     appointment_date = db.Column(db.DateTime)
     status = db.Column(db.String(50), default="pending")  # pending, confirmed, completed, cancelled
     notes = db.Column(db.Text)
+    # Przypisanie do konsultanta
+    assigned_to_consultant_id = db.Column(
+        db.Integer, db.ForeignKey("team_members.id"), nullable=True
+    )  # ID konsultanta
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(
         db.DateTime,
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc),
+    )
+    
+    # Database indexes for performance
+    __table_args__ = (
+        db.Index('idx_bookings_lead_id', 'lead_id'),
+        db.Index('idx_bookings_session_id', 'session_id'),
+        db.Index('idx_bookings_status', 'status'),
+        db.Index('idx_bookings_appointment_date', 'appointment_date'),
+        db.Index('idx_bookings_consultant_id', 'assigned_to_consultant_id'),
     )
 
     def to_dict(self):
@@ -227,6 +291,8 @@ class Booking(db.Model):
             ),
             "status": self.status,
             "notes": self.notes,
+            "assigned_to_consultant_id": self.assigned_to_consultant_id,
+            "consultant": self.consultant.to_dict() if self.consultant else None,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
@@ -296,6 +362,13 @@ class CompetitiveIntel(db.Model):
     sentiment = db.Column(db.String(20))  # positive, negative, neutral
     priority = db.Column(db.String(20), default="medium")  # low, medium, high
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    
+    # Database indexes for performance
+    __table_args__ = (
+        db.Index('idx_competitive_session_id', 'session_id'),
+        db.Index('idx_competitive_type', 'intel_type'),
+        db.Index('idx_competitive_created_at', 'created_at'),
+    )
 
     def to_dict(self):
         return {
@@ -323,6 +396,12 @@ class ChatConversation(db.Model):
     started_at = db.Column(db.DateTime, nullable=False)
     ended_at = db.Column(db.DateTime)
     context_data = db.Column(db.Text)  # JSON: {name, email, city, square_meters, package}
+    
+    # Database indexes for performance
+    __table_args__ = (
+        db.Index('idx_chat_conv_session_id', 'session_id'),
+        db.Index('idx_chat_conv_started_at', 'started_at'),
+    )
     
     @property
     def email(self):
@@ -417,6 +496,13 @@ class ChatMessage(db.Model):
     sender = db.Column(db.String(20), nullable=False)  # 'user' or 'bot'
     timestamp = db.Column(db.DateTime, nullable=False)
     is_followup = db.Column(db.Boolean, default=False)  # Auto-followup message
+    
+    # Database indexes for performance
+    __table_args__ = (
+        db.Index('idx_chat_msg_conversation_id', 'conversation_id'),
+        db.Index('idx_chat_msg_timestamp', 'timestamp'),
+        db.Index('idx_chat_msg_sender', 'sender'),
+    )
 
 
 class RodoConsent(db.Model):
@@ -430,6 +516,12 @@ class RodoConsent(db.Model):
     consent_date = db.Column(db.DateTime, nullable=False)
     ip_address = db.Column(db.String(50))
     user_agent = db.Column(db.String(500))
+    
+    # Database indexes for performance
+    __table_args__ = (
+        db.Index('idx_rodo_session_id', 'session_id'),
+        db.Index('idx_rodo_consent_date', 'consent_date'),
+    )
 
     def to_dict(self):
         return {
@@ -453,6 +545,13 @@ class AuditLog(db.Model):
     ip_address = db.Column(db.String(50))
     details = db.Column(db.Text)
     timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    
+    # Database indexes for performance
+    __table_args__ = (
+        db.Index('idx_audit_session_id', 'session_id'),
+        db.Index('idx_audit_action', 'action'),
+        db.Index('idx_audit_timestamp', 'timestamp'),
+    )
 
     def to_dict(self):
         return {

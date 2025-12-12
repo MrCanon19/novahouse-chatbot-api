@@ -1,0 +1,49 @@
+runtime: python311
+service: default
+instance_class: F4
+
+# ═══════════════════════════════════════════════════════════════
+# PRODUCTION SECRETS TEMPLATE - DO NOT COMMIT REAL SECRETS!
+# ═══════════════════════════════════════════════════════════════
+#
+# This is a TEMPLATE file - do NOT put real secrets here!
+#
+# To deploy:
+# 1. Copy this file: cp config/app.yaml.example config/app.yaml
+# 2. Fill in real secrets from GCP Secret Manager
+# 3. Deploy: gcloud app deploy config/app.yaml
+# 4. Delete local copy: rm config/app.yaml (it's in .gitignore)
+#
+# ═══════════════════════════════════════════════════════════════
+
+env_variables:
+  FLASK_ENV: production
+  
+  # SECURITY: Generate new credentials for production
+  SECRET_KEY: "YOUR_SECRET_KEY_HERE"
+  
+  # Admin API Key
+  API_KEY: "YOUR_API_KEY_HERE"
+  
+  # Database - get from GCP Cloud SQL
+  DATABASE_URL: "postgresql://YOUR_USER:YOUR_PASSWORD@/YOUR_DB?host=/cloudsql/YOUR_INSTANCE"
+  
+  # OpenAI API
+  OPENAI_API_KEY: "YOUR_OPENAI_API_KEY_HERE"
+  
+  # Monday.com
+  MONDAY_API_KEY: "YOUR_MONDAY_API_KEY_HERE"
+  MONDAY_BOARD_ID: "YOUR_MONDAY_BOARD_ID_HERE"
+
+automatic_scaling:
+  min_instances: 2
+  max_instances: 15
+  target_cpu_utilization: 0.65
+
+resources:
+  cpu: 2
+  memory_gb: 1.0
+  disk_size_gb: 10
+
+beta_settings:
+  cloud_sql_instances: "YOUR_PROJECT:YOUR_REGION:YOUR_INSTANCE"

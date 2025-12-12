@@ -186,7 +186,7 @@ def retry_monday_api(func: Callable) -> Callable:
     return retry_with_backoff(
         config=RetryConfig(max_attempts=3, initial_delay=2.0),
         exceptions=(ConnectionError, TimeoutError, Exception),
-        on_retry=lambda attempt, error: print(f"[Monday] Retry {attempt}/3 due to: {error}"),
+        on_retry=lambda attempt, error: logging.warning(f"[Monday] Retry {attempt}/3 due to: {error}"),
     )(func)
 
 
@@ -195,7 +195,7 @@ def retry_openai_api(func: Callable) -> Callable:
     return retry_with_backoff(
         config=RetryConfig(max_attempts=2, initial_delay=1.0),
         exceptions=(ConnectionError, TimeoutError),
-        on_retry=lambda attempt, error: print(f"[OpenAI] Retry {attempt}/2 due to: {error}"),
+        on_retry=lambda attempt, error: logging.warning(f"[OpenAI] Retry {attempt}/2 due to: {error}"),
     )(func)
 
 
@@ -204,5 +204,5 @@ def retry_email_send(func: Callable) -> Callable:
     return retry_with_backoff(
         config=RetryConfig(max_attempts=3, initial_delay=1.5),
         exceptions=(ConnectionError, TimeoutError, Exception),
-        on_retry=lambda attempt, error: print(f"[Email] Retry {attempt}/3 due to: {error}"),
+        on_retry=lambda attempt, error: logging.warning(f"[Email] Retry {attempt}/3 due to: {error}"),
     )(func)

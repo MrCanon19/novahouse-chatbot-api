@@ -72,22 +72,20 @@ class ChatService:
         openai_api_key = os.getenv("OPENAI_API_KEY", "")
 
         if not gpt_enabled or not openai_api_key or openai_api_key.lower().startswith("test_"):
-            print("⚠️  GPT disabled or API key missing/placeholder – OpenAI client not initialized.")
+            logging.warning("⚠️  GPT disabled or API key missing/placeholder – OpenAI client not initialized.")
             return None
 
         try:
             from openai import OpenAI
 
             client = OpenAI(api_key=openai_api_key)
-            print(
-                f"✅ OpenAI client initialized with model: {os.getenv('GPT_MODEL', 'gpt-4o-mini')}"
-            )
+            logging.info(f"✅ OpenAI client initialized with model: {os.getenv('GPT_MODEL', 'gpt-4o-mini')}")
             return client
         except ImportError:
-            print("⚠️  openai package not installed - GPT disabled.")
+            logging.warning("⚠️  openai package not installed - GPT disabled.")
             return None
         except Exception as e:
-            print(f"❌ Error initializing OpenAI client: {e}")
+            logging.error(f"❌ Error initializing OpenAI client: {e}", exc_info=True)
             return None
 
     def process_message(self, user_message: str, session_id: str) -> Dict[str, Any]:

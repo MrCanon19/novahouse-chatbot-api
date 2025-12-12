@@ -266,24 +266,147 @@ class PolishDeclension:
     }
 
     @classmethod
+    def decline_foreign_name_vocative(cls, name: str) -> str:
+        """
+        Decline foreign name to vocative case (wołacz) - zgodnie z polskimi zasadami językowymi
+        
+        Zasady polskiej odmiany obcojęzycznych imion:
+        - Imiona męskie kończące się na spółgłoskę: dodajemy -ie lub -u
+        - Imiona żeńskie kończące się na -a: zmieniamy na -o
+        - Imiona żeńskie kończące się na -e: dodajemy -o
+        
+        Args:
+            name: Foreign first name (e.g., "Alex", "Michael", "Sarah", "Robert", "David")
+        
+        Returns:
+            Declined name in vocative case (e.g., "Alexie", "Michaelu", "Saro", "Robercie", "Davidzie")
+        """
+        if not name:
+            return name
+        
+        name_title = name.strip().title()
+        name_lower = name_title.lower()
+        
+        # === IMIONA ŻEŃSKIE (najpierw sprawdzamy -a, -e, -i, -y) ===
+        # WAŻNE: Sprawdzamy najpierw specjalne przypadki kończące się na -ah (np. "Sarah")
+        # Imiona kończące się na -ah → -o (np. "Sarah" → "Saro")
+        if name_lower.endswith("ah"):
+            return name_title[:-2] + "o"  # "Sarah" → "Saro"
+        
+        # Imiona kończące się na -a → -o (np. "Emma" → "Emo")
+        if name_lower.endswith("a"):
+            # Specjalne przypadki: -ia → -io (np. "Victoria" → "Victorio", "Olivia" → "Olivio")
+            if name_lower.endswith("ia") and len(name_lower) > 3:
+                return name_title[:-2] + "io"
+            # Dla -ya → -yo
+            if name_lower.endswith("ya"):
+                return name_title[:-2] + "yo"
+            # Standardowe -a → -o
+            return name_title[:-1] + "o"
+        
+        # Imiona kończące się na -e → -o lub bez zmian (np. "Alice" → "Alice" lub "Aliceo")
+        if name_lower.endswith("e"):
+            # Dla krótkich imion (do 5 liter) często bez zmian, dla dłuższych -o
+            if len(name_lower) <= 5:
+                return name_title  # "Alice" → "Alice"
+            else:
+                return name_title + "o"  # "Grace" → "Graceo"
+        
+        # Imiona kończące się na -i → bez zmian (np. "Lily" → "Lily")
+        if name_lower.endswith("i"):
+            return name_title
+        
+        # Imiona kończące się na -y → bez zmian (np. "Mary" → "Mary")
+        if name_lower.endswith("y"):
+            return name_title
+        
+        # === IMIONA MĘSKIE (kończące się na spółgłoskę) ===
+        # WAŻNE: Sprawdzamy TYLKO jeśli NIE kończy się na samogłoskę (już obsłużone wyżej)
+        if name_lower[-1] not in "aeiouy":
+            # Zasada 1: Imiona kończące się na -t, -d, -r, -l, -n → dodajemy -ie
+            # Przykłady: "Robert" → "Robercie", "David" → "Davidzie", "Michael" → "Michaelu" (ale "Michael" kończy się na -l, więc "Michaelu" jest poprawne)
+            # WAŻNE: "Michael" w polskim to "Michaelu" (nie "Michaelie"), ale "Robert" to "Robercie"
+            
+            # Sprawdź końcówki w kolejności od najdłuższych
+            # Imiona kończące się na -el, -al, -il → -elu, -alu, -ilu (np. "Michael" → "Michaelu", "Daniel" → "Danielu")
+            if name_lower.endswith(("el", "al", "il")):
+                return name_title + "u"
+            
+            # Imiona kończące się na -er, -ar, -ir → -erze, -arze, -irze (np. "Peter" → "Peterze", "Alexander" → "Alexanderze")
+            if name_lower.endswith(("er", "ar", "ir")):
+                # Dla krótkich imion (do 5 liter) często -u, dla dłuższych -ie
+                if len(name_lower) <= 5:
+                    return name_title + "u"
+                else:
+                    return name_title[:-2] + "erze" if name_lower.endswith("er") else name_title[:-2] + "arze" if name_lower.endswith("ar") else name_title[:-2] + "irze"
+            
+            # Imiona kończące się na -t, -d → -cie, -dzie (np. "Robert" → "Robercie", "David" → "Davidzie")
+            if name_lower.endswith("t"):
+                return name_title[:-1] + "cie"  # "Robert" → "Robercie"
+            if name_lower.endswith("d"):
+                return name_title[:-1] + "dzie"  # "David" → "Davidzie"
+            
+            # Imiona kończące się na -x → -xie (np. "Alex" → "Alexie")
+            if name_lower.endswith("x"):
+                return name_title + "ie"  # "Alex" → "Alexie"
+            
+            # Imiona kończące się na -s → -sie (np. "Thomas" → "Thomasie", "James" → "Jamesie")
+            if name_lower.endswith("s"):
+                # Sprawdź czy kończy się na -mas, -las, -nas, -ras (np. "Thomas" → "Thomasie")
+                if name_lower.endswith(("mas", "las", "nas", "ras", "mes", "les", "nes", "res")):
+                    return name_title + "ie"  # "Thomas" → "Thomasie", "James" → "Jamesie"
+                # Dla innych -s → -sie
+                return name_title + "ie"
+            
+            # Imiona kończące się na -m → -mie (np. "William" → "Williamie")
+            if name_lower.endswith("m"):
+                # Sprawdź czy kończy się na -iam, -lam, -mam, -ram (np. "William" → "Williamie")
+                if name_lower.endswith(("iam", "lam", "mam", "ram", "em", "im", "om", "um")):
+                    return name_title + "ie"  # "William" → "Williamie"
+                # Dla innych -m → -mie
+                return name_title + "ie"
+            
+            # Imiona kończące się na -r, -l, -n (ale nie -er, -el, -ar, -al) → -rze, -le, -nie lub -u
+            if name_lower.endswith("r") and not name_lower.endswith(("er", "ar", "ir")):
+                return name_title + "ze"  # "Peter" → "Peterze" (ale już obsłużone wyżej)
+            if name_lower.endswith("l") and not name_lower.endswith(("el", "al", "il")):
+                return name_title + "e"  # "Paul" → "Paule"
+            if name_lower.endswith("n"):
+                return name_title + "ie"  # "John" → "Johnie"
+            
+            # Imiona kończące się na -k, -g, -h → -ku, -gu, -hu (np. "Mark" → "Marku")
+            if name_lower.endswith(("k", "g", "h")):
+                return name_title + "u"
+            
+            # Imiona kończące się na -p, -b, -f, -v, -w, -z, -c → -u
+            if name_lower.endswith(("p", "b", "f", "v", "w", "z", "c")):
+                return name_title + "u"
+            
+            # Fallback: inne spółgłoski → -u
+            return name_title + "u"
+        
+        # Default: return as-is (niektóre obcojęzyczne imiona nie odmieniają się)
+        return name_title
+
+    @classmethod
     def decline_name_vocative(cls, name: str) -> str:
         """
-        Decline Polish first name to vocative case (wołacz)
+        Decline Polish or foreign first name to vocative case (wołacz)
 
         Args:
-            name: First name (e.g., "Jan", "Maria", "Alex")
+            name: First name (e.g., "Jan", "Maria", "Alex", "Michael")
 
         Returns:
-            Declined name in vocative case (e.g., "Janie", "Mario", "Alex")
+            Declined name in vocative case (e.g., "Janie", "Mario", "Alexie", "Michaelu")
         """
         if not name:
             return name
 
         name_title = name.strip().title()
 
-        # Check if it's a foreign name - return as-is
+        # Check if it's a foreign name - decline it with simplified rules
         if name_title in cls.FOREIGN_NAMES:
-            return name_title
+            return cls.decline_foreign_name_vocative(name_title)
 
         # Check male names
         if name_title in cls.MALE_NAMES:
@@ -292,6 +415,16 @@ class PolishDeclension:
         # Check female names
         if name_title in cls.FEMALE_NAMES:
             return cls.FEMALE_NAMES[name_title]
+
+        # Fallback: try to detect if it's foreign by pattern
+        # If it doesn't match Polish patterns, try foreign declension
+        name_lower = name_title.lower()
+        polish_endings = ["ski", "ska", "cki", "cka", "dzki", "dzka", "ak", "ek", "ik", "uk", "czyk", "iak"]
+        is_likely_polish = any(name_lower.endswith(ending) for ending in polish_endings)
+        
+        if not is_likely_polish and name_title not in cls.MALE_NAMES and name_title not in cls.FEMALE_NAMES:
+            # Try foreign declension as fallback
+            return cls.decline_foreign_name_vocative(name_title)
 
         # Fallback: return original name if not found
         return name_title
@@ -349,18 +482,22 @@ class PolishDeclension:
             if case == "gen":
                 return s + "a"  # Paczyka
             if case == "dat":
-                return s + "owi"  # Paczykowii
+                return s + "owi"  # Paczykowi
             if case == "inst":
                 return s + "iem"  # Paczykiem
+            if case == "loc":
+                return s + "u"  # Paczyku
 
         # -iak endings (e.g., "Nowiak", "Kowaliak")
         if lower.endswith("iak"):
             if case == "gen":
                 return s + "a"  # Nowiaka
             if case == "dat":
-                return s + "owi"  # Nowiakowii
+                return s + "owi"  # Nowiakowi
             if case == "inst":
                 return s + "iem"  # Nowiakiem
+            if case == "loc":
+                return s + "u"  # Nowiaku
 
         # -uk endings (e.g., "Kowaluk", "Nowuk", "Bruduk")
         if lower.endswith("uk"):
@@ -370,6 +507,8 @@ class PolishDeclension:
                 return s + "owi"  # Kowalukowi
             if case == "inst":
                 return s + "iem"  # Kowalukiem
+            if case == "loc":
+                return s + "u"  # Kowaluku
 
         # Additional common masculine surname endings
         # -icz / -owicz (e.g., "Kowalewicz", "Nowakowicz")
@@ -380,6 +519,8 @@ class PolishDeclension:
                 return s + "owi"  # Kowalewiczowi
             if case == "inst":
                 return s + "em"  # Kowalewiczem
+            if case == "loc":
+                return s + "u"  # Kowalewiczu
 
         # Consonant-ending masculine surnames (e.g., "Nowak", "Kowal")
         if lower[-1] not in "aeiouyąęó":
@@ -389,6 +530,8 @@ class PolishDeclension:
                 return s + "owi"  # Nowakowi
             if case == "inst":
                 return s + "em"  # Nowakiem
+            if case == "loc":
+                return s + "u"  # Nowaku
 
         # Vowel-ending fallback (rare)
         if case == "gen":
@@ -397,6 +540,8 @@ class PolishDeclension:
             return s + "owi"
         if case == "inst":
             return s + "em"
+        if case == "loc":
+            return s + "u"
         return s
 
     @staticmethod
@@ -406,11 +551,11 @@ class PolishDeclension:
 
         # Common adjectival feminine surnames
         adj_pairs = [
-            ("ska", {"gen": "skiej", "dat": "skiej", "inst": "ską"}),
-            ("cka", {"gen": "ckiej", "dat": "ckiej", "inst": "cką"}),
-            ("dzka", {"gen": "dzkiej", "dat": "dzkiej", "inst": "dzką"}),
-            ("owska", {"gen": "owskiej", "dat": "owskiej", "inst": "owską"}),
-            ("ewska", {"gen": "ewskiej", "dat": "ewskiej", "inst": "ewską"}),
+            ("ska", {"gen": "skiej", "dat": "skiej", "inst": "ską", "loc": "skiej"}),
+            ("cka", {"gen": "ckiej", "dat": "ckiej", "inst": "cką", "loc": "ckiej"}),
+            ("dzka", {"gen": "dzkiej", "dat": "dzkiej", "inst": "dzką", "loc": "dzkiej"}),
+            ("owska", {"gen": "owskiej", "dat": "owskiej", "inst": "owską", "loc": "owskiej"}),
+            ("ewska", {"gen": "ewskiej", "dat": "ewskiej", "inst": "ewską", "loc": "ewskiej"}),
         ]
         for suf, forms in adj_pairs:
             if lower.endswith(suf):
@@ -425,9 +570,11 @@ class PolishDeclension:
             if case == "gen":
                 return s + "a"  # Paczyka
             if case == "dat":
-                return s + "owi"  # Paczykowii (or unchanged if using base form)
+                return s + "owi"  # Paczykowi (or unchanged if using base form)
             if case == "inst":
                 return s + "ą"  # Paczyką
+            if case == "loc":
+                return s + "u"  # Paczyku
 
         # Feminine surnames ending with -a (e.g., "Nowakowa" – seldom used, or first names used as surnames)
         if lower.endswith("a"):
@@ -440,6 +587,8 @@ class PolishDeclension:
                 return s[:-1] + "ie"
             if case == "inst":
                 return s[:-1] + "ą"
+            if case == "loc":
+                return s[:-1] + "ie"  # Marii, Anny → Marii, Annie
 
         # Non-adjectival feminine surnames often stay unchanged except instrumental with -ą
         if case == "gen":
@@ -448,15 +597,17 @@ class PolishDeclension:
             return s
         if case == "inst":
             return s + "ą"
+        if case == "loc":
+            return s + "u" if s[-1] not in "aeiouyąęó" else s  # Nowak → Nowaku, Anna → Annie
         return s
 
     @classmethod
     def decline_surname_case(cls, surname: str, gender: str, case: str) -> str:
         """
-        Decline surname to case: gen (dopełniacz), dat (celownik), inst (narzędnik)
+        Decline surname to case: gen (dopełniacz), dat (celownik), inst (narzędnik), loc (miejscownik)
 
         gender: 'male' | 'female'
-        case: 'gen' | 'dat' | 'inst'
+        case: 'gen' | 'dat' | 'inst' | 'loc'
         """
         if not surname:
             return surname
@@ -486,8 +637,9 @@ class PolishDeclension:
             gen_last = cls.decline_surname_case(last, gender, "gen")
             dat_last = cls.decline_surname_case(last, gender, "dat")
             inst_last = cls.decline_surname_case(last, gender, "inst")
+            loc_last = cls.decline_surname_case(last, gender, "loc")
         else:
-            gen_last = dat_last = inst_last = ""
+            gen_last = dat_last = inst_last = loc_last = ""
 
         # First name simple cases (approximation)
         gen_first = (
@@ -506,11 +658,19 @@ class PolishDeclension:
             else (first[:-1] + "ą" if first.endswith("a") else first)
         )
 
+        # First name locative (miejscownik) - approximation
+        loc_first = (
+            (first + "u")
+            if gender == "male" and first[-1] not in "aeiouyąęó"
+            else (first[:-1] + "ie" if first.endswith("a") else first)
+        )
+        
         return {
             "voc": voc_first if not last else f"{voc_first} {last}",
             "gen": (gen_first if not last else f"{gen_first} {gen_last}").strip(),
             "dat": (dat_first if not last else f"{dat_first} {dat_last}").strip(),
             "inst": (inst_first if not last else f"{inst_first} {inst_last}").strip(),
+            "loc": (loc_first if not last else f"{loc_first} {loc_last}").strip(),
         }
 
     @classmethod

@@ -78,10 +78,10 @@ def create_lead():
             if monday_item_id:
                 lead.monday_item_id = monday_item_id
                 db.session.commit()
-                print(f"Lead {lead.id} synced to Monday.com: {monday_item_id}")
+                logger.info(f"Lead {lead.id} synced to Monday.com: {monday_item_id}")
 
         except Exception as e:
-            print(f"Monday.com sync error: {e}")
+            logger.warning(f"Monday.com sync error: {e}", exc_info=True)
 
         # Send email notifications
         try:
@@ -99,7 +99,7 @@ def create_lead():
             # Email potwierdzenie do klienta
             email_service.send_lead_confirmation({"name": lead.name, "email": lead.email})
         except Exception as e:
-            print(f"Email notification error: {e}")
+            logger.warning(f"Email notification error: {e}", exc_info=True)
 
         return (
             jsonify(
@@ -152,6 +152,48 @@ def get_leads():
         )
 
     except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@leads_bp.route("/list", methods=["GET"])
+@require_auth
+def list_leads():
+    """Get leads list with stats for dashboard (requires authentication)"""
+    try:
+        from datetime import datetime, timezone, timedelta
+        
+        # Get all leads
+        all_leads = Lead.query.order_by(Lead.created_at.desc()).all()
+        
+        # Calculate stats
+        today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+        today_leads = [l for l in all_leads if l.created_at >= today]
+        converted_leads = [l for l in all_leads if l.status == "converted"]
+        
+        # Format leads for table (limit to 50 most recent)
+        leads_data = [
+            {
+                "id": lead.id,
+                "name": lead.name,
+                "email": lead.email,
+                "phone": lead.phone,
+                "message": lead.message,
+                "status": lead.status,
+                "monday_item_id": lead.monday_item_id,
+                "created_at": lead.created_at.isoformat(),
+            }
+            for lead in all_leads[:50]
+        ]
+        
+        return jsonify({
+            "total": len(all_leads),
+            "today": len(today_leads),
+            "conversions": len(converted_leads),
+            "leads": leads_data
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Error listing leads: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
 
 

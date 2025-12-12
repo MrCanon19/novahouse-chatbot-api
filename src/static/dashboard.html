@@ -131,22 +131,46 @@
     <script>
         const API_URL = window.location.origin;
 
+        // Store API key in localStorage
+        function getApiKey() {
+            let apiKey = localStorage.getItem('dashboard_api_key');
+            if (!apiKey) {
+                apiKey = prompt('Wprowadź API Key (zostanie zapisany w przeglądarce):') || '';
+                if (apiKey) {
+                    localStorage.setItem('dashboard_api_key', apiKey);
+                }
+            }
+            return apiKey;
+        }
+
         async function loadDashboardData() {
             try {
-                // Próbuj załadować dane (wymaga API key)
+                const apiKey = getApiKey();
+                if (!apiKey) {
+                    showPlaceholder();
+                    return;
+                }
+
                 const response = await fetch(`${API_URL}/api/leads/list`, {
                     headers: {
-                        'X-API-KEY': prompt('Wprowadź API Key:') || ''
+                        'X-API-KEY': apiKey,
+                        'X-ADMIN-API-KEY': apiKey  // Try both headers
                     }
                 });
 
                 if (response.ok) {
                     const data = await response.json();
                     updateDashboard(data);
+                } else if (response.status === 401) {
+                    // Invalid API key - clear and ask again
+                    localStorage.removeItem('dashboard_api_key');
+                    alert('Nieprawidłowy API Key. Spróbuj ponownie.');
+                    loadDashboardData();
                 } else {
                     showPlaceholder();
                 }
             } catch (error) {
+                console.error('Dashboard error:', error);
                 showPlaceholder();
             }
         }
@@ -178,7 +202,7 @@
         }
 
         // Load data on page load
-        // loadDashboardData(); // Uncomment if you want to auto-load
+        loadDashboardData();
     </script>
 </body>
 </html>

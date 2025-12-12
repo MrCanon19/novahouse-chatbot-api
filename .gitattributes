@@ -1,0 +1,10 @@
+# Git attributes for security
+# Ensure sensitive files are not tracked
+
+# Prevent accidental commits of secrets
+app.yaml filter=git-crypt diff=git-crypt
+app.yaml.secret filter=git-crypt diff=git-crypt
+*.secret.yaml filter=git-crypt diff=git-crypt
+app.yaml.deploy* -text
+*.deploy.yaml -text
+

@@ -34,12 +34,26 @@ def get_openai_client():
         try:
             from openai import OpenAI
 
-            _openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+            api_key = os.getenv("OPENAI_API_KEY")
+            if not api_key:
+                logging.warning("⚠️  OPENAI_API_KEY not set in environment variables")
+                OPENAI_AVAILABLE = False
+                return None
+            
+            if api_key.lower().startswith("test_"):
+                logging.warning("⚠️  OPENAI_API_KEY is a test key - GPT disabled")
+                OPENAI_AVAILABLE = False
+                return None
+
+            _openai_client = OpenAI(api_key=api_key)
             OPENAI_AVAILABLE = True
-            print(f"✅ OpenAI client initialized with model: {GPT_MODEL}")
+            logging.info(f"✅ OpenAI client initialized with model: {GPT_MODEL}")
         except ImportError:
             OPENAI_AVAILABLE = False
-            print("⚠️  openai package not installed - GPT disabled")
+            logging.warning("⚠️  openai package not installed - GPT disabled")
+        except Exception as e:
+            OPENAI_AVAILABLE = False
+            logging.error(f"❌ Error initializing OpenAI client: {e}", exc_info=True)
     return _openai_client
 
 
@@ -61,6 +75,90 @@ chatbot_bp = Blueprint("chatbot", __name__)
 from src.main import limiter
 
 
+def recommend_package(budget: float = None, square_meters: int = None, preferences: str = None) -> dict:
+    """
+    Rekomenduje pakiet na podstawie budżetu, metrażu i preferencji.
+    
+    Args:
+        budget: Budżet w zł
+        square_meters: Metraż w m²
+        preferences: Preferencje klienta (np. "szybko", "jakość", "oszczędnie")
+    
+    Returns:
+        dict z recommended_package, reason, confidence
+    """
+    if not budget or not square_meters:
+        return None
+    
+    budget_per_sqm = budget / square_meters
+    
+    # Mapowanie pakietów
+    packages = {
+        "Express": {"price": 999, "min_budget": 0, "max_budget": 1100},
+        "Express Plus": {"price": 1199, "min_budget": 1100, "max_budget": 1350},
+        "Comfort": {"price": 1499, "min_budget": 1350, "max_budget": 1750},
+        "Premium": {"price": 1999, "min_budget": 1750, "max_budget": 2500},
+        "Indywidualny": {"price": 2500, "min_budget": 2500, "max_budget": 10000},
+    }
+    
+    # Znajdź pasujący pakiet na podstawie budżetu/m²
+    recommended = None
+    for pkg_name, pkg_info in packages.items():
+        if pkg_info["min_budget"] <= budget_per_sqm < pkg_info["max_budget"]:
+            recommended = pkg_name
+            break
+    
+    # Jeśli nie znaleziono, wybierz najbliższy
+    if not recommended:
+        if budget_per_sqm < 999:
+            recommended = "Express"
+        elif budget_per_sqm > 2500:
+            recommended = "Indywidualny"
+        else:
+            # Znajdź najbliższy pakiet
+            closest = min(packages.items(), key=lambda x: abs(x[1]["price"] - budget_per_sqm))
+            recommended = closest[0]
+    
+    # Dostosuj na podstawie preferencji
+    if preferences:
+        pref_lower = preferences.lower()
+        if "szybko" in pref_lower or "szyb" in pref_lower:
+            if recommended in ["Premium", "Indywidualny"]:
+                recommended = "Comfort"  # Kompromis między czasem a jakością
+        elif "oszczęd" in pref_lower or "tanio" in pref_lower:
+            if recommended in ["Premium", "Indywidualny", "Comfort"]:
+                recommended = "Express Plus"  # Najlepszy balans cena/jakość
+        elif "jakość" in pref_lower or "premium" in pref_lower or "luksus" in pref_lower:
+            if recommended in ["Express", "Express Plus"]:
+                recommended = "Comfort"  # Podnieś do lepszego pakietu
+    
+    # Oblicz confidence (pewność rekomendacji)
+    pkg_price = packages[recommended]["price"]
+    price_diff = abs(budget_per_sqm - pkg_price)
+    price_diff_percent = (price_diff / pkg_price) * 100
+    
+    if price_diff_percent < 5:
+        confidence = 95
+        reason = f"Budżet {budget_per_sqm:.0f} zł/m² idealnie pasuje do pakietu {recommended}"
+    elif price_diff_percent < 15:
+        confidence = 80
+        reason = f"Budżet {budget_per_sqm:.0f} zł/m² dobrze pasuje do pakietu {recommended}"
+    elif price_diff_percent < 30:
+        confidence = 65
+        reason = f"Budżet {budget_per_sqm:.0f} zł/m² sugeruje pakiet {recommended} (możliwe dopasowanie)"
+    else:
+        confidence = 50
+        reason = f"Budżet {budget_per_sqm:.0f} zł/m² - pakiet {recommended} jako orientacja (warto doprecyzować)"
+    
+    return {
+        "recommended_package": recommended,
+        "reason": reason,
+        "confidence": confidence,
+        "budget_per_sqm": round(budget_per_sqm, 0),
+        "package_price": pkg_price,
+    }
+
+
 def calculate_lead_score(context_memory, message_count):
     """Lead score tuned for test expectations and runtime heuristics."""
     base_score = 0
@@ -76,6 +174,8 @@ def calculate_lead_score(context_memory, message_count):
         base_score += 10
     if context_memory.get("package"):
         base_score += 15
+    if context_memory.get("budget"):
+        base_score += 15  # Budżet jest bardzo ważny dla lead score
 
     score = base_score
     if base_score > 0:
@@ -347,6 +447,83 @@ def detect_competitive_intelligence(user_message: str, session_id: str, context_
         return None
 
 
+def auto_categorize_question(question: str) -> str:
+    """
+    Automatycznie kategoryzuje pytanie na podstawie słów kluczowych.
+    Zwraca kategorię dla UnknownQuestion.
+    """
+    question_lower = question.lower()
+    
+    # Kategorie i słowa kluczowe
+    categories = {
+        "cena_wycena": ["cena", "koszt", "ile kosztuje", "wycena", "budżet", "zł", "cennik", "płatność", "płatności"],
+        "pakiety": ["pakiet", "standard", "premium", "express", "comfort", "oferta", "co obejmuje"],
+        "czas_realizacja": ["kiedy", "jak długo", "termin", "czas realizacji", "ile trwa", "harmonogram"],
+        "materiały": ["materiały", "produkty", "wyposażenie", "katalog", "marki", "co wchodzi"],
+        "proces": ["proces", "etap", "krok", "jak wygląda", "harmonogram", "co dalej"],
+        "gwarancja": ["gwarancja", "rękojmia", "reklamacja", "poprawki", "naprawa"],
+        "lokalizacja": ["miasto", "gdzie", "lokalizacja", "obszar", "działacie w", "województwo"],
+        "kontakt": ["kontakt", "telefon", "email", "numer", "rozmowa z człowiekiem", "konsultacja"],
+        "projekt": ["projekt", "projektant", "wizualizacja", "moodboard", "3d"],
+        "inne": []  # Domyślna kategoria
+    }
+    
+    # Sprawdź która kategoria pasuje
+    for category, keywords in categories.items():
+        if category == "inne":
+            continue
+        if any(keyword in question_lower for keyword in keywords):
+            return category
+    
+    return "inne"
+
+
+def detect_user_intent(user_message: str) -> str:
+    """
+    Zaawansowane wykrywanie intencji użytkownika.
+    Zwraca: 'pricing', 'packages', 'timeframe', 'process', 'booking', 'materials', 'warranty', 'location', 'contact', 'other'
+    """
+    msg_lower = (user_message or "").lower()
+    
+    # Intent: Pricing
+    if any(kw in msg_lower for kw in ["cena", "koszt", "ile kosztuje", "cennik", "zł", "budżet", "płacę", "płacić"]):
+        return "pricing"
+    
+    # Intent: Packages
+    if any(kw in msg_lower for kw in ["pakiet", "standard", "premium", "express", "basic", "comfort", "indywidualny"]):
+        return "packages"
+    
+    # Intent: Timeframe
+    if any(kw in msg_lower for kw in ["kiedy", "jak długo", "termin", "czas", "ile trwa", "długo", "szybko"]):
+        return "timeframe"
+    
+    # Intent: Process
+    if any(kw in msg_lower for kw in ["jak", "proces", "etap", "krok", "co dalej", "jak to wygląda", "jak działa"]):
+        return "process"
+    
+    # Intent: Booking
+    if any(kw in msg_lower for kw in ["spotkanie", "konsultacja", "umówić", "rezerwacja", "wizyta", "umów", "zarezerwuj"]):
+        return "booking"
+    
+    # Intent: Materials
+    if any(kw in msg_lower for kw in ["materiały", "katalog", "wybór", "produkty", "marki", "co w cenie", "co zawiera"]):
+        return "materials"
+    
+    # Intent: Warranty
+    if any(kw in msg_lower for kw in ["gwarancja", "rękojmia", "reklamacja", "jak długa gwarancja", "gwarancje"]):
+        return "warranty"
+    
+    # Intent: Location
+    if any(kw in msg_lower for kw in ["miasto", "gdzie", "lokalizacja", "obszar", "działacie", "działacie w"]):
+        return "location"
+    
+    # Intent: Contact
+    if any(kw in msg_lower for kw in ["kontakt", "telefon", "email", "numer", "jak się skontaktować", "dane kontaktowe"]):
+        return "contact"
+    
+    return "other"
+
+
 def generate_follow_up_question(context_memory, user_message, bot_response, conversation):
     """Safe wrapper for optional follow-up automation."""
     try:
@@ -354,7 +531,160 @@ def generate_follow_up_question(context_memory, user_message, bot_response, conv
 
         return generator(context_memory, user_message, bot_response, conversation)
     except Exception:
+        # Improved fallback: generate intelligent follow-up based on context and intent
+        return generate_intelligent_follow_up(context_memory, user_message, bot_response)
+
+
+def track_ab_test_response(conversation: ChatConversation, user_message: str):
+    """
+    Track A/B test response - zwiększa licznik odpowiedzi dla wariantu który został pokazany.
+    """
+    try:
+        if not conversation.followup_variant:
+            return
+        
+        # Znajdź aktywny test dla tego typu pytania
+        # Dla uproszczenia - szukamy testu który pasuje do kontekstu
+        # W przyszłości można dodać question_type do conversation
+        active_tests = FollowUpTest.query.filter_by(is_active=True).all()
+        
+        if not active_tests:
+            return
+        
+        # Użyj pierwszego aktywnego testu (w przyszłości można dopasować do question_type)
+        test = active_tests[0]
+        
+        variant = conversation.followup_variant.upper()
+        if variant == "A":
+            test.variant_a_responses += 1
+        elif variant == "B":
+            test.variant_b_responses += 1
+        
+        db.session.commit()
+        logging.info(f"A/B test tracked: variant {variant}, test_id={test.id}")
+        
+    except Exception as e:
+        logging.warning(f"Failed to track A/B test response: {e}")
+        db.session.rollback()
+
+
+def generate_intelligent_follow_up(context_memory, user_message, bot_response, conversation=None):
+    """
+    Generuje inteligentne pytanie follow-up na podstawie kontekstu i intencji.
+    Poprawiona logika - lepsze wykrywanie kiedy pytać o co.
+    Z A/B testing support.
+    """
+    user_msg_lower = (user_message or "").lower()
+    bot_resp_lower = (bot_response or "").lower()
+    
+    # Jeśli już zaproponowano konsultację, nie dodawaj kolejnego pytania
+    if "konsultacj" in bot_resp_lower or "umów" in bot_resp_lower:
         return None
+    
+    # Wykryj intencję użytkownika
+    intent = detect_user_intent(user_message)
+    
+    # A/B Testing: Sprawdź czy jest aktywny test dla tego typu pytania
+    follow_up_question = None
+    question_type = None
+    
+    # Określ typ pytania follow-up na podstawie kontekstu
+    if intent == "pricing" and not context_memory.get("square_meters"):
+        question_type = "price_to_sqm"
+    elif intent == "packages" and not context_memory.get("square_meters"):
+        question_type = "package_to_sqm"
+    elif context_memory.get("square_meters") and not context_memory.get("city"):
+        question_type = "sqm_to_location"
+    elif context_memory.get("square_meters") and not context_memory.get("budget"):
+        question_type = "sqm_to_budget"
+    
+    # Jeśli mamy question_type, sprawdź A/B test
+    if question_type and conversation:
+        try:
+            test = FollowUpTest.query.filter_by(question_type=question_type, is_active=True).first()
+            if test:
+                import random
+                # Random split 50/50
+                variant = "A" if random.random() < 0.5 else "B"
+                follow_up_question = test.variant_a if variant == "A" else test.variant_b
+                
+                # Track impression
+                if variant == "A":
+                    test.variant_a_shown += 1
+                else:
+                    test.variant_b_shown += 1
+                
+                # Zapisz wariant w konwersacji
+                conversation.followup_variant = variant
+                db.session.commit()
+                
+                logging.info(f"A/B test: question_type={question_type}, variant={variant}, test_id={test.id}")
+        except Exception as e:
+            logging.warning(f"Failed to use A/B test: {e}")
+    
+    # Jeśli nie ma A/B testu, użyj standardowej logiki
+    if not follow_up_question:
+    
+        # Follow-up dla różnych intencji
+        if intent == "pricing":
+            if context_memory.get("square_meters") and not context_memory.get("budget"):
+                follow_up_question = "Jaki budżet planuje Pan/Pani na wykończenie? To pomoże mi dobrać idealny pakiet."
+            elif not context_memory.get("square_meters"):
+                follow_up_question = "Jaki metraż ma mieszkanie? To pomoże mi dokładniej wycenić."
+            elif context_memory.get("square_meters") and context_memory.get("budget"):
+                follow_up_question = "Czy chce Pan/Pani umówić bezpłatną konsultację? Nasz ekspert przygotuje szczegółową wycenę!"
+        
+        elif intent == "packages":
+            if not context_memory.get("square_meters"):
+                follow_up_question = "Jaki metraż ma mieszkanie? To pomoże mi dobrać idealny pakiet."
+            elif not context_memory.get("budget"):
+                follow_up_question = "Jaki budżet planuje Pan/Pani na wykończenie? To pomoże mi dobrać idealny pakiet."
+            elif context_memory.get("square_meters") and context_memory.get("budget"):
+                follow_up_question = "Czy chce Pan/Pani umówić bezpłatną konsultację? Nasz ekspert dopasuje idealny pakiet!"
+        
+        elif intent == "timeframe":
+            if not context_memory.get("square_meters"):
+                follow_up_question = "Jaki metraż ma mieszkanie? Czas realizacji zależy od wielkości i zakresu prac."
+            elif not context_memory.get("package"):
+                follow_up_question = "Który pakiet Pana/Panią interesuje? Czas realizacji zależy od pakietu."
+            elif context_memory.get("square_meters") and context_memory.get("package"):
+                follow_up_question = "Czy chce Pan/Pani umówić bezpłatną konsultację? Omówimy szczegóły i odpowiemy na wszystkie pytania!"
+        
+        elif intent == "process":
+            if not context_memory.get("square_meters"):
+                follow_up_question = "Jaki metraż ma mieszkanie? To pomoże mi dopasować proces do Pana/Pani potrzeb."
+            elif not context_memory.get("package"):
+                follow_up_question = "Który pakiet Pana/Panią interesuje? Proces zależy od pakietu."
+            elif context_memory.get("square_meters") and context_memory.get("package"):
+                follow_up_question = "Czy chce Pan/Pani umówić bezpłatną konsultację? Omówimy szczegóły i odpowiemy na wszystkie pytania!"
+        
+        elif intent == "materials":
+            if not context_memory.get("package"):
+                follow_up_question = "Który pakiet Pana/Panią interesuje? W każdym pakiecie zakres materiałów jest inny."
+            elif context_memory.get("package"):
+                follow_up_question = "Czy chce Pan/Pani umówić bezpłatną konsultację? Nasz ekspert pokaże katalog materiałów!"
+        
+        elif intent == "warranty":
+            follow_up_question = "Czy chce Pan/Pani umówić bezpłatną konsultację? Omówimy szczegóły gwarancji i odpowiemy na wszystkie pytania!"
+        
+        elif intent == "location":
+            if context_memory.get("city"):
+                follow_up_question = "Czy chce Pan/Pani umówić bezpłatną konsultację? Nasz ekspert dopasuje idealny pakiet do Pana/Pani lokalizacji!"
+        
+        elif intent == "contact":
+            follow_up_question = "Czy chce Pan/Pani umówić bezpłatną konsultację? Nasz ekspert skontaktuje się z Panem/Panią!"
+        
+        # Ogólne follow-up gdy mamy wszystkie dane
+        if not follow_up_question:
+            if context_memory.get("square_meters") and context_memory.get("budget") and \
+               not context_memory.get("email") and not context_memory.get("phone"):
+                follow_up_question = "Czy chce Pan/Pani umówić bezpłatną konsultację? Nasz ekspert przygotuje szczegółową wycenę!"
+            
+            if not follow_up_question and context_memory.get("square_meters") and context_memory.get("city") and \
+               not context_memory.get("email") and not context_memory.get("phone"):
+                follow_up_question = "Czy chce Pan/Pani umówić bezpłatną konsultację? Omówimy szczegóły i odpowiemy na wszystkie pytania!"
+    
+    return follow_up_question
 
 
 def get_default_response(user_message: str):
@@ -498,14 +828,18 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
         # 3. Then check standard FAQ (skip if this is a self-introduction)
         if not bot_response and not is_introduction:
             bot_response = check_faq(user_message)
+        
+        # Log if we're using fallback (for debugging)
+        if not bot_response:
+            logging.debug(f"No FAQ/booking match for: {user_message[:50]}... - will use GPT")
 
         # 4. Jeśli nie znaleziono w FAQ, ZAWSZE użyj AI (OpenAI GPT) - PRIORYTET!
         if not bot_response:
             client = ensure_openai_client()
             if client:
                 try:
-                    # Pobierz historię konwersacji (limit zwiększony do 20)
-                    message_history_limit = int(os.getenv("MESSAGE_HISTORY_LIMIT", "20"))
+                    # Pobierz historię konwersacji (ujednolicony limit do 30)
+                    message_history_limit = int(os.getenv("MESSAGE_HISTORY_LIMIT", "30"))
                     history = (
                         ChatMessage.query.filter_by(conversation_id=conversation.id)
                         .order_by(ChatMessage.timestamp.desc())
@@ -561,6 +895,54 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                             memory_items.append(f"Budżet: {context_memory['budget']} zł")
                         if context_memory.get("package"):
                             memory_items.append(f"Interesujący pakiet: {context_memory['package']}")
+                        
+                        # Intelligent package recommendation based on budget and square meters
+                        if context_memory.get("budget") and context_memory.get("square_meters"):
+                            try:
+                                budget = float(context_memory["budget"])
+                                sqm = int(context_memory["square_meters"])
+                                recommendation = recommend_package(budget, sqm)
+                                if recommendation:
+                                    memory_items.append(
+                                        f"⭐ REKOMENDACJA: {recommendation['recommended_package']} "
+                                        f"({recommendation['confidence']}% pewności) - {recommendation['reason']}"
+                                    )
+                                    # Use recommendation if no package in context
+                                    if not context_memory.get("package"):
+                                        context_memory["package"] = recommendation["recommended_package"]
+                            except (ValueError, TypeError) as e:
+                                logging.warning(f"Failed to calculate package recommendation: {e}")
+                        
+                        # Check if lead has qualification data (recommended_package from qualification form)
+                        try:
+                            existing_lead = Lead.query.filter_by(session_id=session_id).first()
+                            if existing_lead and existing_lead.additional_info:
+                                import json
+                                try:
+                                    qual_data = json.loads(existing_lead.additional_info) if isinstance(existing_lead.additional_info, str) else existing_lead.additional_info
+                                    if isinstance(qual_data, dict):
+                                        recommended_pkg = qual_data.get("recommended_package")
+                                        confidence = qual_data.get("confidence_score")
+                                        if recommended_pkg:
+                                            # Map qualification package names to chatbot package names
+                                            pkg_map = {
+                                                "standard": "Express",
+                                                "premium": "Comfort",
+                                                "luxury": "Premium"
+                                            }
+                                            chatbot_pkg = pkg_map.get(recommended_pkg.lower(), recommended_pkg)
+                                            if confidence:
+                                                memory_items.append(f"Rekomendacja z kwalifikacji: {chatbot_pkg} ({confidence}% pewności)")
+                                            else:
+                                                memory_items.append(f"Rekomendacja z kwalifikacji: {chatbot_pkg}")
+                                            # Use qualification package if no package in context
+                                            if not context_memory.get("package"):
+                                                context_memory["package"] = chatbot_pkg
+                                except (json.JSONDecodeError, AttributeError):
+                                    pass
+                        except Exception as e:
+                            print(f"[Qualification Data] Error loading: {e}")
+                        
                         if memory_items:
                             memory_prompt = "\n\nZapamiętane info o kliencie (TYLKO dane które klient PODAŁ WYRAŹNIE):\n" + "\n".join(
                                 memory_items
@@ -575,10 +957,10 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                         cache_key = f"gpt_response:{hashlib.md5(normalized_msg.encode()).hexdigest()}"
                         cached_response = cache.get(cache_key)
                         if cached_response:
-                            print(f"[GPT CACHE HIT] Using cached response for: {user_message[:50]}...")
+                            logging.debug(f"[GPT CACHE HIT] Using cached response for: {user_message[:50]}...")
                             bot_response = cached_response
                         else:
-                            print(f"[OpenAI GPT] Przetwarzanie: {user_message[:50]}...")
+                            logging.debug(f"[OpenAI GPT] Przetwarzanie: {user_message[:50]}...")
                             messages = [
                                 {"role": "system", "content": SYSTEM_PROMPT + memory_prompt},
                                 {
@@ -597,16 +979,14 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                             bot_response = response.choices[0].message.content
                             # Cache response for 1 hour (3600s) - common questions get cached
                             cache.set(cache_key, bot_response, ttl=3600)
-                            print(
-                                f"[OpenAI GPT] Response: {bot_response[:100] if bot_response else 'EMPTY'}..."
-                            )
+                            logging.info(f"[OpenAI GPT] Response received: {bot_response[:100] if bot_response else 'EMPTY'}...")
                             # Log token usage for cost tracking
                             if hasattr(response, 'usage'):
                                 usage = response.usage
-                                print(f"[GPT COST] Input: {usage.prompt_tokens}, Output: {usage.completion_tokens}, Total: {usage.total_tokens}")
+                                logging.debug(f"[GPT COST] Input: {usage.prompt_tokens}, Output: {usage.completion_tokens}, Total: {usage.total_tokens}")
                     except ImportError:
                         # Cache not available, use GPT directly
-                        print(f"[OpenAI GPT] Przetwarzanie: {user_message[:50]}...")
+                        logging.debug(f"[OpenAI GPT] Przetwarzanie (no cache): {user_message[:50]}...")
                         messages = [
                             {"role": "system", "content": SYSTEM_PROMPT + memory_prompt},
                             {
@@ -621,21 +1001,23 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                             temperature=0.6,
                         )
                         bot_response = response.choices[0].message.content
-                        print(
-                            f"[OpenAI GPT] Response: {bot_response[:100] if bot_response else 'EMPTY'}..."
-                        )
+                        logging.info(f"[OpenAI GPT] Response received: {bot_response[:100] if bot_response else 'EMPTY'}...")
 
                 except Exception as e:
-                    print(f"[GPT ERROR] {type(e).__name__}: {e}")
-                    # Fallback tylko przy błędzie GPT
+                    logging.error(f"[GPT ERROR] {type(e).__name__}: {e}", exc_info=True)
+                    # Fallback tylko przy błędzie GPT - ale lepszy fallback
                     bot_response = get_default_response(user_message)
             else:
-                print("[WARNING] OpenAI nie skonfigurowany - używam fallback")
+                logging.warning("[WARNING] OpenAI nie skonfigurowany - używam fallback")
+                # Check if OPENAI_API_KEY is set but client failed to initialize
+                openai_key = os.getenv("OPENAI_API_KEY")
+                if not openai_key or openai_key.lower().startswith("test_"):
+                    logging.warning("OPENAI_API_KEY not set or is test key - GPT disabled")
                 bot_response = get_default_response(user_message)
 
         # Jeśli NADAL brak odpowiedzi (nie powinno się zdarzyć)
         if not bot_response:
-            print("[CRITICAL FALLBACK] Używam awaryjnej odpowiedzi")
+            logging.warning("[CRITICAL FALLBACK] Używam awaryjnej odpowiedzi - brak odpowiedzi z GPT/FAQ")
             bot_response = get_default_response(user_message)
 
         # Add proactive booking suggestion if we have data
@@ -652,8 +1034,10 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
 
         # Track A/B test response (if user responded to follow-up question)
         if conversation.followup_variant and len(user_message) > 3:
-            # TODO: Implement track_ab_test_response function
-            pass  # track_ab_test_response(conversation)
+            try:
+                track_ab_test_response(conversation, user_message)
+            except Exception as e:
+                logging.warning(f"Failed to track A/B test response: {e}")
 
         # Check if we just collected enough data to ask for confirmation
         should_confirm = should_ask_for_confirmation(context_memory, conversation)
@@ -686,7 +1070,7 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
         )
         db.session.add(bot_msg)
 
-        # Log unknown/unclear questions for FAQ learning
+        # Log unknown/unclear questions for FAQ learning with auto-categorization
         try:
             from src.models.faq_learning import UnknownQuestion
 
@@ -704,11 +1088,15 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
 
             # Log if generic response and not FAQ
             if is_generic and not check_faq(user_message):
+                # Automatyczne kategoryzowanie pytania
+                category = auto_categorize_question(user_message)
+                
                 unknown = UnknownQuestion(
                     session_id=session_id,
                     question=user_message,
                     bot_response=bot_response,
                     status="pending",
+                    category=category,
                 )
                 db.session.add(unknown)
         except Exception as e:
@@ -934,7 +1322,7 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
         detect_competitive_intelligence(user_message, session_id, context_memory)
 
         # Generate intelligent follow-up question (with A/B testing)
-        follow_up = generate_follow_up_question(
+        follow_up = generate_intelligent_follow_up(
             context_memory, user_message, bot_response, conversation
         )
         if follow_up:
@@ -1009,7 +1397,7 @@ def ensure_openai_client():
     global openai_client, AI_PROVIDER
     gpt_enabled = os.getenv("GPT_FALLBACK_ENABLED", "true").lower() == "true"
     if not gpt_enabled:
-        print("⚠️  GPT_FALLBACK_ENABLED=false – skipping GPT client init")
+        logging.warning("⚠️  GPT_FALLBACK_ENABLED=false – skipping GPT client init")
         return None
 
     # Always try to get client (even if already initialized, to ensure it's working)
@@ -1018,21 +1406,23 @@ def ensure_openai_client():
         if client:
             openai_client = client
             AI_PROVIDER = "openai"
-            if not openai_client:  # Only print if first time
-                print("✅ OpenAI GPT-4o-mini enabled (proven & reliable)")
+            if not openai_client:  # Only log if first time
+                logging.info("✅ OpenAI GPT-4o-mini enabled (proven & reliable)")
             return openai_client
         else:
-            print("⚠️  No AI configured - set OPENAI_API_KEY")
+            logging.warning("⚠️  No AI configured - set OPENAI_API_KEY or check API key validity")
             return None
     else:
-        print(f"⚠️  OPENAI_API_KEY missing/placeholder (key starts with: {OPENAI_API_KEY[:10] if OPENAI_API_KEY else 'None'}) – GPT disabled")
+        # SECURITY: Never log full API key, only first 4 chars for debugging
+        key_preview = OPENAI_API_KEY[:4] + "..." if OPENAI_API_KEY and len(OPENAI_API_KEY) > 4 else "None"
+        logging.warning(f"⚠️  OPENAI_API_KEY missing/placeholder (key starts with: {key_preview}) – GPT disabled")
         return None
 
 
 if MONDAY_API_KEY:
-    print("✅ Monday.com API key loaded")
+    logging.info("✅ Monday.com API key loaded")
 else:
-    print("⚠️  No Monday.com API key - set MONDAY_API_KEY")
+    logging.warning("⚠️  No Monday.com API key - set MONDAY_API_KEY")
 
 
 @chatbot_bp.route("/chat", methods=["POST"])

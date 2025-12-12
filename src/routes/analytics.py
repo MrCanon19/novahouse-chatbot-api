@@ -4,7 +4,7 @@ from flask import Blueprint, jsonify, request
 from sqlalchemy import func, text
 
 from src.models.analytics import ChatAnalytics, IntentAnalytics, PerformanceMetrics, UserEngagement
-from src.models.chatbot import Conversation, Lead, db
+from src.models.chatbot import ChatConversation, Lead, db
 from src.middleware.security import require_auth
 
 analytics_bp = Blueprint("analytics", __name__)
@@ -46,8 +46,8 @@ def get_overview():
         if days <= 3:
             try:
                 unique_sessions = (
-                    db.session.query(func.count(func.distinct(Conversation.session_id)))
-                    .filter(Conversation.timestamp >= start_date)
+                    db.session.query(func.count(func.distinct(ChatConversation.session_id)))
+                    .filter(ChatConversation.timestamp >= start_date)
                     .scalar()
                 )
                 unique_sessions = int(unique_sessions or 0)
@@ -70,8 +70,8 @@ def get_overview():
         if days <= 3:
             try:
                 total_conversations = (
-                    db.session.query(func.count(Conversation.id))
-                    .filter(Conversation.timestamp >= start_date)
+                    db.session.query(func.count(ChatConversation.id))
+                    .filter(ChatConversation.timestamp >= start_date)
                     .scalar()
                 )
                 total_conversations = int(total_conversations or 0)
@@ -154,12 +154,12 @@ def get_conversation_analytics():
         # Konwersacje według dnia
         conversations_by_day = (
             db.session.query(
-                func.date(Conversation.timestamp).label("date"),
-                func.count(Conversation.id).label("count"),
+                func.date(ChatConversation.timestamp).label("date"),
+                func.count(ChatConversation.id).label("count"),
             )
-            .filter(Conversation.timestamp >= start_date)
-            .group_by(func.date(Conversation.timestamp))
-            .order_by(func.date(Conversation.timestamp))
+            .filter(ChatConversation.timestamp >= start_date)
+            .group_by(func.date(ChatConversation.timestamp))
+            .order_by(func.date(ChatConversation.timestamp))
             .all()
         )
 
@@ -433,6 +433,40 @@ def get_lead_analytics():
             .all()
         )
 
+        # Leady według miasta (location)
+        leads_by_city = (
+            db.session.query(Lead.location, func.count(Lead.id).label("count"))
+            .filter(Lead.created_at >= start_date, Lead.location.isnot(None))
+            .group_by(Lead.location)
+            .order_by(func.count(Lead.id).desc())
+            .limit(50)  # Max 50 unique cities, safety limit
+            .all()
+        )
+
+        # Conversion rate per city
+        city_conversion = []
+        for city, lead_count in leads_by_city:
+            # Count conversations for this city (from context_data)
+            city_conversations = (
+                db.session.query(func.count(ChatConversation.id))
+                .filter(
+                    ChatConversation.timestamp >= start_date,
+                    ChatConversation.context_data.like(f'%"city": "{city}"%'),
+                )
+                .scalar()
+            ) or 0
+            conversion_rate = (
+                (lead_count / city_conversations * 100) if city_conversations > 0 else 0
+            )
+            city_conversion.append(
+                {
+                    "city": city,
+                    "leads": lead_count,
+                    "conversations": city_conversations,
+                    "conversion_rate": round(conversion_rate, 2),
+                }
+            )
+
         total_leads = Lead.query.filter(Lead.created_at >= start_date).count()
 
         return jsonify(
@@ -449,6 +483,10 @@ def get_lead_analytics():
                     {"property_type": prop_type, "count": count}
                     for prop_type, count in leads_by_property
                 ],
+                "leads_by_city": [
+                    {"city": city, "count": count} for city, count in leads_by_city
+                ],
+                "city_conversion_rates": city_conversion,
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             }
         )
@@ -459,9 +497,10 @@ def get_lead_analytics():
 
 @analytics_bp.route("/export", methods=["GET"])
 def export_analytics():
-    """Eksportuj dane analityczne"""
+    """Eksportuj dane analityczne (JSON lub CSV)"""
     try:
         export_type = request.args.get("type", "overview")
+        format_type = request.args.get("format", "json")  # json, csv, pdf
         days = _clamp_days(request.args.get("days", 30, type=int), default=30, max_days=60)
         start_date = datetime.now(timezone.utc) - timedelta(days=days)
 
@@ -469,7 +508,7 @@ def export_analytics():
 
         if export_type == "overview" or export_type == "all":
             # Eksport przeglądu
-            conversations = Conversation.query.filter(Conversation.timestamp >= start_date).all()
+            conversations = ChatConversation.query.filter(ChatConversation.timestamp >= start_date).all()
             data["conversations"] = [conv.to_dict() for conv in conversations]
 
         if export_type == "leads" or export_type == "all":
@@ -484,10 +523,144 @@ def export_analytics():
             ).all()
             data["engagements"] = [eng.to_dict() for eng in engagements]
 
+        # CSV export
+        if format_type == "csv":
+            from flask import make_response
+            import csv
+            import io
+
+            output = io.StringIO()
+            writer = csv.writer(output)
+
+            # Write headers
+            if export_type == "leads" or export_type == "all":
+                writer.writerow(
+                    [
+                        "ID",
+                        "Session ID",
+                        "Name",
+                        "Email",
+                        "Phone",
+                        "Package",
+                        "Property Size",
+                        "Location",
+                        "Created At",
+                    ]
+                )
+                for lead in data.get("leads", []):
+                    writer.writerow(
+                        [
+                            lead.get("id"),
+                            lead.get("session_id"),
+                            lead.get("name"),
+                            lead.get("email"),
+                            lead.get("phone"),
+                            lead.get("interested_package"),
+                            lead.get("property_size"),
+                            lead.get("location"),
+                            lead.get("created_at"),
+                        ]
+                    )
+
+            response = make_response(output.getvalue())
+            response.headers["Content-Type"] = "text/csv"
+            response.headers["Content-Disposition"] = f"attachment; filename=analytics_{export_type}_{days}days.csv"
+            return response
+
+        # PDF export
+        if format_type == "pdf":
+            try:
+                from flask import make_response
+                from reportlab.lib.pagesizes import letter
+                from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+                from reportlab.lib.styles import getSampleStyleSheet
+                from reportlab.lib import colors
+                import io
+
+                buffer = io.BytesIO()
+                doc = SimpleDocTemplate(buffer, pagesize=letter)
+                story = []
+                styles = getSampleStyleSheet()
+
+                # Title
+                story.append(Paragraph(f"Analytics Report - {days} days", styles["Title"]))
+                story.append(Spacer(1, 12))
+
+                # Summary
+                story.append(Paragraph("Summary", styles["Heading2"]))
+                summary_data = [
+                    ["Metric", "Value"],
+                    ["Total Conversations", str(len(data.get("conversations", [])))],
+                    ["Total Leads", str(len(data.get("leads", [])))],
+                    ["Total Engagements", str(len(data.get("engagements", [])))],
+                ]
+                summary_table = Table(summary_data)
+                summary_table.setStyle(
+                    TableStyle(
+                        [
+                            ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
+                            ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+                            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                            ("FONTSIZE", (0, 0), (-1, 0), 14),
+                            ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
+                            ("BACKGROUND", (0, 1), (-1, -1), colors.beige),
+                            ("GRID", (0, 0), (-1, -1), 1, colors.black),
+                        ]
+                    )
+                )
+                story.append(summary_table)
+                story.append(Spacer(1, 12))
+
+                # Leads table
+                if data.get("leads"):
+                    story.append(Paragraph("Leads", styles["Heading2"]))
+                    leads_data = [["Name", "Email", "Phone", "Package", "Location"]]
+                    for lead in data["leads"][:50]:  # Limit to 50 for PDF
+                        leads_data.append(
+                            [
+                                lead.get("name", ""),
+                                lead.get("email", ""),
+                                lead.get("phone", ""),
+                                lead.get("interested_package", ""),
+                                lead.get("location", ""),
+                            ]
+                        )
+                    leads_table = Table(leads_data)
+                    leads_table.setStyle(
+                        TableStyle(
+                            [
+                                ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
+                                ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+                                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                                ("FONTSIZE", (0, 0), (-1, 0), 10),
+                                ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
+                                ("BACKGROUND", (0, 1), (-1, -1), colors.beige),
+                                ("GRID", (0, 0), (-1, -1), 1, colors.black),
+                                ("FONTSIZE", (0, 1), (-1, -1), 8),
+                            ]
+                        )
+                    )
+                    story.append(leads_table)
+
+                doc.build(story)
+                buffer.seek(0)
+
+                response = make_response(buffer.read())
+                response.headers["Content-Type"] = "application/pdf"
+                response.headers["Content-Disposition"] = f"attachment; filename=analytics_{export_type}_{days}days.pdf"
+                return response
+
+            except ImportError:
+                return jsonify({"error": "reportlab library required for PDF export. Install: pip install reportlab"}), 500
+
+        # Default: JSON export
         return jsonify(
             {
                 "status": "success",
                 "export_type": export_type,
+                "format": format_type,
                 "period_days": days,
                 "data": data,
                 "exported_at": datetime.now(timezone.utc).isoformat(),
@@ -508,8 +681,8 @@ def dashboard_summary():
         start_date = datetime.now(timezone.utc) - timedelta(days=days)
 
         # Get all analytics
-        conversations_count = Conversation.query.filter(
-            Conversation.timestamp >= start_date
+        conversations_count = ChatConversation.query.filter(
+            ChatConversation.timestamp >= start_date
         ).count()
 
         leads_count = Lead.query.filter(Lead.created_at >= start_date).count()
