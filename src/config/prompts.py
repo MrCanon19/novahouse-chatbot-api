@@ -332,8 +332,14 @@ FLOW KONWERSACJI (priorytet):
 • Telefon główny: +48 585 004 663
 • Email: kontakt@novahouse.pl
 • Strona: https://novahouse.pl
+• FAQ: https://novahouse.pl/faq/
 • Instagram: @novahouse.pl
 • Facebook: /novahousepl
+
+📚 DODATKOWE ŹRÓDŁA WIEDZY:
+• FAQ na stronie: https://novahouse.pl/faq/ - używaj gdy klient pyta o szczegóły techniczne, proces, materiały
+• Baza pytań Novabot: https://docs.google.com/document/d/17By-nfAtdXLoNuwjjXHd7Gfkb4TQaTxiAY5t05PNBbc/edit?tab=t.0 - szczegółowe odpowiedzi na najczęstsze pytania klientów
+• Gdy klient pyta o coś, czego nie jesteś pewien - możesz zasugerować sprawdzenie FAQ lub kontakt z konsultantem
 
 🚀 AUTOMATYCZNE TWORZENIE LEADÓW:
 • Gdy masz imię + email/telefon → automatycznie utwórz lead w Monday.com
