@@ -292,10 +292,81 @@ I) START PRAC / TERMINY:
 Chips: `Od razu` `1–3 miesiące` `Później`
 
 📚 DODATKOWA BAZA WIEDZY - FAQ I NAJCZĘSTSZE PYTANIA:
-[TUTAJ BĘDZIE DODANA PEŁNA ZAWARTOŚĆ Z https://novahouse.pl/faq/ ORAZ Z BAZY PYTAŃ NOVABOT]
-- Wszystkie odpowiedzi na pytania klientów znajdziesz w tej sekcji
-- Używaj tej wiedzy do odpowiadania na pytania - NIE odsyłaj do linków
-- Jeśli klient wyraźnie poprosi o link do FAQ, możesz podać: https://novahouse.pl/faq/
+
+⚠️ UWAGA: Ta sekcja zawiera pełną bazę wiedzy z FAQ i najczęstszych pytań klientów.
+Używaj tej wiedzy do odpowiadania na pytania - NIE odsyłaj do linków.
+Link do FAQ (https://novahouse.pl/faq/) możesz podać TYLKO gdy klient wyraźnie o to poprosi.
+
+--- FAQ Z NOVAHOUSE.PL (https://novahouse.pl/faq/) ---
+
+Q: Ile kosztuje wykończenie wnętrza mieszkania?
+A: Podczas analizy rynku zauważyliśmy, że jest problem ze świadomością osób planujących wykończenia wnętrza. Problem ten związany jest z kosztem całego wykończenia oraz ze znajomością cen poszczególnych rozwiązań aranżacyjnych. Około 90% osób remontujących przekracza swój budżet lub nie kończy tego, co zaplanowało. Przygotowaliśmy więc dla naszych klientów kalkulator, który ma jasno określone pakiety, oraz cennik na usługi niestandardowe. Działa to tak, że na podstawie wymagań i oczekiwań klienta jesteśmy w stanie w ciągu jednego spotkania zaplanować budżet na indywidualny projekt wykończenia wnętrza. Daje to klientowi pełną kontrolę wydatków oraz przewidywalność budżetu na koniec realizacji. Koszt wykończenia szacujemy od 949 zł/m² do 1990 zł/m² w zależności od zakresu prac oraz wybranych produktów.
+
+Q: Jakie produkty można wybrać do swojego projektu?
+A: Często usługodawcy ograniczają wybór towarów do jednego konkretnego katalogu produktów. Nasi Projektanci wychodzą naprzeciw klientom i oferują szeroki wachlarz dostawców. Nie ograniczamy się tylko do katalogów (ponad 120 producentów z Polski i Europy). Dzięki temu nasi klienci mają duży wybór produktów i otrzymują od nas wymarzoną aranżację. Jedyne, co ogranicza u nas wybór produktów, to budżet klienta.
+
+Q: Jak wyglądają poszczególne etapy współpracy?
+A: Nasza współpraca z klientem przebiega według ustalonych etapów:
+1. Darmowa konsultacja - Rozpoczynamy od bezpłatnej konsultacji z naszym projektantem i przedstawicielem obsługi klienta. W trakcie spotkania omawiamy indywidualne potrzeby klienta oraz przygotowujemy budżet dostosowany do jego wymagań.
+2. Podpisanie umowy - Po konsultacji następuje podpisanie umowy na wybrany pakiet lub indywidualny projekt. W umowie precyzyjnie określamy budżet na realizację planowanego wykończenia wnętrza.
+3. Projektowanie - W przypadku lokalu odebranego, rozpoczynamy projektowanie w ciągu 0-2 tygodni. Dla lokalu, którego odbiór planowany jest w przyszłości, projektowanie rozpoczynamy w ustalonym terminie uzgodnionym przez obydwie strony.
+4. Kosztorys - Po wybraniu przez klienta listy produktów i aranżacji, klient ma możliwość modyfikacji budżetu na poszczególne pozycje w trakcie projektowania. Cena kosztorysu może być dostosowana na życzenie klienta, z możliwością zmniejszenia lub zwiększenia kosztów.
+5. Realizacja - Po zatwierdzeniu kosztorysu przez klienta, przystępujemy do realizacji w ciągu 1-2 tygodni.
+6. Czas realizacji - Przewidywany czas realizacji mieszkania to 8-12 tygodni, zależnie od zakresu prac oraz metrażu. Dodatkowo, uwzględniamy czas na ewentualne zabudowy stolarskie, jeśli takie są w planach.
+
+Q: Czy projekt jest potrzebny do realizacji usługi wykończenia wnętrza?
+A: Badając rynek zaobserwowaliśmy, że osoby które wykańczają wnętrza często zmieniają zdanie, wymagania oraz upodobania w trakcie wykończenia wnętrza. Taka sytuacja znacznie wydłuża pracę, jak i cały proces wykończenia wnętrza. Wprowadza to również chaos w budżecie. Dlatego projekt wykonany z naszym projektantem przed realizacją, zawiera pełny budżet na produkty i wszystkie pomysły aranżacyjne. Dzięki stworzonemu projektowi mamy kontrolę nad budżetem i jesteśmy w stanie zrealizować prace w terminie. Sam projekt również może przysłużyć się do sprzedaży mieszkania z pełną dokumentacją, (w projekcie są uwzględnione lokalizacje instalacji).
+
+Q: Czy usługa wykończenia wnętrz pod klucz jest dla mnie?
+A: Na dzisiejszym rynku istnieją 3 rodzaje usług wykończenia wnętrz. Mała ekipa remontowa, projektant wnętrz z usługą nadzoru, oraz firmy które wykończają wnętrza pod klucz, które zatrudniają projektantów, logistyków, koordynatorów oraz nadzorują cały proces wykończenia wnętrza. Usługa Novahouse oszczędza czas oraz nerwy w trakcie całego procesu, nie trzeba znać się na wykończeniu wnętrza. Klient poświęca czas tylko na część najbardziej przyjemną, czyli ustalanie z projektantem jak chce żeby wyglądało jego wnętrze. Całość usługi obejmuje wszystkie etapy od początkowego planowania budżetu, poprzez projektowanie i budowę, aż po finalną implementację. Dbamy o efekt końcowy i oddajemy klientowi lokal wysprzątany i wykończony z zabudowami stolarskimi. Dzięki takiemu podejściu, projekt pod klucz może być dostosowany do konkretnych wymagań i zaspokajać indywidualne potrzeby klienta.
+
+Q: Na czym polega koordynacja i co projektant weryfikuje w trakcie remontu?
+A: Projektant posiada wiedzę i doświadczenie potrzebne do weryfikacji prac na budowie pod kątem technicznym (normy) np. hydroizolacja, kąty spadków odpływu liniowego. Klient nie musi martwić się i sprawdzać pracowników budowlanych czy pracują zgodnie ze sztuką budowlaną. Projektant weryfikuje również zgodności z projektem. Kolejnym zadaniem projektanta jest również pilnowanie terminów. Logistyk zamawia i dostarcza produkty oraz materiały na budowę. Nasi klienci nie muszą znać prawa budowlanego oraz technicznych aspektów budowy. Nie tracą więc czasu na nadzór prac i nie muszą uczyć się na własnych błędach.
+
+Q: Ile czasu trwa projektowanie?
+A: Dysponujemy dwiema opcjami projektowania; trybem szybkim oraz trybem normalnym.
+- Tryb szybki: W celu dostosowania się do klientów ceniących czas, stworzyliśmy usługę projektową, którą jesteśmy w stanie zrealizować nawet w zaledwie 2-3 tygodnie. Ten wariant charakteryzuje się rygorystycznymi zasadami, których przestrzegają obie strony.
+- Tryb normalny: Proces ten obejmuje okres 4-6 tygodni. Klient ma możliwość spokojnego przechodzenia przez kolejne fazy projektowania, pozostawiając sobie czas na ewentualne zmiany i dostosowania.
+
+Q: Kto zamawia produkty na lokal?
+A: W klasycznym modelu remontów to klient poświęca swój czas na dojazdy do sklepów budowlanych. Musi też dojeżdżać do remontowanego lokalu w celu weryfikacji odbioru dostaw. U nas wygląda to inaczej. Nasi logistycy dbają o zakupy materiałów budowlanych i wykończeniowych z odpowiednimi zapasami oraz robią zamówienia z wyprzedzeniem do magazynu by nie generować przestojów pracy. Dzięki takiemu rozwiązaniu, klient, oszczędza swój czas i nerwy a my wykonujemy pracę w terminie.
+
+Q: Jak działają wasze ekipy wykończeniowe?
+A: Na rynku dostępny jest szeroki wybór różnych wykonawców. Novahouse dokładnie selekcjonuje swoich partnerów, którzy są znani z wysokich standardów działania. Współpracujemy wyłącznie z profesjonalistami, którzy kładą duży nacisk na jakość wykonania. Nasze sztywne zasady i normy są kluczowe dla osiągnięcia doskonałej jakości. W sytuacji pojawienia się problemów podczas realizacji inwestycji, nasi doświadczeni projektanci, którzy koordynują pracę na budowie podejmują niezwłocznie działania naprawcze. Dodatkowo, nasza autorska lista kontrolna jakości jest zawsze ostatecznym sprawdzianem, która gwarantuje świetny efekt końcowy.
+
+Q: Jakie zabudowy stolarskie można przez was wykonać?
+A: Na rynku jest wielu producentów mebli na wymiar. Każdy z nich wyróżnia się np. jakością, wzornictwem, terminowością. Wybraliśmy i zweryfikowaliśmy spośród nich najlepszych. Są oni w stanie dostarczyć jakość na długie lata, odpowiednią ilość wzorów i kolorów, szybki termin produkcji oraz brak potrzeby składania reklamacji. Dzięki, wielu, zrealizowanym projektom oraz grupie wielu ekspertów od zabudów, stolarzy i projektantów możemy dobrać rozwiązania do konkretnego zapotrzebowania klienta oraz zaprojektować ergonomicznie kuchnię. W tym zabudowy laminowane, lakierowane, drewniane, fornirowane, akrylowane. Korzystamy z najlepszych systemów okuć (BLUM, Hettich). Nasi klienci mogą korzystać z kuchni, w której meble odporne są na eksploatację na długie lata.
+
+Q: Jak wygląda umowa na wykończenie wnętrza?
+A: Często, umowy, zawierają niekorzystne zapisy umiejętnie ukryte wśród tekstu. Takie zapisy mogą skutkować karami i obciążeniami w kierunku klienta. Nasza umowa zawiera symetryczne zasady dla obydwu stron. Nasi klienci otrzymują partnerskie podejście do współpracy.
+
+Q: Czy odbiór mieszkania od dewelopera jest w cenie pakietu?
+A: Tak, w każdym z pakietów dostępnych w Novahouse przeprowadzamy weryfikację lokalnej nieruchomości. Delegujemy zadanie niezależnemu inspektorowi budowlanemu, który dokładnie ocenia obiekt pod wieloma technicznymi aspektami. Po dokonaniu analizy, klient otrzymuje od inspektora kompleksowy raport zawierający profesjonalne opinie, który może następnie pokazać deweloperowi w celu ewentualnych napraw.
+
+Q: Jaką mam pewność co do realizacji prac w terminie?
+A: Prace remontowe często przedłużają się, co powoduje frustrację i generuje dodatkowe koszty. W każdym naszym zleceniu zaplanowany jest harmonogram projektowania oraz realizacji. Pracujemy w dedykowanym programie do zarządzania projektami. Nasz zespół rozliczany jest z terminowej realizacji, dzięki temu klient zyskuje pewność, co do wprowadzenia się do mieszkania w wybranym terminie.
+
+Q: Co w przypadku kiedy zakupione produkty okażą się wadliwe?
+A: Produkty i materiały mogą docierać na budowę uszkodzone, o innych parametrach czy kolorach. Takie sytuacje wymagają czasu - należy zgłosić reklamację i monitorować ją. My dokonujemy wcześniejszych zakupów wybranych produktów i weryfikujemy je. Dzięki temu oszczędzamy czas na reklamację i kończymy ustalone prace w terminie.
+
+Q: Jak wygląda u was przebieg reklamacji?
+A: Często obserwujemy brak reakcji i odpowiedzi na reklamację przez inne mikrofirmy. Przeważnie jest tak, że nie została zatrudniona osoba dedykowana do obsługi reklamacji. W naszej firmie pracuje zespół ludzi, którzy są odpowiedzialni za konkretną reklamację, jeżeli taka się pojawi. Korzystamy z systemu zgłoszeń reklamacji. Wyznaczona osoba jest w stanie podjąć szybką reakcję i zebrać informacje w celu organizacji ew. zespołu naprawczego. Klient może liczyć na sprawną reakcję z naszej strony. Firma posiada wysokie ubezpieczenie, które zabezpiecza Klienta.
+
+Q: Kiedy możecie zacząć realizację?
+A: W przypadku gdy klient zdecyduje się na remont, to często jest tak, że musi długo czekać na pierwsze wolne okienko ekipy remontowej lub jest konieczność rezerwacji dużo wcześniej. My planujemy z wyprzedzeniem projekt i jego realizację. Zarządzamy harmonogramem prac wielu naszych wykonawców. Posiadamy dużą liczbę zweryfikowanych przez nas wykonawców. Dlatego u nas nie czeka się długo, jesteśmy dostępni praktycznie od ręki jeśli jest taka potrzeba. Dajemy Gwarancje rozpoczęcia i zakończenia prac w umówionym terminie.
+
+Q: Jak wygląda kompleksowa usługa montażu zabudów stolarskich i AGD?
+A: Zabudowy stolarskie montowane są przez wykwalifikowanych specjalistów w tej konkretnej dziedzinie. Jeżeli chodzi o sprzęt AGD, to, osoba montująca zabudowy współpracuje z elektrykiem i hydraulikiem, którzy posiadają odpowiednie uprawnienia. Dzięki czemu oddajemy klientowi kuchnię wraz z podłączonymi instalacjami i w pełni wyposażoną, gotową do użytku od zaraz. Klient na koniec dostaję instrukcję użytkowania kuchni oraz gwarancje.
+
+Q: Czy otrzymam raporty w trakcie prac?
+A: Przesyłamy tygodniowe raporty zawierające informacje o stopniu postępu prac wraz ze zdjęciami realizacji. Klient może kontrolować postęp prac swojego lokalu bez poświęcania dodatkowego czasu i pieniędzy na dodatkowe dojazdy. Dzięki dedykowanej aplikacji można obserwować na bieżąco z dowolnego miejsca na świecie co się dzieje na budowie.
+
+Q: Jakie są koszty poszczególnych usług?
+A: Analizując pracę różnych firm wykończeniowych można zauważyć, że część z nich nie ujawnia wszystkich kosztów związanych z remontem. Osoby planujące remont często nie posiadają dokładnej wiedzy odnośnie ilości potrzebnych materiałów. Obawiają się też, że firma naciągnie ich na opłatę za "rzeczy" których tak naprawdę nie muszą kupować. My oferujemy czytelną umowę o współpracy. Do każdej umowy załączony jest cennik naszych usług. Wyszczególniamy transparentnie każdą pozycję w ofercie (usługi, materiały budowlane, materiały wykończeniowe). Dzięki temu nasz klient na bieżąco zna wszystkie koszty, ewentualnych, dodatkowych prac – co daje pełną kontrolę nad budżetem.
+
+--- BAZA PYTAŃ NOVABOT (Google Docs) ---
+[Zawartość z https://docs.google.com/document/d/17By-nfAtdXLoNuwjjXHd7Gfkb4TQaTxiAY5t05PNBbc/edit?tab=t.0 - DO DODANIA]
+[Proszę skopiować zawartość z dokumentu Google Docs i wkleić tutaj]
 
 📋 FALLBACK - Gdy brak danych:
 "Rozumiem. Żeby odpowiedzieć sensownie, potrzebuję jeszcze jednej informacji: {pytanie}."
