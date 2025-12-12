@@ -835,15 +835,25 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
 
         # 4. Jeśli nie znaleziono w FAQ, ZAWSZE użyj AI (OpenAI GPT) - PRIORYTET!
         if not bot_response:
+            logging.info(f"[GPT FLOW] No FAQ match for: {user_message[:50]}... - attempting GPT call")
             client = ensure_openai_client()
             if not client:
                 # Try direct initialization as fallback
                 logging.warning("[WARNING] ensure_openai_client() returned None - trying direct initialization...")
+                api_key_check = os.getenv("OPENAI_API_KEY")
+                if api_key_check:
+                    key_preview = api_key_check[:10] + "..." if len(api_key_check) > 10 else "None"
+                    logging.info(f"[DEBUG] OPENAI_API_KEY exists (starts with: {key_preview})")
+                else:
+                    logging.error("[ERROR] OPENAI_API_KEY is NOT SET in environment!")
                 client = get_openai_client()
                 if client:
                     logging.info("[INFO] Direct get_openai_client() succeeded")
+                else:
+                    logging.error("[ERROR] Direct get_openai_client() also returned None!")
             
             if client:
+                logging.info(f"[GPT FLOW] OpenAI client available - calling GPT API for: {user_message[:50]}...")
                 try:
                     # Pobierz historię konwersacji (ujednolicony limit do 30)
                     message_history_limit = int(os.getenv("MESSAGE_HISTORY_LIMIT", "30"))
@@ -948,7 +958,7 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                                 except (json.JSONDecodeError, AttributeError):
                                     pass
                         except Exception as e:
-                            print(f"[Qualification Data] Error loading: {e}")
+                            logging.warning(f"[Qualification Data] Error loading: {e}")
                         
                         if memory_items:
                             memory_prompt = "\n\nZapamiętane info o kliencie (TYLKO dane które klient PODAŁ WYRAŹNIE):\n" + "\n".join(
@@ -984,9 +994,14 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                                 temperature=0.6,  # Optimized: was 0.7, slightly more focused responses
                             )
                             bot_response = response.choices[0].message.content
-                            # Cache response for 1 hour (3600s) - common questions get cached
-                            cache.set(cache_key, bot_response, ttl=3600)
-                            logging.info(f"[OpenAI GPT] Response received: {bot_response[:100] if bot_response else 'EMPTY'}...")
+                            # Validate GPT response
+                            if not bot_response or not bot_response.strip():
+                                logging.error("[GPT ERROR] Empty response from GPT API!")
+                                bot_response = None
+                            else:
+                                # Cache response for 1 hour (3600s) - common questions get cached
+                                cache.set(cache_key, bot_response, ttl=3600)
+                                logging.info(f"[OpenAI GPT] Response received: {bot_response[:100] if bot_response else 'EMPTY'}...")
                             # Log token usage for cost tracking
                             if hasattr(response, 'usage'):
                                 usage = response.usage
@@ -1008,12 +1023,19 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                             temperature=0.6,
                         )
                         bot_response = response.choices[0].message.content
-                        logging.info(f"[OpenAI GPT] Response received: {bot_response[:100] if bot_response else 'EMPTY'}...")
+                        # Validate GPT response
+                        if not bot_response or not bot_response.strip():
+                            logging.error("[GPT ERROR] Empty response from GPT API (no cache)!")
+                            bot_response = None
+                        else:
+                            logging.info(f"[OpenAI GPT] Response received: {bot_response[:100] if bot_response else 'EMPTY'}...")
 
                 except Exception as e:
                     logging.error(f"[GPT ERROR] {type(e).__name__}: {e}", exc_info=True)
+                    logging.error(f"[GPT ERROR] Full error details - message: {user_message[:50]}..., client available: {client is not None}")
                     # Fallback tylko przy błędzie GPT - ale lepszy fallback
                     bot_response = get_default_response(user_message)
+                    logging.warning(f"[FALLBACK] Using default response: {bot_response[:50]}...")
             else:
                 # Try to get client again - maybe it wasn't initialized yet
                 logging.warning("[WARNING] OpenAI client is None - attempting to initialize...")
@@ -1035,10 +1057,17 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                             temperature=0.6,
                         )
                         bot_response = response.choices[0].message.content
-                        logging.info(f"[OpenAI GPT] Response received (retry): {bot_response[:100] if bot_response else 'EMPTY'}...")
+                        # Validate GPT response
+                        if not bot_response or not bot_response.strip():
+                            logging.error("[GPT ERROR] Empty response from GPT API (retry)!")
+                            bot_response = None
+                        else:
+                            logging.info(f"[OpenAI GPT] Response received (retry): {bot_response[:100] if bot_response else 'EMPTY'}...")
                     except Exception as e:
                         logging.error(f"[GPT ERROR on retry] {type(e).__name__}: {e}", exc_info=True)
+                        logging.error(f"[GPT ERROR on retry] Full error details - message: {user_message[:50]}...")
                         bot_response = get_default_response(user_message)
+                        logging.warning(f"[FALLBACK] Using default response (retry failed): {bot_response[:50]}...")
                 else:
                     # Check if OPENAI_API_KEY is set but client failed to initialize
                     openai_key = os.getenv("OPENAI_API_KEY")
@@ -1046,12 +1075,16 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                         logging.warning("OPENAI_API_KEY not set or is test key - GPT disabled")
                     else:
                         logging.error(f"OPENAI_API_KEY is set but client initialization failed - check API key validity")
+                        logging.error(f"[CRITICAL] GPT is completely unavailable - API key: {bool(openai_key)}, starts with test_: {openai_key.lower().startswith('test_') if openai_key else 'N/A'}")
                     bot_response = get_default_response(user_message)
+                    logging.warning(f"[FALLBACK] Using default response (no client): {bot_response[:50]}...")
 
         # Jeśli NADAL brak odpowiedzi (nie powinno się zdarzyć)
         if not bot_response:
-            logging.warning("[CRITICAL FALLBACK] Używam awaryjnej odpowiedzi - brak odpowiedzi z GPT/FAQ")
+            logging.error("[CRITICAL FALLBACK] Używam awaryjnej odpowiedzi - brak odpowiedzi z GPT/FAQ")
+            logging.error(f"[CRITICAL] Message: {user_message[:50]}..., FAQ match: False, GPT attempted: True")
             bot_response = get_default_response(user_message)
+            logging.warning(f"[FALLBACK] Final fallback response: {bot_response[:50]}...")
 
         # Add proactive booking suggestion if we have data
         if context_memory.get("_booking_suggestion") and not context_memory.get("booking_intent_detected"):
