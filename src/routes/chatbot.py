@@ -784,8 +784,6 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
     Returns:
         dict with 'response', 'session_id', 'conversation_id'
     """
-    global _context_fallback
-    
     conversation = None
     context_memory = {}
     db_available = False

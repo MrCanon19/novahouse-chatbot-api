@@ -3,6 +3,7 @@ Retry Logic for External Integrations
 Handles transient failures with exponential backoff
 """
 
+import logging
 import time
 from functools import wraps
 from typing import Any, Callable, Optional, Tuple
