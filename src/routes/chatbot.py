@@ -317,9 +317,9 @@ def extract_context(message: str, existing_context: dict | None = None):
                 # Fallback: try to clean up common endings
                 lower_city = candidate_city.lower()
                 if lower_city.endswith("iu") and len(candidate_city) > 5:
-            candidate_city = candidate_city[:-2]
+                    candidate_city = candidate_city[:-2]
                 elif lower_city.endswith("u") and len(candidate_city) > 5:
-            candidate_city = candidate_city[:-1]
+                    candidate_city = candidate_city[:-1]
                 elif lower_city.endswith("ia") and len(candidate_city) > 5:
                     candidate_city = candidate_city  # Keep as is
                 
