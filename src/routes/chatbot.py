@@ -1467,7 +1467,15 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
         if follow_up:
             bot_response = f"{bot_response}\n\n{follow_up}"
 
-        message_count = ChatMessage.query.filter_by(conversation_id=conversation.id).count()
+        # Calculate lead score (use in-memory message count if DB unavailable)
+        if db_available and conversation:
+            try:
+                message_count = ChatMessage.query.filter_by(conversation_id=conversation.id).count()
+            except Exception:
+                message_count = 0
+        else:
+            message_count = 0  # Approximate when DB unavailable
+        
         lead_score = calculate_lead_score(context_memory, message_count)
         next_action = suggest_next_best_action(context_memory, lead_score)
 
