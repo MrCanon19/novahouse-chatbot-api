@@ -225,16 +225,44 @@ class ContextValidator:
             f"Unknown package (expected one of: {', '.join(ContextValidator.VALID_PACKAGES)})",
         )
 
+    # Blacklist of words that cannot be names (greetings, common words)
+    NAME_BLACKLIST = {
+        "cześć", "hej", "dzień", "dobry", "dobra", "dobrym", "dobra",
+        "witam", "witaj", "siema", "elo", "hejo", "heja", "siemka",
+        "dziękuję", "dzięki", "proszę", "przepraszam", "przepraszam",
+        "tak", "nie", "ok", "okej", "okay", "super", "świetnie",
+        "mam", "masz", "ma", "mają", "jest", "są", "być",
+        "chcę", "chcesz", "chce", "chcą", "potrzebuję", "potrzebujesz",
+        "mogę", "możesz", "może", "mogą", "pomoc", "pomocy", "pomóc",
+        "informacje", "informacji", "informacja", "dane", "danych",
+        "pakiet", "pakiety", "pakietów", "cena", "ceny", "cen",
+        "budżet", "budżetu", "budżecie", "metraż", "metrażu", "metrażem",
+        "mieszkanie", "mieszkania", "mieszkaniu", "dom", "domu", "domem",
+        "wykończenie", "wykończenia", "wykończeniu", "remont", "remontu",
+        "wrocław", "warszawa", "gdańsk", "kraków", "poznań", "miasto", "miasta",
+    }
+
     @staticmethod
     def validate_name(name: str) -> Tuple[bool, Optional[str], Optional[str]]:
         """
-        Validate name
+        Validate name - with blacklist to prevent false positives (greetings, common words)
 
         Returns:
             (is_valid, sanitized_value, error_message)
         """
         if not name or not isinstance(name, str):
             return False, None, "Name is empty"
+
+        name_lower = name.strip().lower()
+        
+        # Check blacklist - reject common words that are not names
+        if name_lower in ContextValidator.NAME_BLACKLIST:
+            return False, None, f"'{name}' is in blacklist (not a valid name)"
+        
+        # Check if name starts with blacklisted word (e.g., "Cześć Michał" -> reject "Cześć")
+        for blacklisted in ContextValidator.NAME_BLACKLIST:
+            if name_lower.startswith(blacklisted + " ") or name_lower == blacklisted:
+                return False, None, f"Name starts with blacklisted word: '{blacklisted}'"
 
         name = name.strip()
 

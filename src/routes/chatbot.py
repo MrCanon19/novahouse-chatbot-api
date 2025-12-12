@@ -102,27 +102,57 @@ def extract_context(message: str, existing_context: dict | None = None):
         if valid:
             ctx["email"] = value
 
-    # Name (prefer introduction pattern, fall back to last capitalized pair)
+    # Name extraction - CRITICAL: "Cześć" is a greeting, NOT a name!
+    # Only extract if explicitly introduced with patterns like "jestem X", "nazywam się X", "mam na imię X"
     preferred_name = None
+    
+    # Pattern 1: Explicit introduction ("jestem Michał", "nazywam się Anna Kowalska")
     intro_match = re.search(
-        r"(?:jestem|nazywam się|mam na imię|to ja)\s+([A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+(?:\s+[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+)+)",
+        r"(?:jestem|nazywam się|mam na imię|to)\s+([A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+(?:\s+[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+)?)",
         text,
         re.IGNORECASE,
     )
     if intro_match:
-        preferred_name = intro_match.group(1).strip()
-    else:
-        capitalized_pairs = re.findall(
-            r"[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+\s+[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+",
-            text,
-        )
-        if capitalized_pairs:
-            preferred_name = capitalized_pairs[-1].strip()
+        candidate = intro_match.group(1).strip()
+        # CRITICAL: Validate immediately - reject if in blacklist (greetings like "Cześć")
+        valid, value, _ = ContextValidator.validate_name(candidate)
+        if valid:
+            preferred_name = value
+            logging.info(f"✓ Extracted name from intro pattern: {preferred_name}")
+        else:
+            logging.warning(f"✗ Rejected name candidate (blacklist/validation): {candidate}")
+    
+    # Pattern 2: Only use capitalized pairs if no intro pattern found AND it's a full name (2+ words)
+    # AND it's not at the start of message (likely a greeting)
+    if not preferred_name:
+        # Skip if message starts with common greetings
+        text_start = text.strip()[:20].lower()
+        if not any(text_start.startswith(greeting) for greeting in ["cześć", "hej", "dzień", "witam", "siema"]):
+            capitalized_pairs = re.findall(
+                r"[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+\s+[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+",
+                text,
+            )
+            if capitalized_pairs:
+                candidate = capitalized_pairs[-1].strip()
+                # Validate - reject if in blacklist
+                valid, value, _ = ContextValidator.validate_name(candidate)
+                if valid:
+                    preferred_name = value
+                    logging.info(f"✓ Extracted name from capitalized pair: {preferred_name}")
 
     if preferred_name:
-        valid, value, _ = ContextValidator.validate_name(preferred_name)
-        if valid and (not ctx.get("name") or ctx["name"].lower().startswith("jestem")):
-            ctx["name"] = value
+        # Only update if we don't have a name yet, or if old name was clearly wrong (starts with blacklisted word)
+        if not ctx.get("name"):
+            ctx["name"] = preferred_name
+            logging.info(f"✓ Saved name to context: {preferred_name}")
+        else:
+            # Check if existing name is in blacklist - if so, replace it
+            existing_name_lower = ctx["name"].lower()
+            is_blacklisted = any(existing_name_lower.startswith(bl) or existing_name_lower == bl 
+                               for bl in ContextValidator.NAME_BLACKLIST)
+            if is_blacklisted:
+                logging.warning(f"⚠ Replacing blacklisted name '{ctx['name']}' with '{preferred_name}'")
+                ctx["name"] = preferred_name
 
     # Phone (capture formatted raw phone to satisfy formatting expectations)
     phone_match = re.search(
@@ -410,8 +440,12 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
             db.session.add(conversation)
             db.session.commit()
 
-        # Load context
-        context_memory = json.loads(conversation.context_data or "{}")
+        # Load context with error handling
+        try:
+            context_memory = json.loads(conversation.context_data or "{}")
+        except (json.JSONDecodeError, TypeError) as e:
+            logging.warning(f"Failed to parse context_data for session {session_id}: {e}, using empty dict")
+            context_memory = {}
 
         # Extract and update context from user message (with safeguards)
         try:
@@ -421,7 +455,17 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
         except ImportError:
             # Fallback to legacy extract_context if safe version not available
             context_memory = extract_context(user_message, context_memory)
-        conversation.context_data = json.dumps(context_memory)
+        # Save context with error handling
+        try:
+            conversation.context_data = json.dumps(context_memory, ensure_ascii=False)
+        except (TypeError, ValueError) as e:
+            logging.warning(f"Failed to serialize context_data for session {session_id}: {e}")
+            # Try with ensure_ascii=True as fallback
+            try:
+                conversation.context_data = json.dumps(context_memory, ensure_ascii=True)
+            except Exception:
+                # Last resort: save minimal context
+                conversation.context_data = json.dumps({"error": "context_serialization_failed"})
 
         # Zapisz wiadomość użytkownika
         user_msg = ChatMessage(
@@ -518,9 +562,9 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                         if context_memory.get("package"):
                             memory_items.append(f"Interesujący pakiet: {context_memory['package']}")
                         if memory_items:
-                            memory_prompt = "\n\nZapamiętane info o kliencie:\n" + "\n".join(
+                            memory_prompt = "\n\nZapamiętane info o kliencie (TYLKO dane które klient PODAŁ WYRAŹNIE):\n" + "\n".join(
                                 memory_items
-                            ) + "\n\nWAŻNE: Używaj imienia naturalnie (co 2-3 wiadomości), zapamiętuj miasto i metraż, przeliczaj ceny automatycznie!"
+                            ) + "\n\n⚠️ KRYTYCZNE: NIGDY nie zakładaj danych których klient NIE PODAŁ! Jeśli klient mówi 'nie podawałem budżetu' - USUŃ błędne dane z pamięci. Używaj imienia naturalnie (co 2-3 wiadomości), zapamiętuj miasto i metraż, przeliczaj ceny automatycznie!"
 
                     # COST OPTIMIZATION: Check cache first for similar questions
                     try:
@@ -556,6 +600,10 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                             print(
                                 f"[OpenAI GPT] Response: {bot_response[:100] if bot_response else 'EMPTY'}..."
                             )
+                            # Log token usage for cost tracking
+                            if hasattr(response, 'usage'):
+                                usage = response.usage
+                                print(f"[GPT COST] Input: {usage.prompt_tokens}, Output: {usage.completion_tokens}, Total: {usage.total_tokens}")
                     except ImportError:
                         # Cache not available, use GPT directly
                         print(f"[OpenAI GPT] Przetwarzanie: {user_message[:50]}...")
@@ -669,7 +717,12 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
 
         # Check if user is confirming data
         confirmation_intent = check_data_confirmation_intent(user_message)
-        existing_lead = Lead.query.filter_by(session_id=session_id).first()
+        # Safe query with error handling for missing columns
+        try:
+            existing_lead = Lead.query.filter_by(session_id=session_id).first()
+        except Exception as e:
+            logging.warning(f"Failed to query Lead for session {session_id}: {e}")
+            existing_lead = None
 
         # Check if we have enough data to create lead
         has_enough_data_for_lead = context_memory.get("name") and (
