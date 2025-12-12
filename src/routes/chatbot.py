@@ -1433,21 +1433,23 @@ def ensure_openai_client():
         logging.warning("⚠️  GPT_FALLBACK_ENABLED=false – skipping GPT client init")
         return None
 
+    # Get API key from environment (always fresh, not from global variable)
+    api_key = os.getenv("OPENAI_API_KEY")
+    
     # Always try to get client (even if already initialized, to ensure it's working)
-    if OPENAI_API_KEY and not OPENAI_API_KEY.lower().startswith("test_"):
+    if api_key and not api_key.lower().startswith("test_"):
         client = get_openai_client()
         if client:
             openai_client = client
             AI_PROVIDER = "openai"
-            if not openai_client:  # Only log if first time
-                logging.info("✅ OpenAI GPT-4o-mini enabled (proven & reliable)")
+            logging.debug("✅ OpenAI GPT-4o-mini client ready")
             return openai_client
         else:
-            logging.warning("⚠️  No AI configured - set OPENAI_API_KEY or check API key validity")
+            logging.warning("⚠️  get_openai_client() returned None - check API key validity")
             return None
     else:
         # SECURITY: Never log full API key, only first 4 chars for debugging
-        key_preview = OPENAI_API_KEY[:4] + "..." if OPENAI_API_KEY and len(OPENAI_API_KEY) > 4 else "None"
+        key_preview = api_key[:4] + "..." if api_key and len(api_key) > 4 else "None"
         logging.warning(f"⚠️  OPENAI_API_KEY missing/placeholder (key starts with: {key_preview}) – GPT disabled")
         return None
 
