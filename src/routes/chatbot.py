@@ -1054,13 +1054,29 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                             # OPTIMIZED FOR COST: Reduced max_tokens from 500 to 350 (saves ~30% on output costs)
                             # Most chatbot responses are 200-300 tokens, 350 is sufficient
                             # CRITICAL: Add timeout to prevent hanging requests
-                            response = client.chat.completions.create(
-                                model=GPT_MODEL,
-                                messages=messages,
-                                max_tokens=350,  # Optimized: was 500, saves ~30% on output costs
-                                temperature=0.6,  # Optimized: was 0.7, slightly more focused responses
-                                timeout=30.0,  # 30 second timeout to prevent hanging
-                            )
+                            # CRITICAL: Use circuit breaker and retry logic
+                            from src.services.circuit_breaker import get_openai_circuit_breaker, CircuitBreakerOpenError
+                            from src.services.retry_handler import retry_openai_api
+                            
+                            circuit_breaker = get_openai_circuit_breaker()
+                            
+                            # Wrap GPT call with retry logic
+                            @retry_openai_api
+                            def _call_gpt_with_retry():
+                                return circuit_breaker.call(
+                                    client.chat.completions.create,
+                                    model=GPT_MODEL,
+                                    messages=messages,
+                                    max_tokens=350,  # Optimized: was 500, saves ~30% on output costs
+                                    temperature=0.6,  # Optimized: was 0.7, slightly more focused responses
+                                    timeout=30.0,  # 30 second timeout to prevent hanging
+                                )
+                            
+                            try:
+                                response = _call_gpt_with_retry()
+                            except CircuitBreakerOpenError as cb_error:
+                                logging.error(f"[CircuitBreaker] Circuit is OPEN: {cb_error}")
+                                raise Exception("OpenAI API is temporarily unavailable. Please try again later.")
                             bot_response = response.choices[0].message.content
                             # Validate GPT response
                             if not bot_response or not bot_response.strip():

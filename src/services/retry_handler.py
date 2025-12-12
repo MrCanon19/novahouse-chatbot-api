@@ -62,14 +62,16 @@ def retry_with_backoff(
 
                     # Last attempt, raise the exception
                     if attempt >= config.max_attempts:
-                        print(f"[Retry] {func.__name__} failed after {attempt} attempts: {e}")
+                        import logging
+                        logging.error(f"[Retry] {func.__name__} failed after {attempt} attempts: {e}")
                         raise
 
                     # Call retry callback if provided
                     if on_retry:
                         on_retry(attempt, e)
 
-                    print(
+                    import logging
+                    logging.warning(
                         f"[Retry] {func.__name__} attempt {attempt}/{config.max_attempts} failed: {e}. Retrying in {delay}s..."
                     )
 
@@ -107,7 +109,8 @@ class FailedOperationQueue:
                 "timestamp": time.time(),
             }
         )
-        print(f"[FailedQueue] Added {operation_type}: {error}")
+        import logging
+        logging.warning(f"[FailedQueue] Added {operation_type}: {error}")
 
     def get_pending(self, operation_type: Optional[str] = None) -> list:
         """Get pending operations, optionally filtered by type"""
@@ -134,7 +137,8 @@ class FailedOperationQueue:
             operation["attempts"] += 1
 
             if operation["attempts"] > max_attempts:
-                print(f"[FailedQueue] Abandoning {operation['type']} after {max_attempts} attempts")
+                import logging
+                logging.warning(f"[FailedQueue] Abandoning {operation['type']} after {max_attempts} attempts")
                 self.remove(operation)
                 failed += 1
                 continue
@@ -146,7 +150,8 @@ class FailedOperationQueue:
 
                     monday = MondayClient()
                     monday.create_lead_item(operation["data"])
-                    print("[FailedQueue] Successfully retried monday_lead")
+                    import logging
+                    logging.info("[FailedQueue] Successfully retried monday_lead")
                     self.remove(operation)
                     success += 1
 
@@ -154,16 +159,19 @@ class FailedOperationQueue:
                     from src.services.email_service import email_service
 
                     email_service.send_email(**operation["data"])
-                    print("[FailedQueue] Successfully retried email")
+                    import logging
+                    logging.info("[FailedQueue] Successfully retried email")
                     self.remove(operation)
                     success += 1
 
                 else:
-                    print(f"[FailedQueue] Unknown operation type: {operation['type']}")
+                    import logging
+                    logging.warning(f"[FailedQueue] Unknown operation type: {operation['type']}")
                     failed += 1
 
             except Exception as e:
-                print(f"[FailedQueue] Retry failed for {operation['type']}: {e}")
+                import logging
+                logging.error(f"[FailedQueue] Retry failed for {operation['type']}: {e}")
                 failed += 1
 
         return success, failed
@@ -172,7 +180,8 @@ class FailedOperationQueue:
         """Clear all pending operations"""
         count = len(self.queue)
         self.queue.clear()
-        print(f"[FailedQueue] Cleared {count} operations")
+        import logging
+        logging.info(f"[FailedQueue] Cleared {count} operations")
         return count
 
 
