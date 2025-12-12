@@ -260,8 +260,7 @@
             border: 1px solid rgba(0,0,0,0.08);
             box-shadow: 0 8px 24px rgba(0,0,0,0.1);
             padding: 8px;
-            min-width: 220px;
-            max-width: 240px;
+            width: 240px;
             z-index: 50;
         }
         .header-menu-dropdown::before {
@@ -272,7 +271,7 @@
             border-width: 0 8px 8px 8px;
             border-style: solid;
             border-color: transparent transparent #fff transparent;
-            filter: drop-shadow(0 -2px 2px rgba(0,0,0,0.06));
+            filter: drop-shadow(0 2px 2px rgba(0,0,0,0.10));
         }
         .header-menu-dropdown.active {
             display: block;
@@ -921,7 +920,11 @@
         
         function clearConversation() {
             document.getElementById('headerMenu')?.classList.remove('active');
-            if (confirm('Czy na pewno wyczyścić rozmowę? Tej operacji nie da się cofnąć.')) {
+            const confirmed = confirm('Czy na pewno wyczyścić rozmowę? Tej operacji nie da się cofnąć.');
+            if (!confirmed) {
+                return;
+            }
+            if (confirmed) {
                 // Clear messages
                 const messagesDiv = document.getElementById('messages');
                 messagesDiv.innerHTML = `
