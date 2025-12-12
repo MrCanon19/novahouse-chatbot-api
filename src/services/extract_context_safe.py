@@ -43,19 +43,21 @@ def extract_context_safe(message: str, existing_context: Dict[str, Any] = None) 
     message_lower = message.lower()
 
     try:
-        # Extract name - only if looks like Polish name
+        # Extract name - only if explicitly introduced, NOT from random capitalized words
+        # Reject common greetings and words that are not names
         name_patterns = [
-            r"(?:jestem|mam na imię|moje imię|to|[Ii] to)\s+([A-ZŚŻŹĆŃĄĘÓŁ][a-ząęółćżźśń]+(?:\s+[A-ZŚŻŹĆŃĄĘÓŁ][a-ząęółćżźśń]+)?)",
-            r"^([A-ZŚŻŹĆŃĄĘÓŁ][a-ząęółćżźśń]+(?:\s+[A-ZŚŻŹĆŃĄĘÓŁ][a-ząęółćżźśń]+)?)[\s,]",
+            r"(?:jestem|mam na imię|moje imię|nazywam się|to)\s+([A-ZŚŻŹĆŃĄĘÓŁ][a-ząęółćżźśń]+(?:\s+[A-ZŚŻŹĆŃĄĘÓŁ][a-ząęółćżźśń]+)?)",
         ]
         for pattern in name_patterns:
-            match = re.search(pattern, message)
+            match = re.search(pattern, message, re.IGNORECASE)
             if match:
                 name = match.group(1).strip()
                 validated_name = validator.validate_name(name)
                 if validated_name:
                     existing_context["name"] = validated_name
                     logger.debug(f"✓ Extracted name: {validated_name}")
+                else:
+                    logger.debug(f"✗ Rejected name (blacklist/validation): {name}")
                 break
 
         # Extract email

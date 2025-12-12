@@ -21,11 +21,11 @@
         }
         .chatbot-container {
             width: 100%;
-            max-width: 800px;
-            height: 600px;
+            max-width: min(560px, 92vw);
+            height: min(720px, 86vh);
             background: white;
-            border-radius: 16px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -33,63 +33,129 @@
         .chatbot-header {
             background: linear-gradient(135deg, #FF6B35 0%, #D2691E 100%);
             color: white;
-            padding: 24px 20px;
-            border-radius: 16px 16px 0 0;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 12px 16px;
+            border-radius: 12px 12px 0 0;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            position: relative;
+            z-index: 10;
         }
         .chatbot-header h1 {
-            font-size: 26px;
-            margin: 0 0 8px 0;
-            font-weight: 700;
+            font-size: 16px;
+            margin: 0 0 2px 0;
+            font-weight: 600;
             display: flex;
             align-items: center;
-            gap: 10px;
-        }
-        .chatbot-header h1::before {
-            content: "🏠";
-            font-size: 28px;
+            gap: 6px;
         }
         .chatbot-header p {
-            font-size: 14px;
-            opacity: 0.95;
+            font-size: 12px;
+            opacity: 0.85;
             margin: 0;
+            line-height: 1.3;
         }
         .chatbot-messages {
             flex: 1;
             overflow-y: auto;
-            padding: 20px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            gap: 12px;
+            align-items: flex-start;
+        }
+        @media (max-width: 600px) {
+            .chatbot-messages {
+                padding: 12px;
+            }
         }
         .message {
-            margin-bottom: 15px;
-            padding: 12px 16px;
+            margin-bottom: 8px;
+            padding: 12px 14px;
             border-radius: 12px;
-            max-width: 80%;
+            max-width: 70%;
+            font-size: 15px;
+            line-height: 1.45;
+            text-align: left;
+            align-self: flex-start;
+        }
+        @media (max-width: 600px) {
+            .message {
+                max-width: 82%;
+                font-size: 14px;
+            }
         }
         .message.user {
             background: linear-gradient(135deg, #FF6B35 0%, #FF8C42 100%);
             color: white;
             margin-left: auto;
-            text-align: right;
+            text-align: left;
             box-shadow: 0 2px 8px rgba(255, 107, 53, 0.2);
+            align-self: flex-end;
         }
         .message.bot {
             background: #F8F8F8;
             color: #2C2C2C;
-            border-left: 3px solid #FF6B35;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+            border: 1px solid rgba(0,0,0,0.08);
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            text-align: left;
+            position: relative;
+            align-self: flex-start;
+        }
+        .message.bot::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 10px;
+            bottom: 10px;
+            width: 3px;
+            border-radius: 0 3px 3px 0;
+            background: #FF6B35;
+            opacity: 0.9;
+        }
+        .message-microcopy {
+            font-size: 13px;
+            color: rgba(0,0,0,0.65);
+            margin-top: 6px;
+            display: block;
+            font-style: italic;
+        }
+        .message.bot br {
+            line-height: 1.45;
+            display: block;
+            content: "";
+            margin-top: 6px;
+        }
+        .message.bot strong {
+            display: inline;
+        }
+        .message br {
+            line-height: 1.4;
+        }
+        .message p {
+            margin: 0 0 8px 0;
+        }
+        .message p:last-child {
+            margin-bottom: 0;
         }
         .chatbot-input {
             display: flex;
-            padding: 20px;
+            padding: 12px;
             border-top: 1px solid #e0e0e0;
+            gap: 8px;
         }
         .chatbot-input input {
             flex: 1;
-            padding: 14px 20px;
+            height: 44px;
+            padding: 0 14px;
             border: 2px solid #E8E8E8;
-            border-radius: 28px;
-            font-size: 16px;
+            border-radius: 22px;
+            font-size: 14px;
             transition: all 0.3s ease;
+        }
+        .chatbot-input input::placeholder {
+            color: #999;
+            font-style: italic;
         }
         .chatbot-input input:focus {
             outline: none;
@@ -97,17 +163,18 @@
             box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
         }
         .chatbot-input button {
-            margin-left: 12px;
-            padding: 14px 28px;
+            height: 44px;
+            min-width: 80px;
+            padding: 0 16px;
             background: linear-gradient(135deg, #FF6B35 0%, #D2691E 100%);
             color: white;
             border: none;
-            border-radius: 28px;
+            border-radius: 22px;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: 600;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+            box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
         }
         .chatbot-input button:hover {
             background: linear-gradient(135deg, #FF8C42 0%, #FF6B35 100%);
@@ -117,6 +184,251 @@
         .chatbot-input button:active {
             transform: translateY(0);
         }
+        .chatbot-input button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .loading-indicator {
+            display: none;
+            padding: 12px 20px;
+            color: #666;
+            font-size: 14px;
+            font-style: italic;
+            text-align: center;
+            background: #F5F5F5;
+            border-top: 1px solid #E0E0E0;
+        }
+        .loading-indicator.active {
+            display: block;
+        }
+        .header-menu {
+            position: absolute;
+            top: 8px;
+            right: 12px;
+            display: flex;
+            gap: 8px;
+            z-index: 10;
+        }
+        .menu-btn, .close-btn {
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            background: rgba(255, 255, 255, 0.25);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.45);
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .menu-btn:hover, .close-btn:hover {
+            background: rgba(255, 255, 255, 0.35);
+        }
+        .menu-btn:focus,
+        .close-btn:focus,
+        .menu-btn:focus-visible,
+        .close-btn:focus-visible {
+            outline: 2px solid rgba(255, 255, 255, 0.6);
+            outline-offset: 2px;
+        }
+        .menu-btn:hover, .close-btn:hover {
+            background: rgba(255, 255, 255, 0.35);
+            border-color: rgba(255, 255, 255, 0.6);
+        }
+        .quick-actions-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 12px;
+            margin-bottom: 8px;
+            font-weight: 600;
+            display: block;
+        }
+        .header-menu-dropdown {
+            display: none;
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 16px;
+            background: white;
+            border-radius: 12px;
+            border: 1px solid rgba(0,0,0,0.08);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+            padding: 8px;
+            min-width: 220px;
+            max-width: 240px;
+            z-index: 50;
+        }
+        .header-menu-dropdown::before {
+            content: "";
+            position: absolute;
+            top: -8px;
+            right: 22px;
+            border-width: 0 8px 8px 8px;
+            border-style: solid;
+            border-color: transparent transparent #fff transparent;
+            filter: drop-shadow(0 -2px 2px rgba(0,0,0,0.06));
+        }
+        .header-menu-dropdown.active {
+            display: block;
+        }
+        .header-menu-dropdown a {
+            display: block;
+            padding: 10px 12px;
+            color: #333;
+            text-decoration: none;
+            font-size: 14px;
+            line-height: 1.2;
+            border-radius: 10px;
+            transition: background 0.2s;
+            cursor: pointer;
+        }
+        .header-menu-dropdown a:hover {
+            background: rgba(0,0,0,0.04);
+        }
+        .header-menu-dropdown .menu-separator {
+            height: 1px;
+            background: rgba(0,0,0,0.08);
+            margin: 6px 0;
+        }
+        .delete-data-btn:hover {
+            background: rgba(255, 255, 255, 0.35);
+            border-color: rgba(255, 255, 255, 0.6);
+            transform: translateY(-1px);
+        }
+        .message {
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .quick-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        @media (max-width: 600px) {
+            .quick-actions {
+                grid-template-columns: 1fr;
+            }
+        }
+        .quick-actions-mini {
+            display: flex;
+            gap: 6px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+        .quick-action-btn-mini {
+            min-height: 32px;
+            padding: 8px 10px;
+            background: #fff;
+            border: 1px solid rgba(0,0,0,0.12);
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 400;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #666;
+            text-align: center;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .quick-action-btn-mini:hover {
+            background: rgba(0,0,0,0.02);
+            border-color: rgba(0,0,0,0.15);
+            color: #555;
+        }
+        .quick-action-btn-mini:focus,
+        .quick-action-btn-mini:focus-visible {
+            outline: 1px solid rgba(0,0,0,0.2);
+            outline-offset: 1px;
+        }
+        .quick-action-btn {
+            min-height: 40px;
+            padding: 10px 12px;
+            background: #fff;
+            border: 1px solid rgba(0,0,0,0.18);
+            border-radius: 999px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #333;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .quick-action-btn:hover {
+            background: rgba(0,0,0,0.03);
+            border-color: rgba(0,0,0,0.25);
+        }
+        .quick-action-btn:focus,
+        .quick-action-btn:focus-visible {
+            outline: 2px solid rgba(0,0,0,0.35);
+            outline-offset: 2px;
+        }
+        .quick-action-btn:active {
+            transform: translateY(0);
+        }
+        .quick-action-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        .typing-indicator {
+            display: none;
+            padding: 12px 16px;
+            color: #666;
+            font-size: 14px;
+            font-style: italic;
+        }
+        .typing-indicator.active {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #FF6B35;
+            animation: typingDot 1.4s infinite;
+        }
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        @keyframes typingDot {
+            0%, 60%, 100% {
+                transform: translateY(0);
+                opacity: 0.7;
+            }
+            30% {
+                transform: translateY(-10px);
+                opacity: 1;
+            }
+        }
+        /* Welcome message removed - redundant with header and bot message */
         .rodo-modal {
             display: none;
             position: fixed;
@@ -134,20 +446,23 @@
         }
         .rodo-modal-content {
             background: white;
-            padding: 30px;
+            padding: 20px;
             border-radius: 12px;
-            max-width: 500px;
-            max-height: 80vh;
+            max-width: 480px;
+            max-height: 85vh;
             overflow-y: auto;
             box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            font-size: 13px;
         }
         .rodo-modal-content h2 {
             color: #FF6B35;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
+            font-size: 18px;
         }
         .rodo-modal-content p {
-            margin-bottom: 15px;
-            line-height: 1.6;
+            margin-bottom: 12px;
+            line-height: 1.5;
+            font-size: 13px;
         }
         .rodo-checkbox {
             margin: 20px 0;
@@ -247,7 +562,7 @@
                 <p style="margin: 10px 0 0 0; font-size: 14px;">
                     Twoje wiadomości są przetwarzane automatycznie przez system AI (OpenAI GPT). 
                     <strong>Użytkownik ma prawo wiedzieć, że rozmawia z maszyną - to wymóg prawny.</strong><br>
-                    W razie potrzeby możesz poprosić o kontakt z żywym konsultantem (telefon: 585 004 663).
+                    W razie potrzeby możesz poprosić o kontakt z żywym konsultantem (telefon: 502 274 453).
                 </p>
             </div>
 
@@ -260,7 +575,10 @@
                 <br>
                 <strong>Kontakt:</strong><br>
                 Email: m.kubiak@novahouse.pl<br>
-                Telefon: 585 004 663<br>
+                Telefon: 502 274 453<br>
+                <br>
+                <strong>Kontakt techniczny (IT):</strong><br>
+                Email: marini1944@gmail.com<br>
                 <br>
                 <small style="color: #d32f2f; font-weight: bold;">
                     ⚠️ WAŻNE: Administrator ponosi pełną odpowiedzialność za dane przetwarzane przez chatbota zgodnie z art. 24 RODO. 
@@ -271,44 +589,17 @@
             <p>
                 <strong>Co chatbot robi z Twoimi danymi? (Szczegółowy zakres przetwarzania)</strong>
             </p>
-            <ul style="margin-left: 20px; margin-bottom: 15px; font-size: 14px;">
-                <li><strong>Zbiera:</strong> 
-                    <ul style="margin-left: 15px; margin-top: 5px;">
-                        <li>Treść wszystkich wiadomości w rozmowie</li>
-                        <li>Dane kontaktowe (email, telefon - jeśli podasz)</li>
-                        <li>Informacje o projekcie (metraż, budżet, lokalizacja, preferencje)</li>
-                        <li>Dane techniczne (IP, cookies, identyfikator sesji, user agent)</li>
-                        <li>Zgody RODO (data, czas, IP, user agent)</li>
-                    </ul>
-                </li>
-                <li><strong>Przetwarza:</strong> 
-                    <ul style="margin-left: 15px; margin-top: 5px;">
-                        <li>Analizuje pytania za pomocą AI (OpenAI GPT)</li>
-                        <li>Dopasowuje odpowiedzi na podstawie bazy wiedzy</li>
-                        <li>Kwalifikuje leady i oblicza scoring</li>
-                        <li>Tworzy podsumowania konwersacji</li>
-                    </ul>
-                </li>
-                <li><strong>Przechowuje:</strong> 
-                    <ul style="margin-left: 15px; margin-top: 5px;">
-                        <li>Pełna historia rozmów w bazie danych (PostgreSQL)</li>
-                        <li>Dane kontaktowe w systemie CRM (Monday.com)</li>
-                        <li>Backupy danych (Google Cloud Storage)</li>
-                    </ul>
-                </li>
-                <li><strong>Udostępnia:</strong> 
-                    <ul style="margin-left: 15px; margin-top: 5px;">
-                        <li>Dostawcom usług IT (Google Cloud, OpenAI) - na podstawie umowy powierzenia (art. 28 RODO)</li>
-                        <li>Systemowi CRM (Monday.com) - na podstawie umowy powierzenia</li>
-                        <li>Partnerom biznesowym - tylko za wyraźną zgodą marketingową</li>
-                    </ul>
-                </li>
+            <ul style="margin-left: 18px; margin-bottom: 12px; font-size: 12px; line-height: 1.6;">
+                <li style="margin-bottom: 8px;"><strong>Zbiera:</strong> Treść wiadomości, dane kontaktowe (email, telefon), informacje o projekcie (metraż, budżet, lokalizacja), dane techniczne (IP, cookies, sesja), zgody RODO</li>
+                <li style="margin-bottom: 8px;"><strong>Przetwarza:</strong> Analizuje pytania przez AI (OpenAI GPT), dopasowuje odpowiedzi, kwalifikuje leady, tworzy podsumowania</li>
+                <li style="margin-bottom: 8px;"><strong>Przechowuje:</strong> Historia rozmów w bazie (PostgreSQL), dane w CRM (Monday.com), backupy (Google Cloud Storage)</li>
+                <li style="margin-bottom: 8px;"><strong>Udostępnia:</strong> Dostawcom IT (Google Cloud, OpenAI) i CRM (Monday.com) - na podstawie umowy powierzenia (art. 28 RODO), partnerom - tylko za zgodą marketingową</li>
             </ul>
 
             <p>
                 <strong>Cel przetwarzania:</strong>
             </p>
-            <ul style="margin-left: 20px; margin-bottom: 15px; font-size: 14px;">
+            <ul style="margin-left: 18px; margin-bottom: 12px; font-size: 12px; line-height: 1.6;">
                 <li>Świadczenie usług chatbota i odpowiedzi na pytania</li>
                 <li>Kwalifikacja leadów i dopasowanie oferty</li>
                 <li>Kontakt w sprawie oferty (za zgodą marketingową)</li>
@@ -318,41 +609,42 @@
             <p>
                 <strong>Podstawa prawna przetwarzania:</strong>
             </p>
-            <ul style="margin-left: 20px; margin-bottom: 15px; font-size: 14px;">
-                <li><strong>Zgoda użytkownika</strong> (art. 6 ust. 1 lit. a RODO) - podstawowa podstawa dla chatbota</li>
-                <li><strong>Wykonanie umowy</strong> (art. 6 ust. 1 lit. b RODO) - świadczenie usług chatbota</li>
-                <li><strong>Prawnie uzasadniony interes</strong> (art. 6 ust. 1 lit. f RODO) - analiza i poprawa jakości</li>
+            <ul style="margin-left: 18px; margin-bottom: 12px; font-size: 12px; line-height: 1.6;">
+                <li><strong>Zgoda użytkownika</strong> (art. 6 ust. 1 lit. a RODO) - podstawowa podstawa</li>
+                <li><strong>Wykonanie umowy</strong> (art. 6 ust. 1 lit. b RODO) - świadczenie usług</li>
+                <li><strong>Prawnie uzasadniony interes</strong> (art. 6 ust. 1 lit. f RODO) - analiza jakości</li>
             </ul>
 
             <p>
                 <strong>Okres przechowywania danych:</strong>
             </p>
-            <ul style="margin-left: 20px; margin-bottom: 15px; font-size: 14px;">
+            <ul style="margin-left: 18px; margin-bottom: 12px; font-size: 12px; line-height: 1.6;">
                 <li><strong>Historia rozmów:</strong> 12 miesięcy od ostatniej aktywności</li>
                 <li><strong>Dane kontaktowe:</strong> 12 miesięcy od ostatniej aktywności</li>
-                <li><strong>Zgody RODO:</strong> 5 lat (wymóg prawny - dokumentacja zgodności)</li>
+                <li><strong>Zgody RODO:</strong> 5 lat (wymóg prawny)</li>
                 <li><strong>Dane marketingowe:</strong> Do momentu wycofania zgody</li>
-                <li><strong>Dane księgowe:</strong> Zgodnie z wymogami prawa podatkowego (5 lat)</li>
+                <li><strong>Dane księgowe:</strong> 5 lat (wymóg prawa podatkowego)</li>
             </ul>
 
             <p>
                 <strong>Twoje prawa (art. 15-22 RODO):</strong>
             </p>
-            <ul style="margin-left: 20px; margin-bottom: 15px; font-size: 14px;">
-                <li><strong>Prawo dostępu</strong> (art. 15) - możesz poprosić o kopię swoich danych</li>
-                <li><strong>Prawo sprostowania</strong> (art. 16) - możesz poprawić nieprawidłowe dane</li>
+            <ul style="margin-left: 18px; margin-bottom: 12px; font-size: 12px; line-height: 1.6;">
+                <li><strong>Prawo dostępu</strong> (art. 15) - kopię danych</li>
+                <li><strong>Prawo sprostowania</strong> (art. 16) - poprawa danych</li>
                 <li><strong>Prawo usunięcia</strong> (art. 17) - "prawo do bycia zapomnianym"</li>
-                <li><strong>Prawo ograniczenia</strong> (art. 18) - możesz ograniczyć przetwarzanie</li>
-                <li><strong>Prawo przenoszenia</strong> (art. 20) - możesz otrzymać dane w formacie JSON/CSV</li>
-                <li><strong>Prawo sprzeciwu</strong> (art. 21) - możesz sprzeciwić się przetwarzaniu</li>
+                <li><strong>Prawo ograniczenia</strong> (art. 18) - ograniczenie przetwarzania</li>
+                <li><strong>Prawo przenoszenia</strong> (art. 20) - dane w formacie JSON/CSV</li>
+                <li><strong>Prawo sprzeciwu</strong> (art. 21) - sprzeciw wobec przetwarzania</li>
                 <li><strong>Prawo wycofania zgody</strong> (art. 7 ust. 3) - w dowolnym momencie</li>
             </ul>
-            <p style="font-size: 13px; background: #e3f2fd; padding: 10px; border-radius: 6px; margin-top: 10px;">
+            <p style="font-size: 12px; background: #e3f2fd; padding: 8px; border-radius: 6px; margin-top: 10px; line-height: 1.6;">
                 <strong>Jak skorzystać z praw?</strong><br>
-                • Eksport danych: <code>/api/rodo/export</code> (wymaga email)<br>
-                • Usunięcie danych: <code>/api/chatbot/delete-my-data</code> (wymaga email)<br>
+                • Eksport: <code>/api/rodo/export</code> (wymaga email)<br>
+                • Usunięcie: <code>/api/chatbot/delete-my-data</code> lub przycisk "Usuń dane"<br>
                 • Wycofanie zgody: <code>/api/unsubscribe</code> lub w chacie<br>
-                • Kontakt: m.kubiak@novahouse.pl
+                • Kontakt: m.kubiak@novahouse.pl<br>
+                • Kontakt IT: marini1944@gmail.com
             </p>
 
             <p style="font-size: 13px; background: #fff3cd; padding: 15px; border-radius: 8px; margin-top: 20px; border-left: 4px solid #ffc107;">
@@ -371,8 +663,8 @@
                 obowiązek informowania o naruszeniach, prawo do audytu.
             </p>
 
-            <p style="font-size: 12px; color: #666; margin-top: 15px;">
-                <strong>Prawo do skargi:</strong> Masz prawo wnieść skargę do organu nadzorczego (UODO - Urząd Ochrony Danych Osobowych) 
+            <p style="font-size: 12px; color: #666; margin-top: 12px; line-height: 1.5;">
+                <strong>Prawo do skargi:</strong> Masz prawo wnieść skargę do organu nadzorczego (UODO) 
                 jeśli uważasz, że przetwarzanie Twoich danych narusza przepisy RODO. 
                 Kontakt: <a href="https://uodo.gov.pl" target="_blank" class="rodo-link">uodo.gov.pl</a>
             </p>
@@ -398,27 +690,50 @@
 
     <div class="chatbot-container">
         <div class="chatbot-header">
-            <h1>🏠 NovaHouse Chatbot</h1>
-            <p>
-                Cześć! Jestem Twoim asystentem AI. Jak mogę pomóc? 
-                <span style="font-size: 12px; opacity: 0.9; display: block; margin-top: 5px;">
-                    💬 Rozmawiasz z chatbotem (sztuczną inteligencją)
-                </span>
+            <div class="header-menu">
+                <button class="menu-btn" onclick="toggleMenu()" title="Menu">⋯</button>
+                <button class="close-btn" onclick="closeChatbot()" title="Zamknij">✕</button>
+            </div>
+            <h1>NovaBota – doradca wykończenia</h1>
+            <p style="font-size: 11px; opacity: 0.9;">
+                Wycena • Pakiety • Zakres prac
             </p>
         </div>
         <div class="chatbot-messages" id="messages">
             <div class="message bot">
-                Cześć! 👋 Jestem asystentem AI NovaHouse. Mogę pomóc Ci z informacjami o pakietach wykończeniowych, cenach i procesie budowy. O co chciałbyś zapytać?
-                <br><br>
-                <small style="opacity: 0.7;">
-                    💡 <strong>Informacja:</strong> Rozmawiasz z chatbotem (sztuczną inteligencją), a nie z człowiekiem. 
-                    To wymóg prawny - musisz wiedzieć, że rozmawiasz z AI.<br>
-                    W razie potrzeby mogę przekierować Cię do żywego konsultanta (tel: 585 004 663).
-                </small>
+                Dzień dobry! Miło mi 🙂<br>
+                W czym mogę pomóc? Proszę wybrać opcję poniżej.<br>
+                Jeśli chce Pan/Pani, proszę podać imię. Będzie mi łatwiej się zwracać.
+                <span class="message-microcopy">Imię jest opcjonalne.</span>
+            </div>
+            <div>
+                <div class="quick-actions-label">Najczęściej wybierane:</div>
+                <div class="quick-actions">
+                    <button class="quick-action-btn" onclick="sendQuickMessage('Policz wstępną wycenę')">Policz wstępną wycenę</button>
+                    <button class="quick-action-btn" onclick="sendQuickMessage('Porównaj pakiety')">Porównaj pakiety</button>
+                    <button class="quick-action-btn" onclick="sendQuickMessage('Co obejmuje cena?')">Co obejmuje cena?</button>
+                    <button class="quick-action-btn" onclick="sendQuickMessage('Zadaj pytanie')">Zadaj pytanie</button>
+                </div>
+                <div class="quick-actions-mini">
+                    <button class="quick-action-btn-mini" onclick="sendQuickMessage('Ile trwa wykończenie?')">Ile trwa wykończenie?</button>
+                    <button class="quick-action-btn-mini" onclick="sendQuickMessage('Jaki pakiet do 50 m²?')">Jaki pakiet do 50 m²?</button>
+                </div>
+                <div class="message-microcopy" style="margin-top: 6px; font-size: 13px; opacity: 0.65;">
+                    Może Pan/Pani też wpisać pytanie poniżej.
+                </div>
             </div>
         </div>
+        <div class="typing-indicator" id="typingIndicator">
+            <span>Chatbot pisze</span>
+            <div class="typing-dots">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>
+        </div>
+        <div class="loading-indicator" id="loadingIndicator">⏳ Chatbot myśli...</div>
         <div class="chatbot-input">
-            <input type="text" id="userInput" placeholder="Napisz wiadomość..." />
+            <input type="text" id="userInput" placeholder="Np. Koszt wykończenia 50 m² – pakiet Komfort?" />
             <button onclick="sendMessage()">Wyślij</button>
         </div>
     </div>
@@ -489,9 +804,25 @@
         function addMessage(text, isUser = false) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${isUser ? 'user' : 'bot'}`;
-            messageDiv.textContent = text;
+            
+            // Render markdown-like formatting (**bold** -> <strong>bold</strong>)
+            if (!isUser) {
+                let htmlText = text
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                    .replace(/\n/g, '<br style="line-height: 1.1; margin-top: 2px;">');
+                messageDiv.innerHTML = htmlText;
+            } else {
+                messageDiv.textContent = text;
+            }
+            
             messagesDiv.appendChild(messageDiv);
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function sendQuickMessage(text) {
+            userInput.value = text;
+            sendMessage();
         }
 
         async function sendMessage() {
@@ -505,6 +836,14 @@
 
             addMessage(message, true);
             userInput.value = '';
+            userInput.disabled = true;
+            document.querySelector('.chatbot-input button').disabled = true;
+            
+            // Show typing indicator (more professional than loading)
+            const typingIndicator = document.getElementById('typingIndicator');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            typingIndicator.classList.add('active');
+            loadingIndicator.classList.remove('active');
 
             try {
                 const response = await fetch(`${API_URL}/api/chatbot/chat`, {
@@ -524,22 +863,169 @@
 
                 const data = await response.json();
                 
+                // Hide typing indicator before showing response
+                typingIndicator.classList.remove('active');
+                
                 if (data.error) {
                     addMessage(`Przepraszam, wystąpił błąd: ${data.error}`, false);
                 } else {
                     addMessage(data.response || 'Przepraszam, wystąpił błąd.', false);
+                    
+                    // Add quick actions for common follow-ups (only if no error)
+                    addQuickActionsIfNeeded(data.response);
                 }
             } catch (error) {
                 console.error('Error sending message:', error);
+                typingIndicator.classList.remove('active');
                 addMessage('Przepraszam, nie mogę się połączyć z serwerem. Sprawdź połączenie internetowe.', false);
+            } finally {
+                userInput.disabled = false;
+                document.querySelector('.chatbot-input button').disabled = false;
+                userInput.focus();
+            }
+        }
+        
+        function addQuickActionsIfNeeded(response) {
+            // Remove existing quick actions
+            const existingActions = messagesDiv.querySelectorAll('.quick-actions');
+            existingActions.forEach(el => el.remove());
+            
+            // Add quick actions based on context
+            const responseLower = response.toLowerCase();
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'quick-actions';
+            
+            if (responseLower.includes('pakiet') || responseLower.includes('cena')) {
+                actionsDiv.innerHTML = `
+                    <button class="quick-action-btn" onclick="sendQuickMessage('Chcę umówić konsultację')">Umów konsultację</button>
+                    <button class="quick-action-btn" onclick="sendQuickMessage('Jakie są różnice między pakietami?')">Różnice pakietów</button>
+                    <button class="quick-action-btn" onclick="sendQuickMessage('Ile trwa wykończenie?')">Czas realizacji</button>
+                `;
+            } else if (responseLower.includes('imię') || responseLower.includes('nazywasz')) {
+                // Don't add actions for name question
+                return;
+            } else {
+                actionsDiv.innerHTML = `
+                    <button class="quick-action-btn" onclick="sendQuickMessage('Chcę poznać pakiety')">Pakiety</button>
+                    <button class="quick-action-btn" onclick="sendQuickMessage('Ile kosztuje?')">Cennik</button>
+                    <button class="quick-action-btn" onclick="sendQuickMessage('Umów spotkanie')">Konsultacja</button>
+                `;
+            }
+            
+            // Add to last bot message
+            const lastBotMessage = Array.from(messagesDiv.querySelectorAll('.message.bot')).pop();
+            if (lastBotMessage) {
+                lastBotMessage.appendChild(actionsDiv);
+            }
+        }
+        
+        function clearConversation() {
+            document.getElementById('headerMenu')?.classList.remove('active');
+            if (confirm('Czy na pewno wyczyścić rozmowę? Tej operacji nie da się cofnąć.')) {
+                // Clear messages
+                const messagesDiv = document.getElementById('messages');
+                messagesDiv.innerHTML = `
+                    <div class="message bot">
+                        Dzień dobry! Miło mi 🙂<br>
+                        W czym mogę pomóc? Proszę wybrać opcję poniżej.<br>
+                        Jeśli chce Pan/Pani, proszę podać imię. Będzie mi łatwiej się zwracać.
+                        <span class="message-microcopy">Imię jest opcjonalne.</span>
+                    </div>
+                    <div>
+                        <div class="quick-actions-label">Najczęściej wybierane:</div>
+                        <div class="quick-actions">
+                            <button class="quick-action-btn" onclick="sendQuickMessage('Policz wstępną wycenę')">Policz wstępną wycenę</button>
+                            <button class="quick-action-btn" onclick="sendQuickMessage('Porównaj pakiety')">Porównaj pakiety</button>
+                            <button class="quick-action-btn" onclick="sendQuickMessage('Co obejmuje cena?')">Co obejmuje cena?</button>
+                            <button class="quick-action-btn" onclick="sendQuickMessage('Zadaj pytanie')">Zadaj pytanie</button>
+                        </div>
+                        <div class="quick-actions-mini">
+                            <button class="quick-action-btn-mini" onclick="sendQuickMessage('Ile trwa wykończenie?')">Ile trwa wykończenie?</button>
+                            <button class="quick-action-btn-mini" onclick="sendQuickMessage('Jaki pakiet do 50 m²?')">Jaki pakiet do 50 m²?</button>
+                        </div>
+                <div class="message-microcopy" style="margin-top: 6px; font-size: 13px; opacity: 0.65;">
+                    Może Pan/Pani też wpisać pytanie poniżej.
+                </div>
+                    </div>
+                `;
+                messagesDiv.scrollTop = 0;
             }
         }
 
-        userInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
+        async function deleteMyData() {
+            if (!confirm('Czy na pewno chcesz usunąć wszystkie swoje dane? Ta operacja jest nieodwracalna.')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/api/chatbot/delete-my-data`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        session_id: sessionId
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('✅ Wszystkie Twoje dane zostały usunięte zgodnie z RODO.');
+                    // Clear local storage
+                    localStorage.removeItem('chatbot_session_id');
+                    localStorage.removeItem('rodo_consent');
+                    // Reload page
+                    location.reload();
+                } else {
+                    alert(`❌ Błąd: ${data.error || 'Nie udało się usunąć danych'}`);
+                }
+            } catch (error) {
+                console.error('Error deleting data:', error);
+                alert('❌ Nie udało się usunąć danych. Spróbuj ponownie.');
+            }
+        }
+
+        userInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
                 sendMessage();
             }
+            // Shift+Enter allows new line (default behavior)
         });
+
+        // Menu functions
+        function toggleMenu() {
+            const menu = document.getElementById('headerMenu');
+            if (menu) {
+                menu.classList.toggle('active');
+            } else {
+                // Create menu if doesn't exist
+                const menuDiv = document.createElement('div');
+                menuDiv.id = 'headerMenu';
+                menuDiv.className = 'header-menu-dropdown';
+                menuDiv.innerHTML = `
+                    <a href="#" onclick="showPrivacyInfo(); return false;">Prywatność i dane</a>
+                    <a href="#" onclick="deleteMyData(); return false;">Usuń historię rozmowy</a>
+                    <a href="tel:502274453">Kontakt</a>
+                    <a href="/polityka-prywatnosci.html" target="_blank">Regulamin / Informacje</a>
+                `;
+                document.querySelector('.chatbot-header').appendChild(menuDiv);
+                menuDiv.classList.add('active');
+            }
+        }
+
+        function closeChatbot() {
+            if (confirm('Czy na pewno chcesz zamknąć chatbota?')) {
+                // Hide chatbot or redirect
+                document.querySelector('.chatbot-container').style.display = 'none';
+            }
+        }
+
+        function showPrivacyInfo() {
+            alert('Dbamy o prywatność. Może Pan/Pani w każdej chwili usunąć historię rozmowy.');
+            document.getElementById('headerMenu')?.classList.remove('active');
+        }
     </script>
 </body>
 </html>
