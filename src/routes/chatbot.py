@@ -808,13 +808,13 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
         try:
             conversation = ChatConversation.query.filter_by(session_id=session_id).first()
             if not conversation:
-            conversation = ChatConversation(
-                session_id=session_id,
-                started_at=datetime.now(timezone.utc),
-                context_data=json.dumps({}),
-            )
-            db.session.add(conversation)
-            db.session.commit()
+                conversation = ChatConversation(
+                    session_id=session_id,
+                    started_at=datetime.now(timezone.utc),
+                    context_data=json.dumps({}),
+                )
+                db.session.add(conversation)
+                db.session.commit()
 
             # Load context with error handling
             try:
