@@ -738,7 +738,7 @@ def check_booking_intent(user_message: str, context_memory: dict):
             context_memory.get("name"), context_memory.get("email")
         )
     except Exception as e:
-        print(f"[Zencal] Error getting booking link: {e}")
+        logging.error(f"[Zencal] Error getting booking link: {e}", exc_info=True)
         booking_link = os.getenv("ZENCAL_BOOKING_URL", "https://zencal.io/novahouse/konsultacja")
 
     context_memory["booking_intent_detected"] = True
@@ -1000,11 +1000,13 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                             ]
                             # OPTIMIZED FOR COST: Reduced max_tokens from 500 to 350 (saves ~30% on output costs)
                             # Most chatbot responses are 200-300 tokens, 350 is sufficient
+                            # CRITICAL: Add timeout to prevent hanging requests
                             response = client.chat.completions.create(
                                 model=GPT_MODEL,
                                 messages=messages,
                                 max_tokens=350,  # Optimized: was 500, saves ~30% on output costs
                                 temperature=0.6,  # Optimized: was 0.7, slightly more focused responses
+                                timeout=30.0,  # 30 second timeout to prevent hanging
                             )
                             bot_response = response.choices[0].message.content
                             # Validate GPT response
@@ -1034,6 +1036,7 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                             messages=messages,
                             max_tokens=350,
                             temperature=0.6,
+                            timeout=30.0,  # 30 second timeout to prevent hanging
                         )
                         bot_response = response.choices[0].message.content
                         # Validate GPT response
@@ -1068,6 +1071,7 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                             messages=messages,
                             max_tokens=350,
                             temperature=0.6,
+                            timeout=30.0,  # 30 second timeout to prevent hanging
                         )
                         bot_response = response.choices[0].message.content
                         # Validate GPT response
@@ -1120,9 +1124,7 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
 
         # Check if we just collected enough data to ask for confirmation
         should_confirm = should_ask_for_confirmation(context_memory, conversation)
-        print(
-            f"[CONFIRMATION CHECK] should_confirm={should_confirm}, context={context_memory}, awaiting={conversation.awaiting_confirmation}"
-        )
+        logging.debug(f"[CONFIRMATION CHECK] should_confirm={should_confirm}, context={context_memory}, awaiting={conversation.awaiting_confirmation}")
         if should_confirm:
             conversation.awaiting_confirmation = True
             # Use lead creation strategy method or build inline
@@ -1138,7 +1140,7 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
             if confirmation_parts:
                 confirmation_msg = "Potwierdzam dane:\n" + "\n".join(confirmation_parts)
                 bot_response = f"{bot_response}\n\n{confirmation_msg}"
-                print("[CONFIRMATION] Added confirmation message to response")
+                logging.debug("[CONFIRMATION] Added confirmation message to response")
 
         # Zapisz odpowiedź bota
         bot_msg = ChatMessage(
@@ -1179,7 +1181,7 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                 )
                 db.session.add(unknown)
         except Exception as e:
-            print(f"[FAQ Learning] Failed to log: {e}")
+            logging.warning(f"[FAQ Learning] Failed to log: {e}", exc_info=True)
             # Don't fail the main flow
 
         # Check if user is confirming data
@@ -1266,10 +1268,8 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
 
                     if monday_item_id:
                         lead.monday_item_id = monday_item_id
-                        print(
-                            f"[Monday] Confirmed lead created: {monday_item_id} (score: {lead_score})"
-                        )
-                        print(f"Lead created in Monday.com: {lead.name}, score: {lead_score}")
+                        logging.info(f"[Monday] Confirmed lead created: {monday_item_id} (score: {lead_score})")
+                        logging.info(f"Lead created in Monday.com: {lead.name}, score: {lead_score}")
 
                     # Alert dla leadów o wysokim priorytecie
                     if lead_score >= 70:
@@ -1287,9 +1287,9 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                                 <p><strong>Monday.com ID:</strong> {monday_item_id}</p>
                                 """,
                             )
-                            print(f"ALERT: High-priority lead: {lead.name}, score: {lead_score}")
+                            logging.info(f"ALERT: High-priority lead: {lead.name}, score: {lead_score}")
                         except Exception as e:
-                            print(f"Failed to send high-priority alert: {e}")
+                            logging.error(f"Failed to send high-priority alert: {e}", exc_info=True)
 
                     # Clear awaiting flag
                     conversation.awaiting_confirmation = False
@@ -1302,7 +1302,7 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                     )
 
             except Exception as e:
-                print(f"[Confirmed Lead] Error: {e}")
+                logging.error(f"[Confirmed Lead] Error: {e}", exc_info=True)
 
         elif confirmation_intent == "edit":
             # User wants to edit - clear awaiting flag
@@ -1390,10 +1390,10 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
 
                     if monday_item_id:
                         lead.monday_item_id = monday_item_id
-                        print(f"[Monday] Auto-lead created: {monday_item_id} (score: {lead_score})")
+                        logging.info(f"[Monday] Auto-lead created: {monday_item_id} (score: {lead_score})")
 
             except Exception as e:
-                print(f"[Auto Lead] Error: {e}")
+                logging.error(f"[Auto Lead] Error: {e}", exc_info=True)
 
         db.session.commit()
 
@@ -1444,6 +1444,7 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                         messages=messages,
                         max_tokens=350,
                         temperature=0.6,
+                        timeout=30.0,  # 30 second timeout to prevent hanging
                     )
                     bot_response = response.choices[0].message.content
                     if bot_response and bot_response.strip():
@@ -1471,13 +1472,43 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                 "conversation_id": None,
             }
     except Exception as e:
-        print(f"Unexpected chat processing error: {e}")
+        logging.error(f"[CRITICAL] Unexpected chat processing error: {e}", exc_info=True)
         db.session.rollback()
+        # Try to get GPT response even on unexpected errors
+        try:
+            client = ensure_openai_client()
+            if not client:
+                client = get_openai_client()
+            if client:
+                try:
+                    messages = [
+                        {"role": "system", "content": SYSTEM_PROMPT},
+                        {"role": "user", "content": user_message},
+                    ]
+                    response = client.chat.completions.create(
+                        model=GPT_MODEL,
+                        messages=messages,
+                        max_tokens=350,
+                        temperature=0.6,
+                        timeout=30.0,  # 30 second timeout
+                    )
+                    bot_response = response.choices[0].message.content
+                    if bot_response and bot_response.strip():
+                        logging.info(f"[GPT SUCCESS] Got response despite unexpected error: {bot_response[:50]}...")
+                        return {
+                            "response": bot_response,
+                            "session_id": session_id,
+                            "conversation_id": None,
+                        }
+                except Exception as gpt_error:
+                    logging.error(f"[GPT ERROR in unexpected error handler] {gpt_error}", exc_info=True)
+        except Exception as fallback_error:
+            logging.error(f"[FALLBACK ERROR] Even GPT fallback failed: {fallback_error}", exc_info=True)
+        
         return {
-            "response": "Przepraszam, wystąpił błąd. Spróbuj ponownie.",
+            "response": "Dziękuję za wiadomość! Jak mogę pomóc w wykończeniu Twojego mieszkania? Możesz zapytać o ofertę, pakiety lub terminy realizacji.",
             "session_id": session_id,
             "conversation_id": None,
-            "error": str(e),
         }
 
 
@@ -1694,7 +1725,7 @@ def save_rodo_consent():
 
     except Exception as e:
         db.session.rollback()
-        print(f"Error saving RODO consent: {e}")
+        logging.error(f"Error saving RODO consent: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
 
 
@@ -1732,7 +1763,7 @@ def delete_user_data():
             db.session.add(audit)
             db.session.commit()
         except Exception as e:
-            print(f"[RODO] Warning: Failed to log audit entry: {e}")
+            logging.warning(f"[RODO] Warning: Failed to log audit entry: {e}", exc_info=True)
             db.session.rollback()
 
         return (
@@ -1744,7 +1775,7 @@ def delete_user_data():
 
     except Exception as e:
         db.session.rollback()
-        print(f"Error deleting user data: {e}")
+        logging.error(f"Error deleting user data: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
 
 
@@ -1856,7 +1887,7 @@ def cleanup_audit_endpoint():
             db.session.add(audit)
             db.session.commit()
         except Exception as e:
-            print(f"[RODO] Warning: Failed to log cleanup audit entry: {e}")
+            logging.warning(f"[RODO] Warning: Failed to log cleanup audit entry: {e}", exc_info=True)
             db.session.rollback()
 
         return jsonify({"deleted": deleted}), 200
@@ -1914,7 +1945,7 @@ def export_user_data(session_id):
             db.session.commit()
         except Exception as e:
             # Rollback but don't fail the export if audit fails
-            print(f"[RODO] Warning: Failed to log export audit entry: {e}")
+            logging.warning(f"[RODO] Warning: Failed to log export audit entry: {e}", exc_info=True)
             db.session.rollback()
 
         return jsonify(result), 200

@@ -876,7 +876,16 @@
             } catch (error) {
                 console.error('Error sending message:', error);
                 typingIndicator.classList.remove('active');
-                addMessage('Przepraszam, nie mogę się połączyć z serwerem. Sprawdź połączenie internetowe.', false);
+                
+                // Better error messages based on error type
+                let errorMessage = 'Przepraszam, nie mogę się połączyć z serwerem. Sprawdź połączenie internetowe.';
+                if (error.name === 'AbortError') {
+                    errorMessage = 'Przepraszam, odpowiedź trwa zbyt długo. Spróbuj ponownie za chwilę.';
+                } else if (error.message && error.message.includes('status')) {
+                    errorMessage = 'Przepraszam, wystąpił błąd serwera. Spróbuj ponownie za chwilę.';
+                }
+                
+                addMessage(errorMessage, false);
             } finally {
                 userInput.disabled = false;
                 document.querySelector('.chatbot-input button').disabled = false;
