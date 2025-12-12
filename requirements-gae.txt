@@ -29,7 +29,7 @@ pybreaker==1.0.1
 Whoosh==2.7.4
 python-dotenv==1.0.1
 locust==2.32.3
-snakeviz==2.2.0
+snakeviz==2.2.2
 coverage-badge==1.1.2
 openai>=1.0.0
 # numpy>=1.24.0  # DISABLED: Not compatible with GAE standard environment
