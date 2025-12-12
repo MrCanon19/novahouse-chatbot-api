@@ -255,7 +255,7 @@ def extract_context(message: str, existing_context: dict | None = None):
                 r"[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+\s+[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+",
                 text,
             )
-        if capitalized_pairs:
+            if capitalized_pairs:
                 candidate = capitalized_pairs[-1].strip()
                 # Validate - reject if in blacklist
                 valid, value, _ = ContextValidator.validate_name(candidate)
