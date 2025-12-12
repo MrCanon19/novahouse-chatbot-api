@@ -239,7 +239,7 @@ def extract_context(message: str, existing_context: dict | None = None):
                 preferred_name = existing_name  # Keep original to preserve formatting
                 # Mark in context that name was confirmed
                 ctx["_name_confirmed"] = True
-    else:
+            else:
                 preferred_name = value
                 logging.info(f"✓ Extracted name from intro pattern: {preferred_name}")
         else:
@@ -251,11 +251,11 @@ def extract_context(message: str, existing_context: dict | None = None):
         # Skip if message starts with common greetings
         text_start = text.strip()[:20].lower()
         if not any(text_start.startswith(greeting) for greeting in ["cześć", "hej", "dzień", "witam", "siema"]):
-        capitalized_pairs = re.findall(
+            capitalized_pairs = re.findall(
             r"[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+\s+[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+",
             text,
         )
-        if capitalized_pairs:
+            if capitalized_pairs:
                 candidate = capitalized_pairs[-1].strip()
                 # Validate - reject if in blacklist
                 valid, value, _ = ContextValidator.validate_name(candidate)
@@ -315,10 +315,10 @@ def extract_context(message: str, existing_context: dict | None = None):
                     ctx["city"] = value
             else:
                 # Fallback: try to clean up common endings
-        lower_city = candidate_city.lower()
-        if lower_city.endswith("iu") and len(candidate_city) > 5:
+                lower_city = candidate_city.lower()
+                if lower_city.endswith("iu") and len(candidate_city) > 5:
             candidate_city = candidate_city[:-2]
-        elif lower_city.endswith("u") and len(candidate_city) > 5:
+                elif lower_city.endswith("u") and len(candidate_city) > 5:
             candidate_city = candidate_city[:-1]
                 elif lower_city.endswith("ia") and len(candidate_city) > 5:
                     candidate_city = candidate_city  # Keep as is
@@ -806,7 +806,7 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
         
         # Try to get conversation from DB
         try:
-        conversation = ChatConversation.query.filter_by(session_id=session_id).first()
+            conversation = ChatConversation.query.filter_by(session_id=session_id).first()
         if not conversation:
             conversation = ChatConversation(
                 session_id=session_id,
@@ -818,7 +818,7 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
 
             # Load context with error handling
             try:
-        context_memory = json.loads(conversation.context_data or "{}")
+                context_memory = json.loads(conversation.context_data or "{}")
                 db_available = True
             except (json.JSONDecodeError, TypeError) as e:
                 logging.warning(f"Failed to parse context_data for session {session_id}: {e}, using empty dict")
@@ -853,14 +853,14 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                 conversation.context_data = json.dumps(context_memory, ensure_ascii=False)
                 # Try to save user message
                 try:
-        user_msg = ChatMessage(
+                    user_msg = ChatMessage(
             conversation_id=conversation.id,
             message=user_message,
             sender="user",
             timestamp=datetime.now(timezone.utc),
         )
-        db.session.add(user_msg)
-        db.session.commit()
+                    db.session.add(user_msg)
+                    db.session.commit()
                 except Exception as msg_error:
                     logging.warning(f"[DB] Failed to save message, but continuing: {msg_error}")
                     db.session.rollback()
@@ -935,7 +935,7 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                     message_history_limit = int(os.getenv("MESSAGE_HISTORY_LIMIT", "30"))
                     if db_available and conversation:
                         try:
-                    history = (
+                            history = (
                         ChatMessage.query.filter_by(conversation_id=conversation.id)
                         .order_by(ChatMessage.timestamp.desc())
                         .limit(message_history_limit)
@@ -1270,13 +1270,13 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
         # Zapisz odpowiedź bota (only if DB is available)
         if db_available and conversation:
             try:
-        bot_msg = ChatMessage(
+                bot_msg = ChatMessage(
             conversation_id=conversation.id,
             message=bot_response,
             sender="bot",
             timestamp=datetime.now(timezone.utc),
         )
-        db.session.add(bot_msg)
+                db.session.add(bot_msg)
                 # Update context in DB
                 try:
                     conversation.context_data = json.dumps(context_memory, ensure_ascii=False)
