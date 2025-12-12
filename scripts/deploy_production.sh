@@ -42,21 +42,16 @@ PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 cd "$PROJECT_DIR"
 
-# Create temporary deploy file (app.yaml.secret has full structure)
-DEPLOY_FILE="$PROJECT_DIR/app.yaml.deploy.$(date +%s)"
-cp app.yaml.secret "$DEPLOY_FILE"
+# gcloud app deploy requires app.yaml in the project root
+# Create temporary app.yaml from app.yaml.secret
+echo "📤 Preparing deployment..."
+cp app.yaml.secret app.yaml.tmp
 
 echo "📤 Deploying to Google App Engine..."
-echo "   Using file: $DEPLOY_FILE"
+echo "   Using app.yaml.secret (copied to app.yaml.tmp)"
 
-# Check if deploy file exists
-if [ ! -f "$DEPLOY_FILE" ]; then
-    echo "❌ ERROR: Deploy file not created: $DEPLOY_FILE"
-    exit 1
-fi
-
-# Deploy directly (app.yaml.secret has full structure)
-gcloud app deploy "$DEPLOY_FILE" \
+# Deploy using the temporary file
+gcloud app deploy app.yaml.tmp \
     --quiet \
     --project=glass-core-467907-e9 \
     --version="$(date +%Y%m%d%H%M%S)"
@@ -65,8 +60,8 @@ gcloud app deploy "$DEPLOY_FILE" \
 sleep 2
 
 # Clean up
-rm -f "$DEPLOY_FILE"
-echo "✅ Deploy file cleaned up"
+rm -f app.yaml.tmp
+echo "✅ Temporary file cleaned up"
 
 echo ""
 echo "✅ Deployment completed successfully!"
