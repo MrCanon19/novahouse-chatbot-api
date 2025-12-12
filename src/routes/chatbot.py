@@ -239,7 +239,7 @@ def extract_context(message: str, existing_context: dict | None = None):
                 preferred_name = existing_name  # Keep original to preserve formatting
                 # Mark in context that name was confirmed
                 ctx["_name_confirmed"] = True
-    else:
+            else:
                 preferred_name = value
                 logging.info(f"✓ Extracted name from intro pattern: {preferred_name}")
         else:
