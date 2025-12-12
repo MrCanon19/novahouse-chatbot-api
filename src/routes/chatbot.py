@@ -1189,14 +1189,27 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                 bot_response = f"{bot_response}\n\n{confirmation_msg}"
                 logging.debug("[CONFIRMATION] Added confirmation message to response")
 
-        # Zapisz odpowiedź bota
-        bot_msg = ChatMessage(
-            conversation_id=conversation.id,
-            message=bot_response,
-            sender="bot",
-            timestamp=datetime.now(timezone.utc),
-        )
-        db.session.add(bot_msg)
+        # Zapisz odpowiedź bota (only if DB is available)
+        if db_available and conversation:
+            try:
+                bot_msg = ChatMessage(
+                    conversation_id=conversation.id,
+                    message=bot_response,
+                    sender="bot",
+                    timestamp=datetime.now(timezone.utc),
+                )
+                db.session.add(bot_msg)
+                # Update context in DB
+                try:
+                    conversation.context_data = json.dumps(context_memory, ensure_ascii=False)
+                    db.session.commit()
+                except Exception:
+                    db.session.rollback()
+            except Exception as bot_msg_error:
+                logging.warning(f"[DB] Failed to save bot message, but continuing: {bot_msg_error}")
+                db.session.rollback()
+                # Update in-memory fallback
+                _context_fallback[session_id] = context_memory
 
         # Log unknown/unclear questions for FAQ learning with auto-categorization
         try:
