@@ -272,7 +272,7 @@ def extract_context(message: str, existing_context: dict | None = None):
             # Check if existing name is in blacklist - if so, replace it
             existing_name_lower = ctx["name"].lower()
             is_blacklisted = any(existing_name_lower.startswith(bl) or existing_name_lower == bl 
-                               for bl in ContextValidator.NAME_BLACKLIST)
+                            for bl in ContextValidator.NAME_BLACKLIST)
             if is_blacklisted:
                 logging.warning(f"⚠ Replacing blacklisted name '{ctx['name']}' with '{preferred_name}'")
                 ctx["name"] = preferred_name
@@ -700,12 +700,20 @@ def generate_intelligent_follow_up(context_memory, user_message, bot_response, c
         # Ogólne follow-up gdy mamy wszystkie dane
         if not follow_up_question:
             if context_memory.get("square_meters") and context_memory.get("budget") and \
-               not context_memory.get("email") and not context_memory.get("phone"):
+            not context_memory.get("email") and not context_memory.get("phone"):
                 follow_up_question = "Czy chce Pan/Pani umówić bezpłatną konsultację? Nasz ekspert przygotuje szczegółową wycenę!"
-            
-            if not follow_up_question and context_memory.get("square_meters") and context_memory.get("city") and \
-               not context_memory.get("email") and not context_memory.get("phone"):
+            elif context_memory.get("square_meters") and context_memory.get("city") and \
+                not context_memory.get("email") and not context_memory.get("phone"):
                 follow_up_question = "Czy chce Pan/Pani umówić bezpłatną konsultację? Omówimy szczegóły i odpowiemy na wszystkie pytania!"
+            elif context_memory.get("square_meters") and context_memory.get("package") and \
+                not context_memory.get("email") and not context_memory.get("phone"):
+                follow_up_question = "Czy chce Pan/Pani umówić bezpłatną konsultację? Nasz ekspert dopasuje idealny pakiet do Pana/Pani potrzeb!"
+            elif context_memory.get("square_meters") and context_memory.get("package") and context_memory.get("city") and \
+                not context_memory.get("email") and not context_memory.get("phone"):
+                follow_up_question = "Czy chce Pan/Pani umówić bezpłatną konsultację? Nasz ekspert dopasuje idealny pakiet do Pana/Pani lokalizacji!"
+            elif context_memory.get("square_meters") and context_memory.get("package") and context_memory.get("city") and context_memory.get("budget") and \
+                not context_memory.get("email") and not context_memory.get("phone"):
+                follow_up_question = "Czy chce Pan/Pani umówić bezpłatną konsultację? Nasz ekspert dopasuje idealny pakiet do Pana/Pani potrzeb i lokalizacji!"
     
     return follow_up_question
 
@@ -798,7 +806,7 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
         
         # Try to get conversation from DB
         try:
-        conversation = ChatConversation.query.filter_by(session_id=session_id).first()
+            conversation = ChatConversation.query.filter_by(session_id=session_id).first()
         if not conversation:
             conversation = ChatConversation(
                 session_id=session_id,
