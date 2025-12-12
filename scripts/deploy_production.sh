@@ -43,15 +43,20 @@ PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$PROJECT_DIR"
 
 # gcloud app deploy requires app.yaml in the project root
-# Create temporary app.yaml from app.yaml.secret
+# Create temporary app.yaml from app.yaml.secret (app.yaml is in .gitignore)
 echo "📤 Preparing deployment..."
-cp app.yaml.secret app.yaml.tmp
+if [ -f "app.yaml" ]; then
+    echo "⚠️  app.yaml already exists, backing up..."
+    mv app.yaml app.yaml.backup.$(date +%s)
+fi
+
+cp app.yaml.secret app.yaml
 
 echo "📤 Deploying to Google App Engine..."
-echo "   Using app.yaml.secret (copied to app.yaml.tmp)"
+echo "   Using app.yaml (created from app.yaml.secret)"
 
-# Deploy using the temporary file
-gcloud app deploy app.yaml.tmp \
+# Deploy (app.yaml is in .gitignore, so it won't be committed)
+gcloud app deploy app.yaml \
     --quiet \
     --project=glass-core-467907-e9 \
     --version="$(date +%Y%m%d%H%M%S)"
@@ -59,9 +64,15 @@ gcloud app deploy app.yaml.tmp \
 # Wait a moment for deployment to start
 sleep 2
 
-# Clean up
-rm -f app.yaml.tmp
-echo "✅ Temporary file cleaned up"
+# Clean up - remove app.yaml (it's in .gitignore)
+rm -f app.yaml
+echo "✅ app.yaml cleaned up (was temporary)"
+
+# Restore backup if it existed
+if ls app.yaml.backup.* 1> /dev/null 2>&1; then
+    mv app.yaml.backup.* app.yaml
+    echo "✅ Restored original app.yaml"
+fi
 
 echo ""
 echo "✅ Deployment completed successfully!"
