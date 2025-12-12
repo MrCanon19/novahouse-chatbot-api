@@ -759,6 +759,9 @@ def chatbot_health():
     return jsonify({"status": "healthy", "service": "chatbot"}), 200
 
 
+# In-memory fallback storage for context when DB is unavailable
+_context_fallback = {}  # {session_id: context_memory}
+
 def process_chat_message(user_message: str, session_id: str) -> dict:
     """
     Process chat message and return bot response
@@ -771,24 +774,53 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
     Returns:
         dict with 'response', 'session_id', 'conversation_id'
     """
+    global _context_fallback
+    
+    conversation = None
+    context_memory = {}
+    db_available = False
+    
+    # Try to load from database with timeout
     try:
-        # Znajdź lub utwórz konwersację
-        conversation = ChatConversation.query.filter_by(session_id=session_id).first()
-        if not conversation:
-            conversation = ChatConversation(
-                session_id=session_id,
-                started_at=datetime.now(timezone.utc),
-                context_data=json.dumps({}),
-            )
-            db.session.add(conversation)
-            db.session.commit()
-
-        # Load context with error handling
+        # Set a timeout for DB operations (5 seconds)
+        import signal
+        
+        def timeout_handler(signum, frame):
+            raise TimeoutError("Database operation timed out")
+        
+        # Try to get conversation from DB
         try:
-            context_memory = json.loads(conversation.context_data or "{}")
-        except (json.JSONDecodeError, TypeError) as e:
-            logging.warning(f"Failed to parse context_data for session {session_id}: {e}, using empty dict")
-            context_memory = {}
+            conversation = ChatConversation.query.filter_by(session_id=session_id).first()
+            if not conversation:
+                conversation = ChatConversation(
+                    session_id=session_id,
+                    started_at=datetime.now(timezone.utc),
+                    context_data=json.dumps({}),
+                )
+                db.session.add(conversation)
+                db.session.commit()
+            
+            # Load context with error handling
+            try:
+                context_memory = json.loads(conversation.context_data or "{}")
+                db_available = True
+            except (json.JSONDecodeError, TypeError) as e:
+                logging.warning(f"Failed to parse context_data for session {session_id}: {e}, using empty dict")
+                context_memory = {}
+                db_available = True  # DB is available, just bad data
+        except (SQLAlchemyError, TimeoutError, Exception) as db_error:
+            logging.warning(f"[DB FALLBACK] Database unavailable for session {session_id}: {db_error}")
+            db.session.rollback()
+            # Use in-memory fallback
+            context_memory = _context_fallback.get(session_id, {})
+            db_available = False
+    except Exception as e:
+        logging.warning(f"[DB FALLBACK] Database error, using in-memory storage: {e}")
+        db.session.rollback()
+        context_memory = _context_fallback.get(session_id, {})
+        db_available = False
+    
+    try:
 
         # Extract and update context from user message (with safeguards)
         try:
@@ -798,27 +830,42 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
         except ImportError:
             # Fallback to legacy extract_context if safe version not available
             context_memory = extract_context(user_message, context_memory)
-        # Save context with error handling
-        try:
-            conversation.context_data = json.dumps(context_memory, ensure_ascii=False)
-        except (TypeError, ValueError) as e:
-            logging.warning(f"Failed to serialize context_data for session {session_id}: {e}")
-            # Try with ensure_ascii=True as fallback
+        
+        # Save context - try DB first, fallback to in-memory
+        if db_available and conversation:
             try:
-                conversation.context_data = json.dumps(context_memory, ensure_ascii=True)
-            except Exception:
-                # Last resort: save minimal context
-                conversation.context_data = json.dumps({"error": "context_serialization_failed"})
-
-        # Zapisz wiadomość użytkownika
-        user_msg = ChatMessage(
-            conversation_id=conversation.id,
-            message=user_message,
-            sender="user",
-            timestamp=datetime.now(timezone.utc),
-        )
-        db.session.add(user_msg)
-        db.session.commit()
+                conversation.context_data = json.dumps(context_memory, ensure_ascii=False)
+                # Try to save user message
+                try:
+                    user_msg = ChatMessage(
+                        conversation_id=conversation.id,
+                        message=user_message,
+                        sender="user",
+                        timestamp=datetime.now(timezone.utc),
+                    )
+                    db.session.add(user_msg)
+                    db.session.commit()
+                except Exception as msg_error:
+                    logging.warning(f"[DB] Failed to save message, but continuing: {msg_error}")
+                    db.session.rollback()
+            except (TypeError, ValueError) as e:
+                logging.warning(f"Failed to serialize context_data for session {session_id}: {e}")
+                # Try with ensure_ascii=True as fallback
+                try:
+                    conversation.context_data = json.dumps(context_memory, ensure_ascii=True)
+                    db.session.commit()
+                except Exception:
+                    # Last resort: save minimal context
+                    conversation.context_data = json.dumps({"error": "context_serialization_failed"})
+                    db.session.commit()
+            except Exception as save_error:
+                logging.warning(f"[DB] Failed to save context to DB, using in-memory: {save_error}")
+                db.session.rollback()
+                db_available = False
+                # Fall through to in-memory storage
+        
+        # Always save to in-memory fallback (for redundancy and when DB is down)
+        _context_fallback[session_id] = context_memory
         
         # Update session activity
         try:
