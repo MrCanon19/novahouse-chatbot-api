@@ -193,26 +193,35 @@ failed_operations = FailedOperationQueue()
 # Pre-configured retry decorators for common integrations
 def retry_monday_api(func: Callable) -> Callable:
     """Retry decorator for Monday.com API calls"""
+    def on_retry_callback(attempt: int, error: Exception) -> None:
+        logging.warning(f"[Monday] Retry {attempt}/3 due to: {error}")
+    
     return retry_with_backoff(
         config=RetryConfig(max_attempts=3, initial_delay=2.0),
         exceptions=(ConnectionError, TimeoutError, Exception),
-        on_retry=lambda attempt, error: logging.warning(f"[Monday] Retry {attempt}/3 due to: {error}"),
+        on_retry=on_retry_callback,
     )(func)
 
 
 def retry_openai_api(func: Callable) -> Callable:
     """Retry decorator for OpenAI API calls"""
+    def on_retry_callback(attempt: int, error: Exception) -> None:
+        logging.warning(f"[OpenAI] Retry {attempt}/2 due to: {error}")
+    
     return retry_with_backoff(
         config=RetryConfig(max_attempts=2, initial_delay=1.0),
         exceptions=(ConnectionError, TimeoutError),
-        on_retry=lambda attempt, error: logging.warning(f"[OpenAI] Retry {attempt}/2 due to: {error}"),
+        on_retry=on_retry_callback,
     )(func)
 
 
 def retry_email_send(func: Callable) -> Callable:
     """Retry decorator for email sending"""
+    def on_retry_callback(attempt: int, error: Exception) -> None:
+        logging.warning(f"[Email] Retry {attempt}/3 due to: {error}")
+    
     return retry_with_backoff(
         config=RetryConfig(max_attempts=3, initial_delay=1.5),
         exceptions=(ConnectionError, TimeoutError, Exception),
-        on_retry=lambda attempt, error: logging.warning(f"[Email] Retry {attempt}/3 due to: {error}"),
+        on_retry=on_retry_callback,
     )(func)
