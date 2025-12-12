@@ -45,10 +45,15 @@ cd "$PROJECT_DIR"
 cp app.yaml.secret "$DEPLOY_FILE"
 
 echo "📤 Deploying to Google App Engine..."
+echo "   Using file: $DEPLOY_FILE"
 gcloud app deploy "$DEPLOY_FILE" \
     --quiet \
     --project=glass-core-467907-e9 \
-    --version="$(date +%Y%m%d%H%M%S)"
+    --version="$(date +%Y%m%d%H%M%S)" \
+    --no-promote
+
+# Wait a moment for deployment to start
+sleep 2
 
 # Clean up
 rm -f "$DEPLOY_FILE"
