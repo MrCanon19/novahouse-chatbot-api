@@ -1027,9 +1027,49 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                             logging.warning(f"[Qualification Data] Error loading: {e}")
                         
                         if memory_items:
+                            # Build critical instructions based on what data we have
+                            critical_instructions = []
+                            
+                            # Check if we have name - if user repeats it, confirm it's the same person
+                            if context_memory.get("name"):
+                                critical_instructions.append(f"⚠️ IMIĘ: Klient podał imię '{context_memory.get('name')}'. Jeśli klient ponownie poda to samo imię - POTWIERDŹ że to ta sama osoba i NIE pytaj ponownie o imię!")
+                            
+                            # Check if we have square_meters - don't ask again
+                            if context_memory.get("square_meters"):
+                                critical_instructions.append(f"⚠️ METRAŻ: Klient już podał metraż {context_memory.get('square_meters')}m². NIGDY nie pytaj ponownie o metraż - UŻYWAJ tego co masz!")
+                            
+                            # Check if we have package - don't ask again
+                            if context_memory.get("package"):
+                                critical_instructions.append(f"⚠️ PAKIET: Klient już wybrał pakiet '{context_memory.get('package')}'. NIGDY nie pytaj ponownie o pakiet - UŻYWAJ tego co masz!")
+                            
+                            # Check if we have city - don't ask again
+                            if context_memory.get("city"):
+                                critical_instructions.append(f"⚠️ MIASTO: Klient już podał miasto '{context_memory.get('city')}'. NIGDY nie pytaj ponownie o miasto - UŻYWAJ tego co masz!")
+                            
+                            # Check if we have budget - don't ask again
+                            if context_memory.get("budget"):
+                                critical_instructions.append(f"⚠️ BUDŻET: Klient już podał budżet {context_memory.get('budget')} zł. NIGDY nie pytaj ponownie o budżet - UŻYWAJ tego co masz!")
+                            
+                            # Check if we have email or phone - don't ask again
+                            if context_memory.get("email") or context_memory.get("phone"):
+                                critical_instructions.append(f"⚠️ KONTAKT: Klient już podał dane kontaktowe. NIGDY nie pytaj ponownie o email/telefon - UŻYWAJ tego co masz!")
+                            
+                            # Build final memory prompt
                             memory_prompt = "\n\nZapamiętane info o kliencie (TYLKO dane które klient PODAŁ WYRAŹNIE):\n" + "\n".join(
                                 memory_items
-                            ) + "\n\n⚠️ KRYTYCZNE: NIGDY nie zakładaj danych których klient NIE PODAŁ! Jeśli klient mówi 'nie podawałem budżetu' - USUŃ błędne dane z pamięci. Używaj imienia naturalnie (co 2-3 wiadomości), zapamiętuj miasto i metraż, przeliczaj ceny automatycznie!"
+                            ) + "\n\n"
+                            
+                            # Add critical instructions
+                            if critical_instructions:
+                                memory_prompt += "\n".join(critical_instructions) + "\n\n"
+                            
+                            # Add general instructions
+                            memory_prompt += "⚠️ KRYTYCZNE ZASADY:\n"
+                            memory_prompt += "- NIGDY nie pytaj o dane które JUŻ MASZ w pamięci powyżej!\n"
+                            memory_prompt += "- NIGDY nie zakładaj danych których klient NIE PODAŁ!\n"
+                            memory_prompt += "- Jeśli klient mówi 'nie podawałem X' - USUŃ błędne dane z pamięci!\n"
+                            memory_prompt += "- Używaj imienia naturalnie (co 2-3 wiadomości), zapamiętuj miasto i metraż, przeliczaj ceny automatycznie!\n"
+                            memory_prompt += "- Jeśli klient ponownie poda imię które już masz - POTWIERDŹ że to ta sama osoba (np. 'Tak, rozumiem że to Pan/Pani {imię}') i KONTYNUUJ bez pytania o dane które już masz!"
 
                     # COST OPTIMIZATION: Check cache first for similar questions
                     try:
