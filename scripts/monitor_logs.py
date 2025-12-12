@@ -93,16 +93,18 @@ def filter_logs_by_severity(logs: List[Dict], min_severity: str = "INFO") -> Lis
 
 def get_recent_logs(limit: int = 50, severity: Optional[str] = None) -> List[Dict]:
     """Pobierz ostatnie logi z GCP"""
+    # Buduj filtr
+    filter_str = f'resource.type=gae_app AND resource.labels.module_id="{SERVICE}"'
+    if severity:
+        filter_str = f'{filter_str} AND severity>={severity}'
+    
     cmd = [
         "gcloud", "logging", "read",
-        f"resource.type=gae_app AND resource.labels.module_id={SERVICE}",
+        filter_str,
         "--limit", str(limit),
         "--format", "json",
         "--project", PROJECT_ID
     ]
-    
-    if severity:
-        cmd.insert(3, f"severity>={severity}")
     
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, check=True)
@@ -129,17 +131,19 @@ def tail_logs(follow: bool = True, severity: Optional[str] = None):
     
     while True:
         try:
+            # Buduj filtr
+            filter_str = f'resource.type=gae_app AND resource.labels.module_id="{SERVICE}"'
+            if severity:
+                filter_str = f'{filter_str} AND severity>={severity}'
+            
             cmd = [
                 "gcloud", "logging", "read",
-                f"resource.type=gae_app AND resource.labels.module_id={SERVICE}",
+                filter_str,
                 "--limit", "20",
                 "--format", "json",
                 "--project", PROJECT_ID,
                 "--order", "desc"
             ]
-            
-            if severity:
-                cmd.insert(3, f"severity>={severity}")
             
             result = subprocess.run(cmd, capture_output=True, text=True, check=True)
             logs = json.loads(result.stdout)
