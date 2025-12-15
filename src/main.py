@@ -19,6 +19,7 @@ from flask import Flask, g, render_template, request, send_from_directory
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from src.middleware.rate_limiting import DummyLimiter, is_rate_limit_disabled
+from src.services.secret_manager import load_secret_into_env
 
 # Inicjalizacja aplikacji Flask na samym początku
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), "static"))
@@ -122,22 +123,19 @@ else:
     logger.info(f"   Chat endpoint limit: {chat_rate_limit}")
     logger.info(f"   Default limits: {', '.join(default_rate_limits)}")
 
-# SECURITY: Secret key from environment (NEVER hardcode!)
-# Fail-fast if critical secrets missing in production
-# BUT: Log warning instead of crashing to allow graceful degradation
+# SECURITY: Load secrets (Secret Manager fallback)
+project_id = os.getenv("GOOGLE_CLOUD_PROJECT") or os.getenv("GCP_PROJECT")
+for key in ["SECRET_KEY", "OPENAI_API_KEY", "ADMIN_API_KEY", "DATABASE_URL"]:
+    load_secret_into_env(key, project_id=project_id)
+
+# Fail-fast if critical secrets missing in production (after attempting Secret Manager)
 if os.getenv("FLASK_ENV") == "production":
     required_secrets = ["SECRET_KEY", "OPENAI_API_KEY", "ADMIN_API_KEY"]
     missing = [key for key in required_secrets if not os.getenv(key)]
     if missing:
-        import logging
-        logger = logging.getLogger(__name__)
         error_msg = f"Missing critical environment variables in production: {', '.join(missing)}"
         logger.critical(error_msg)
-        # Don't crash - allow app to start but log critical error
-        # This allows health checks to work even if some secrets are missing
-        # The app will fail on actual usage, but at least we can see the error in logs
         print(f"⚠️ CRITICAL: {error_msg}")
-        # Only raise if SECRET_KEY is missing (absolutely required)
         if "SECRET_KEY" in missing:
             raise RuntimeError(error_msg)
 
@@ -434,6 +432,10 @@ with app.app_context():
 
     # Schedule periodic cleanup of fallback cache (prevent memory leaks)
     try:
+        if os.getenv("DISABLE_SCHEDULER", "false").lower() == "true":
+            logger.warning("⏸ Scheduler disabled via DISABLE_SCHEDULER=true")
+            raise RuntimeError("Scheduler disabled by env flag")
+
         from src.services.dead_letter_queue import DeadLetterQueueService
         from src.services.redis_service import get_redis_cache
 
