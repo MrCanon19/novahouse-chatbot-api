@@ -850,15 +850,16 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
         # Save context - try DB first, fallback to in-memory
         if db_available and conversation:
             try:
+                conv_id = conversation.id  # cache primitive id to avoid stale objects after commit
                 conversation.context_data = json.dumps(context_memory, ensure_ascii=False)
                 # Try to save user message
                 try:
                     user_msg = ChatMessage(
-            conversation_id=conversation.id,
-            message=user_message,
-            sender="user",
-            timestamp=datetime.now(timezone.utc),
-        )
+                        conversation_id=conv_id,
+                        message=user_message,
+                        sender="user",
+                        timestamp=datetime.now(timezone.utc),
+                    )
                     db.session.add(user_msg)
                     db.session.commit()
                 except Exception as msg_error:
@@ -1270,12 +1271,13 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
         # Zapisz odpowiedź bota (only if DB is available)
         if db_available and conversation:
             try:
+                conv_id = conversation.id
                 bot_msg = ChatMessage(
-            conversation_id=conversation.id,
-            message=bot_response,
-            sender="bot",
-            timestamp=datetime.now(timezone.utc),
-        )
+                    conversation_id=conv_id,
+                    message=bot_response,
+                    sender="bot",
+                    timestamp=datetime.now(timezone.utc),
+                )
                 db.session.add(bot_msg)
                 # Update context in DB
                 try:

@@ -111,7 +111,10 @@ class RateLimiter:
 # Global rate limiter instance with Redis fallback
 def get_rate_limiter():
     """Lazy load rate limiter to avoid import deadlock"""
-    # Force in-memory limiter when REDIS_URL is not configured (GAE cost-saving mode)
+    # Force in-memory limiter when REDIS_URL is not configured or explicitly disabled (GAE cost-saving mode)
+    if os.getenv("DISABLE_REDIS_RATE_LIMITER", "true").lower() == "true":
+        return RateLimiter()
+
     redis_url = os.getenv("REDIS_URL")
     if not redis_url:
         return RateLimiter()
