@@ -33,6 +33,6 @@ locust==2.32.3
 snakeviz==2.2.0
 coverage-badge==1.1.2
 openai>=1.0.0
-reportlab==4.2.5
+reportlab==4.4.6
 # numpy>=1.24.0  # DISABLED: Not compatible with GAE standard environment
 # scikit-learn>=1.3.0  # DISABLED: Not compatible with GAE standard environment
