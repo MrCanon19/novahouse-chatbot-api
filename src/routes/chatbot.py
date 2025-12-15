@@ -924,10 +924,10 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                     logging.error("[ERROR] OPENAI_API_KEY is NOT SET in environment!")
                 client = get_openai_client()
             if client:
-                    logging.info("[INFO] Direct get_openai_client() succeeded")
-                else:
-                    logging.error("[ERROR] Direct get_openai_client() also returned None!")
-            
+                logging.info("[INFO] Direct get_openai_client() succeeded")
+            else:
+                logging.error("[ERROR] Direct get_openai_client() also returned None!")
+
             if client:
                 logging.info(f"[GPT FLOW] OpenAI client available - calling GPT API for: {user_message[:50]}...")
                 try:
@@ -936,11 +936,11 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                     if db_available and conversation:
                         try:
                             history = (
-                        ChatMessage.query.filter_by(conversation_id=conversation.id)
-                        .order_by(ChatMessage.timestamp.desc())
-                        .limit(message_history_limit)
-                        .all()
-                    )
+                                ChatMessage.query.filter_by(conversation_id=conversation.id)
+                                .order_by(ChatMessage.timestamp.desc())
+                                .limit(message_history_limit)
+                                .all()
+                            )
                         except Exception:
                             history = []
                     else:
@@ -1159,17 +1159,17 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                     response = client.chat.completions.create(
                         model=GPT_MODEL,
                         messages=messages,
-                            max_tokens=350,
-                            temperature=0.6,
-                            timeout=30.0,  # 30 second timeout to prevent hanging
+                        max_tokens=350,
+                        temperature=0.6,
+                        timeout=30.0,  # 30 second timeout to prevent hanging
                     )
                     bot_response = response.choices[0].message.content
-                        # Validate GPT response
-                        if not bot_response or not bot_response.strip():
-                            logging.error("[GPT ERROR] Empty response from GPT API (no cache)!")
-                            bot_response = None
-                        else:
-                            logging.info(f"[OpenAI GPT] Response received: {bot_response[:100] if bot_response else 'EMPTY'}...")
+                    # Validate GPT response
+                    if not bot_response or not bot_response.strip():
+                        logging.error("[GPT ERROR] Empty response from GPT API (no cache)!")
+                        bot_response = None
+                    else:
+                        logging.info(f"[OpenAI GPT] Response received: {bot_response[:100] if bot_response else 'EMPTY'}...")
 
                 except Exception as e:
                     logging.error(f"[GPT ERROR] {type(e).__name__}: {e}", exc_info=True)
@@ -1208,7 +1208,7 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                     except Exception as e:
                         logging.error(f"[GPT ERROR on retry] {type(e).__name__}: {e}", exc_info=True)
                         logging.error(f"[GPT ERROR on retry] Full error details - message: {user_message[:50]}...")
-                bot_response = get_default_response(user_message)
+                        bot_response = get_default_response(user_message)
                         logging.warning(f"[FALLBACK] Using default response (retry failed): {bot_response[:50]}...")
                 else:
                     # Check if OPENAI_API_KEY is set but client failed to initialize
@@ -1326,7 +1326,7 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
         confirmation_intent = check_data_confirmation_intent(user_message)
         # Safe query with error handling for missing columns
         try:
-        existing_lead = Lead.query.filter_by(session_id=session_id).first()
+            existing_lead = Lead.query.filter_by(session_id=session_id).first()
         except Exception as e:
             logging.warning(f"Failed to query Lead for session {session_id}: {e}")
             existing_lead = None
@@ -1345,16 +1345,16 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                     # Get message count for lead scoring
                     if db_available and conversation:
                         try:
-                    message_count = ChatMessage.query.filter_by(
-                        conversation_id=conversation.id
-                    ).count()
-                    # Generate conversation summary
-                    all_messages = (
-                        ChatMessage.query.filter_by(conversation_id=conversation.id)
-                        .order_by(ChatMessage.timestamp.asc())
-                        .all()
-                    )
-                    conv_summary = generate_conversation_summary(all_messages, context_memory)
+                            message_count = ChatMessage.query.filter_by(
+                                conversation_id=conversation.id
+                            ).count()
+                            # Generate conversation summary
+                            all_messages = (
+                                ChatMessage.query.filter_by(conversation_id=conversation.id)
+                                .order_by(ChatMessage.timestamp.asc())
+                                .all()
+                            )
+                            conv_summary = generate_conversation_summary(all_messages, context_memory)
                         except Exception:
                             message_count = 0
                             conv_summary = f"Konwersacja z chatbotem. Dane: {json.dumps(context_memory, ensure_ascii=False)}"
@@ -1469,10 +1469,10 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                 has_project_data = context_memory.get("square_meters") or context_memory.get("budget")
 
                 # Calculate lead score first to decide
-                    message_count = ChatMessage.query.filter_by(
-                        conversation_id=conversation.id
-                    ).count()
-                    lead_score = calculate_lead_score(context_memory, message_count)
+                message_count = ChatMessage.query.filter_by(
+                    conversation_id=conversation.id
+                ).count()
+                lead_score = calculate_lead_score(context_memory, message_count)
                 
                 # Create lead if:
                 # 1. We have contact data (name + email/phone)
@@ -1556,7 +1556,7 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
         # Calculate lead score (use in-memory message count if DB unavailable)
         if db_available and conversation:
             try:
-        message_count = ChatMessage.query.filter_by(conversation_id=conversation.id).count()
+                message_count = ChatMessage.query.filter_by(conversation_id=conversation.id).count()
             except Exception:
                 message_count = 0
         else:
@@ -1603,7 +1603,7 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                     bot_response = response.choices[0].message.content
                     if bot_response and bot_response.strip():
                         logging.info(f"[GPT SUCCESS] Got response despite DB error: {bot_response[:50]}...")
-        return {
+                        return {
                             "response": bot_response,
                             "session_id": session_id,
                             "conversation_id": None,
@@ -1649,10 +1649,10 @@ def process_chat_message(user_message: str, session_id: str) -> dict:
                     bot_response = response.choices[0].message.content
                     if bot_response and bot_response.strip():
                         logging.info(f"[GPT SUCCESS] Got response despite unexpected error: {bot_response[:50]}...")
-        return {
+                        return {
                             "response": bot_response,
-            "session_id": session_id,
-            "conversation_id": None,
+                            "session_id": session_id,
+                            "conversation_id": None,
                         }
                 except Exception as gpt_error:
                     logging.error(f"[GPT ERROR in unexpected error handler] {gpt_error}", exc_info=True)
@@ -1706,7 +1706,7 @@ def ensure_openai_client():
             openai_client = client
             AI_PROVIDER = "openai"
             logging.debug("✅ OpenAI GPT-4o-mini client ready")
-    return openai_client
+            return openai_client
         else:
             logging.warning("⚠️  get_openai_client() returned None - check API key validity")
             return None
