@@ -24,7 +24,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: "pip"
+          cache: pip
 
       - name: Install minimal deps
         run: |
@@ -42,15 +42,22 @@ jobs:
             echo "Skipping DB check: DATABASE_URL secret not set"
           else
             python - <<'PY'
-import os
-from sqlalchemy import create_engine, text
+            import os
+            from sqlalchemy import create_engine, text
 
-db_url = os.environ["DATABASE_URL"]
-engine = create_engine(db_url, pool_pre_ping=True, pool_size=1, max_overflow=0)
-with engine.connect() as conn:
-    conn.execute(text("SELECT 1"))
-print("✅ DB preflight passed (SELECT 1)")
-PY
+            db_url = os.environ["DATABASE_URL"]
+            engine = create_engine(
+                db_url,
+                pool_pre_ping=True,
+                pool_size=1,
+                max_overflow=0,
+            )
+
+            with engine.connect() as conn:
+                conn.execute(text("SELECT 1"))
+
+            print("✅ DB preflight passed (SELECT 1)")
+            PY
           fi
 
           if [ -n "$APP_HEALTH_URL" ]; then
@@ -81,8 +88,8 @@ PY
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: "pip"
-          cache-dependency-path: "requirements.txt"
+          cache: pip
+          cache-dependency-path: requirements.txt
 
       - name: Install dependencies
         run: |
@@ -93,7 +100,10 @@ PY
       - name: Run unit tests with coverage
         continue-on-error: true
         run: |
-          pytest tests/ --cov=src --cov-report=term --cov-report=xml \
+          pytest tests/ \
+            --cov=src \
+            --cov-report=term \
+            --cov-report=xml \
             --ignore=tests/integration \
             --ignore=tests/test_customer_journey_comprehensive.py \
             --ignore=tests/test_input_validation_and_gpt_guard.py \
@@ -117,8 +127,8 @@ PY
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: "pip"
-          cache-dependency-path: "requirements.txt"
+          cache: pip
+          cache-dependency-path: requirements.txt
 
       - name: Install dependencies
         run: |
@@ -143,8 +153,8 @@ PY
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: "pip"
-          cache-dependency-path: "requirements.txt"
+          cache: pip
+          cache-dependency-path: requirements.txt
 
       - name: Install linters
         run: |
@@ -166,29 +176,28 @@ PY
       - name: Check formatting with black
         continue-on-error: true
         run: |
-          black --check src/ || echo "Black formatting check skipped (reformatting needed)"
+          black --check src/ || echo "Black formatting check skipped"
 
   security:
     name: Security Scan
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    continue-on-error: false
     steps:
       - uses: actions/checkout@v4
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          scan-type: "fs"
-          scan-ref: "."
-          format: "sarif"
-          output: "trivy-results.sarif"
+          scan-type: fs
+          scan-ref: .
+          format: sarif
+          output: trivy-results.sarif
 
-      - name: Upload Trivy results to GitHub Security tab
+      - name: Upload Trivy results
         uses: github/codeql-action/upload-sarif@v4
-        continue-on-error: true
         with:
-          sarif_file: "trivy-results.sarif"
+          sarif_file: trivy-results.sarif
+        continue-on-error: true
 
   deploy:
     name: Deploy to GCP App Engine
@@ -202,7 +211,6 @@ PY
         id: deploy_check
         run: |
           if [ -z "${{ secrets.GCP_SA_KEY }}" ] || [ -z "${{ secrets.GCP_PROJECT_ID }}" ]; then
-            echo "Deployment skipped: GCP secrets not configured"
             echo "should_deploy=false" >> "$GITHUB_OUTPUT"
           else
             echo "should_deploy=true" >> "$GITHUB_OUTPUT"
@@ -229,19 +237,11 @@ PY
       - name: Deploy to App Engine
         if: steps.deploy_check.outputs.should_deploy == 'true'
         run: |
-          echo "🚀 Deploying to Google App Engine..."
           gcloud app deploy app.yaml --quiet --project=${{ secrets.GCP_PROJECT_ID }}
-          echo "✅ Deployment completed successfully!"
 
-      - name: Get deployment URL
+      - name: Show deployment URL
         if: steps.deploy_check.outputs.should_deploy == 'true'
         run: |
-          URL=$(gcloud app describe --format="value(defaultHostname)" --project=${{ secrets.GCP_PROJECT_ID }})
+          URL=$(gcloud app describe --format="value(defaultHostname)")
           echo "🌐 App URL: https://$URL"
-          echo "🔗 Health check: https://$URL/api/health"
-
-      - name: Deploy placeholder
-        if: steps.deploy_check.outputs.should_deploy == 'false'
-        run: echo "ℹ️  Deployment skipped - no GCP secrets configured. Add GCP_SA_KEY and GCP_PROJECT_ID to GitHub Secrets to enable auto-deploy."
-
-# Koniec pliku YAML
+          echo "🔗 Health: https://$URL/api/health"
