@@ -940,7 +940,7 @@
                     <div class="message bot">
                         Dzień dobry! Miło mi 🙂<br>
                         W czym mogę pomóc? Proszę wybrać opcję poniżej.<br>
-                        Jeśli chce Pan/Pani, proszę podać imię. Będzie mi łatwiej się zwracać.
+                        Jeśli chcesz, możesz podać swoje imię – będzie mi łatwiej się zwracać.
                         <span class="message-microcopy">Imię jest opcjonalne.</span>
                     </div>
                     <div>
@@ -1019,6 +1019,7 @@
                 menuDiv.innerHTML = `
                     <a href="#" onclick="showPrivacyInfo(); return false;">Prywatność i dane</a>
                     <a href="#" onclick="clearConversation(); return false;">Wyczyść rozmowę</a>
+                    <a href="#" onclick="deleteMyData(); return false;">Usuń dane (RODO)</a>
                     <a href="tel:502274453">Kontakt</a>
                     <a href="/polityka-prywatnosci.html" target="_blank">Regulamin / Informacje</a>
                 `;
@@ -1035,7 +1036,7 @@
         }
 
         function showPrivacyInfo() {
-            alert('Dbamy o prywatność. Może Pan/Pani w każdej chwili usunąć historię rozmowy.');
+            alert('Dbamy o prywatność. W każdej chwili możesz wyczyścić rozmowę lub całkowicie usunąć swoje dane (RODO) z naszego systemu.');
             document.getElementById('headerMenu')?.classList.remove('active');
         }
     </script>

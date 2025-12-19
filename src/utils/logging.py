@@ -157,14 +157,27 @@ def log_request(response):
     else:
         duration = 0
 
-    # Log request
-    logging.info(
-        f"{request.method} {request.path} {response.status_code} {duration:.2f}ms",
+    status_code = response.status_code
+    
+    # Use appropriate log level based on status code
+    # 4xx = client errors (not server problems) -> DEBUG or INFO
+    # 5xx = server errors -> WARNING or ERROR
+    if status_code >= 500:
+        log_level = logging.error
+    elif status_code >= 400:
+        # 4xx errors are client mistakes, log as DEBUG to reduce noise
+        log_level = logging.debug
+    else:
+        log_level = logging.info
+
+    # Log request with appropriate level
+    log_level(
+        f"{request.method} {request.path} {status_code} {duration:.2f}ms",
         extra={
             "request_id": getattr(g, "request_id", None),
             "method": request.method,
             "path": request.path,
-            "status": response.status_code,
+            "status": status_code,
             "duration_ms": duration,
             "ip": request.remote_addr,
             "user_agent": request.headers.get("User-Agent", ""),
@@ -192,15 +205,46 @@ def setup_request_logging(app):
 
     @app.errorhandler(Exception)
     def log_exception(e):
-        logging.error(
-            f"Unhandled exception: {str(e)}",
-            exc_info=True,
-            extra={
-                "request_id": getattr(g, "request_id", None),
-                "method": request.method if has_request_context() else None,
-                "path": request.path if has_request_context() else None,
-            },
-        )
+        """Log exceptions with appropriate level based on type"""
+        from werkzeug.exceptions import HTTPException
+        
+        # HTTP exceptions (4xx) are client mistakes, not server errors
+        if isinstance(e, HTTPException):
+            status_code = e.code if hasattr(e, 'code') else 500
+            if status_code < 500:
+                # 4xx = client error, log as DEBUG
+                logging.debug(
+                    f"HTTP exception: {type(e).__name__}: {str(e)}",
+                    extra={
+                        "request_id": getattr(g, "request_id", None),
+                        "method": request.method if has_request_context() else None,
+                        "path": request.path if has_request_context() else None,
+                        "status_code": status_code,
+                    },
+                )
+            else:
+                # 5xx = server error, log as ERROR
+                logging.error(
+                    f"HTTP exception: {type(e).__name__}: {str(e)}",
+                    exc_info=True,
+                    extra={
+                        "request_id": getattr(g, "request_id", None),
+                        "method": request.method if has_request_context() else None,
+                        "path": request.path if has_request_context() else None,
+                        "status_code": status_code,
+                    },
+                )
+        else:
+            # Non-HTTP exceptions are real errors
+            logging.error(
+                f"Unhandled exception: {str(e)}",
+                exc_info=True,
+                extra={
+                    "request_id": getattr(g, "request_id", None),
+                    "method": request.method if has_request_context() else None,
+                    "path": request.path if has_request_context() else None,
+                },
+            )
         raise
 
 

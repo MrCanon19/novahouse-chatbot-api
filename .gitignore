@@ -63,7 +63,9 @@ backups/*
 !backups/automated/
 !backups/automated/*.gpg
 *.backup
+*.backup.*
 *.bak
+app.yaml.backup.*
 backups/secrets/
 
 # IDE

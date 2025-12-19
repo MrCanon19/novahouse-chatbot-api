@@ -15,8 +15,8 @@ from src.utils.polish_declension import PolishDeclension
 
 from .base import ChatStrategy
 
-# Configuration: Message history limit (increased from 10 to 20 for longer conversations)
-MESSAGE_HISTORY_LIMIT = int(os.getenv("MESSAGE_HISTORY_LIMIT", "20"))
+# Configuration: Message history limit (shorter = szybsze odpowiedzi)
+MESSAGE_HISTORY_LIMIT = int(os.getenv("MESSAGE_HISTORY_LIMIT", "15"))
 
 
 class GptStrategy(ChatStrategy):
@@ -116,7 +116,7 @@ class GptStrategy(ChatStrategy):
             response = self.openai_client.chat.completions.create(
                 model=self.gpt_model,
                 messages=messages,
-                max_tokens=500,
+                max_tokens=250,
                 temperature=0.7,
             )
 

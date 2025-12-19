@@ -659,6 +659,19 @@ with app.app_context():
 # Handle psycopg2 connection errors gracefully
 from sqlalchemy.exc import OperationalError as SQLAlchemyOperationalError
 
+# Import Werkzeug HTTP exceptions for proper error handling
+from werkzeug.exceptions import (
+    BadRequest,
+    Unauthorized,
+    Forbidden,
+    NotFound,
+    MethodNotAllowed,
+    RequestTimeout,
+    TooManyRequests,
+    RequestEntityTooLarge,
+    ServiceUnavailable,
+)
+
 
 @app.errorhandler(SQLAlchemyOperationalError)
 def handle_db_connection_error(error):
@@ -675,28 +688,149 @@ def handle_db_connection_error(error):
     }, 503
 
 
+@app.errorhandler(400)
+@app.errorhandler(BadRequest)
+def bad_request(error):
+    """Bad request (400) - client error"""
+    request_id = getattr(g, "request_id", None)
+    MetricsService.increment_error(400)
+    
+    # Don't log 400 as ERROR - it's a client mistake, not server issue
+    logger.debug(f"Bad request: {str(error)[:200]}")
+    
+    response_data = {"error": "bad_request", "message": "Invalid request"}
+    if request_id:
+        response_data["request_id"] = request_id
+    return response_data, 400
+
+
+@app.errorhandler(401)
+@app.errorhandler(Unauthorized)
+def unauthorized(error):
+    """Unauthorized (401) - authentication required"""
+    request_id = getattr(g, "request_id", None)
+    MetricsService.increment_error(401)
+    
+    logger.debug(f"Unauthorized: {str(error)[:200]}")
+    
+    response_data = {"error": "unauthorized", "message": "Authentication required"}
+    if request_id:
+        response_data["request_id"] = request_id
+    return response_data, 401
+
+
+@app.errorhandler(403)
+@app.errorhandler(Forbidden)
+def forbidden(error):
+    """Forbidden (403) - access denied"""
+    request_id = getattr(g, "request_id", None)
+    MetricsService.increment_error(403)
+    
+    logger.debug(f"Forbidden: {str(error)[:200]}")
+    
+    response_data = {"error": "forbidden", "message": "Access denied"}
+    if request_id:
+        response_data["request_id"] = request_id
+    return response_data, 403
+
+
+@app.errorhandler(404)
+@app.errorhandler(NotFound)
+def not_found(error):
+    """Page not found (404)"""
+    request_id = getattr(g, "request_id", None)
+    MetricsService.increment_error(404)
+    
+    # Don't log 404 as ERROR - it's normal for missing resources
+    logger.debug(f"Not found: {request.path if hasattr(request, 'path') else 'unknown'}")
+    
+    response_data = {"error": "not_found", "message": "Resource not found"}
+    if request_id:
+        response_data["request_id"] = request_id
+    return response_data, 404
+
+
+@app.errorhandler(405)
+@app.errorhandler(MethodNotAllowed)
+def method_not_allowed(error):
+    """Method not allowed (405) - wrong HTTP method"""
+    request_id = getattr(g, "request_id", None)
+    MetricsService.increment_error(405)
+    
+    # CRITICAL FIX: Don't log 405 as ERROR - it's a client mistake, not server issue
+    # This prevents false alarms in GCP Error Reporting
+    method = request.method if hasattr(request, 'method') else 'unknown'
+    path = request.path if hasattr(request, 'path') else 'unknown'
+    logger.debug(f"Method not allowed: {method} {path}")
+    
+    response_data = {
+        "error": "method_not_allowed",
+        "message": f"Method {method} not allowed for this endpoint"
+    }
+    if request_id:
+        response_data["request_id"] = request_id
+    return response_data, 405
+
+
+@app.errorhandler(408)
+@app.errorhandler(RequestTimeout)
+def request_timeout(error):
+    """Request timeout (408)"""
+    request_id = getattr(g, "request_id", None)
+    MetricsService.increment_error(408)
+    
+    logger.warning(f"Request timeout: {str(error)[:200]}")
+    
+    response_data = {"error": "request_timeout", "message": "Request timed out"}
+    if request_id:
+        response_data["request_id"] = request_id
+    return response_data, 408
+
+
 @app.errorhandler(413)
+@app.errorhandler(RequestEntityTooLarge)
 def request_entity_too_large(error):
-    """File too large"""
+    """File too large (413)"""
     request_id = getattr(g, "request_id", None)
     MetricsService.increment_error(413)
     
-    response_data = {"error": "File too large. Maximum size is 50MB."}
+    logger.warning(f"Request entity too large: {str(error)[:200]}")
+    
+    response_data = {"error": "file_too_large", "message": "File too large. Maximum size is 50MB."}
     if request_id:
         response_data["request_id"] = request_id
     return response_data, 413
 
 
-@app.errorhandler(404)
-def not_found(error):
-    """Page not found"""
+@app.errorhandler(429)
+@app.errorhandler(TooManyRequests)
+def too_many_requests(error):
+    """Too many requests (429) - rate limit exceeded"""
     request_id = getattr(g, "request_id", None)
-    MetricsService.increment_error(404)
+    MetricsService.increment_error(429)
     
-    response_data = {"error": "Resource not found"}
+    # Don't log 429 as ERROR - it's expected behavior for rate limiting
+    logger.info(f"Rate limit exceeded: {request.remote_addr if hasattr(request, 'remote_addr') else 'unknown'}")
+    
+    response_data = {"error": "rate_limit_exceeded", "message": "Too many requests. Please try again later."}
     if request_id:
         response_data["request_id"] = request_id
-    return response_data, 404
+    return response_data, 429
+
+
+@app.errorhandler(503)
+@app.errorhandler(ServiceUnavailable)
+def service_unavailable(error):
+    """Service unavailable (503) - temporary service issue"""
+    request_id = getattr(g, "request_id", None)
+    MetricsService.increment_error(503)
+    
+    logger.warning(f"Service unavailable: {str(error)[:200]}")
+    
+    response_data = {"error": "service_unavailable", "message": "Service temporarily unavailable"}
+    if request_id:
+        response_data["request_id"] = request_id
+    return response_data, 503
 
 
 # Import custom exceptions
@@ -759,17 +893,51 @@ def handle_all_exceptions(error: Exception):
     if isinstance(error, BusinessException):
         return handle_business_error(error)
     
-    # Capture in Sentry
-    capture_exception(error, extra={"request_id": request_id})
+    # CRITICAL FIX: Check if this is a Werkzeug HTTP exception that should be handled differently
+    from werkzeug.exceptions import HTTPException
+    
+    if isinstance(error, HTTPException):
+        # Werkzeug HTTP exceptions should have been caught by specific handlers above
+        # But if they slip through, handle them gracefully without logging as ERROR
+        status_code = error.code if hasattr(error, 'code') else 500
+        if status_code < 500:  # 4xx errors are client mistakes, not server errors
+            logger.debug(f"HTTP exception (handled): {type(error).__name__}: {str(error)[:200]}")
+            MetricsService.increment_error(status_code)
+            response_data = {
+                "error": error.name.lower().replace(" ", "_") if hasattr(error, 'name') else "client_error",
+                "message": str(error.description) if hasattr(error, 'description') else str(error)
+            }
+            if request_id:
+                response_data["request_id"] = request_id
+            return response_data, status_code
+    
+    # Filter out test/health check errors that shouldn't trigger alerts
+    path = request.path if hasattr(request, 'path') else ''
+    user_agent = request.headers.get('User-Agent', '') if hasattr(request, 'headers') else ''
+    
+    # Ignore errors from health checks, monitoring, and common bot requests
+    ignore_paths = ['/api/health', '/health', '/metrics', '/favicon.ico', '/robots.txt']
+    ignore_agents = ['GoogleHC', 'HealthChecker', 'UptimeRobot', 'Pingdom']
+    
+    is_test_request = (
+        any(ignore_path in path for ignore_path in ignore_paths) or
+        any(ignore_agent in user_agent for ignore_agent in ignore_agents)
+    )
+    
+    # Only capture real errors in Sentry (not test requests)
+    if not is_test_request:
+        capture_exception(error, extra={"request_id": request_id, "path": path})
     
     # Track metrics
     MetricsService.increment_error(500)
     
     # Log error (full traceback only in logs, not to user)
-    logger.error(
+    # Use WARNING for test requests, ERROR for real issues
+    log_level = logger.warning if is_test_request else logger.error
+    log_level(
         f"Unhandled exception: {type(error).__name__}: {str(error)}",
-        exc_info=True,
-        extra={"request_id": request_id}
+        exc_info=not is_test_request,  # Full traceback only for real errors
+        extra={"request_id": request_id, "path": path, "is_test_request": is_test_request}
     )
     
     response_data = {"error": "internal_error"}
