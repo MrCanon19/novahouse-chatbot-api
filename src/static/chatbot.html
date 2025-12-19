@@ -903,7 +903,18 @@
             const actionsDiv = document.createElement('div');
             actionsDiv.className = 'quick-actions';
             
-            if (responseLower.includes('pakiet') || responseLower.includes('cena')) {
+            // Check if bot is asking about package selection
+            if (responseLower.includes('jaki standard') || responseLower.includes('standard wykończenia') || 
+                responseLower.includes('który pakiet') || (responseLower.includes('pakiet') && responseLower.includes('interesuje'))) {
+                // Show specific package buttons
+                actionsDiv.innerHTML = `
+                    <button class="quick-action-btn" onclick="sendQuickMessage('Express')">Express (999 zł/m²)</button>
+                    <button class="quick-action-btn" onclick="sendQuickMessage('Express Plus')">Express Plus (1199 zł/m²)</button>
+                    <button class="quick-action-btn" onclick="sendQuickMessage('Comfort')">Comfort (1499 zł/m²)</button>
+                    <button class="quick-action-btn" onclick="sendQuickMessage('Premium')">Premium (1999 zł/m²)</button>
+                    <button class="quick-action-btn" onclick="sendQuickMessage('Nie wiem – proszę doradzić')">Nie wiem – doradź mi</button>
+                `;
+            } else if (responseLower.includes('pakiet') || responseLower.includes('cena')) {
                 actionsDiv.innerHTML = `
                     <button class="quick-action-btn" onclick="sendQuickMessage('Chcę umówić konsultację')">Umów konsultację</button>
                     <button class="quick-action-btn" onclick="sendQuickMessage('Jakie są różnice między pakietami?')">Różnice pakietów</button>

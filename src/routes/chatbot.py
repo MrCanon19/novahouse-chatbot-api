@@ -191,14 +191,14 @@ def extract_context_safe(user_message: str, existing: dict) -> dict:
         m = re.search(r"(\d+[\s\d]*)(?:\s?tys|\s?000|\s?pln|\s?zł)", text, re.IGNORECASE)
         if m and "budget" not in ctx:
             raw = m.group(1).replace(" ", "")
-        try:
-            value = int(raw)
-            if re.search(r"tys|tyś", text, re.IGNORECASE):
-                value *= 1000
+            try:
+                value = int(raw)
+                if re.search(r"tys|tyś", text, re.IGNORECASE):
+                    value *= 1000
                 if 10000 <= value <= 10_000_000:
                     ctx["budget"] = value
-        except ValueError:
-            pass
+            except ValueError:
+                pass
 
     # Extract package from message (if not already set)
     if not ctx.get("package"):
@@ -318,13 +318,25 @@ def handle_short_message(user_message: str, context: dict) -> Optional[str]:
             quote = calculate_quote(sqm, package_normalized)
             if quote:
                 price_per_sqm = PACKAGE_PRICES[package_normalized]
-                response = (
-                    f"Jasne — **{package_normalized}**. "
-                    f"Przy **{sqm} m²** wychodzi ok. **{quote['formatted']}** "
-                    f"({sqm} × {price_per_sqm} zł/m²).\n\n"
-                    f"To wstępna wycena; ostatecznie zależy od zakresu i materiałów.\n\n"
-                    f"Chcesz porównać z innymi pakietami czy doprecyzować zakres (łazienka/kuchnia/elektryka)?"
-                )
+                # Check if we have contact data - if yes, propose consultation immediately
+                has_contact = context.get("email") or context.get("phone")
+                name = context.get("name", "")
+                
+                if has_contact:
+                    # We have everything - propose consultation
+                    response = (
+                        f"Dziękuję {name + ', ' if name else ''}mam wszystkie dane: **{sqm} m²**, pakiet: **{package_normalized}**.\n\n"
+                        f"Wstępna wycena: **{quote['formatted']}** ({sqm} × {price_per_sqm} zł/m²).\n\n"
+                        f"Wyślemy Ci szczegółową wycenę na email. Czy chcesz, aby nasz ekspert oddzwonił dziś po 16:00, by omówić szczegóły?"
+                    )
+                else:
+                    response = (
+                        f"Jasne — **{package_normalized}**. "
+                        f"Przy **{sqm} m²** wychodzi ok. **{quote['formatted']}** "
+                        f"({sqm} × {price_per_sqm} zł/m²).\n\n"
+                        f"To wstępna wycena; ostatecznie zależy od zakresu i materiałów.\n\n"
+                        f"Chcesz porównać z innymi pakietami czy doprecyzować zakres (łazienka/kuchnia/elektryka)?"
+                    )
                 context["last_quoted_price"] = quote["total"]
                 context["last_price_calc"] = quote
                 context["conversation_stage"] = "QUOTE_GIVEN"
@@ -451,11 +463,26 @@ def call_gpt(user_message: str, context: dict, history: list[dict] | None = None
     if memory_lines:
         context_rules = "\n\nDane podane przez klienta (NIE PYTAJ PONOWNIE):\n" + "\n".join(memory_lines)
         context_rules += "\n\n⚠️ WAŻNE: Jeśli masz metraż/pakiet/miasto - NIE pytaj o nie ponownie. Użyj ich do odpowiedzi."
+        
+        # CRITICAL: If we have square meters, ALWAYS calculate and show quote
+        if context.get("square_meters") and not context.get("package"):
+            context_rules += "\n\n🚨 KRYTYCZNE: Masz metraż - ZAWSZE przelicz i pokaż wycenę dla 3-4 pakietów (Express, Express Plus, Comfort, Premium)."
+        elif context.get("square_meters") and context.get("package"):
+            quote = calculate_quote(context["square_meters"], context["package"])
+            if quote:
+                context_rules += f"\n\n🚨 KRYTYCZNE: Masz metraż {context['square_meters']} m² i pakiet {context['package']} - wycena: {quote['formatted']}. Użyj tej informacji w odpowiedzi!"
 
     # Add conversation stage context
     stage = context.get("conversation_stage", "DISCOVERY")
     if stage == "QUOTE_READY" or stage == "QUOTE_GIVEN":
         context_rules += "\n\nKlient ma już wycenę - możesz proponować następne kroki (konsultacja, porównanie pakietów, doprecyzowanie zakresu)."
+    
+    # CRITICAL: If we have contact data + square meters + package, propose consultation immediately
+    has_contact = context.get("email") or context.get("phone")
+    has_sqm = context.get("square_meters")
+    has_package = context.get("package")
+    if has_contact and has_sqm and has_package:
+        context_rules += "\n\n🎯 KRYTYCZNE: Masz wszystkie dane (kontakt + metraż + pakiet) - ZAWSZE zaproponuj konsultację, NIE pytaj ponownie o pakiety/metraż!"
 
     messages = [{"role": "system", "content": SYSTEM_PROMPT + context_rules}]
     if history:
